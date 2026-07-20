@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TS·OS // ARCHIVE TERMINAL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600&family=Share+Tech+Mono&family=Gothic+A1:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+<!-- 공통 디자인·동작 (css/common.css · js/common.js 한 곳에서 관리) -->
+<link rel="stylesheet" href="../assets/css/common.css?v=2">
+<script src="../assets/js/common.js?v=2"></script>
+
+<style>
+  /* ===== 홈 전용 스타일 ===== */
+  .feature{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+  .feature .kick{font-family:'Share Tech Mono';font-size:11px;letter-spacing:4px;color:var(--acc);margin-bottom:18px}
+  .ring{position:relative;width:clamp(210px,30vh,290px);aspect-ratio:1;display:flex;align-items:center;justify-content:center;margin-bottom:32px}
+  .ring svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .ring .spin{transform-origin:150px 150px;animation:sp 90s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .ring .logo{width:56%;opacity:.9}
+  :root[data-theme="light"] .ring .logo{filter:brightness(.6) saturate(1.5)}
+  .ring .rl{position:absolute;font-family:'Share Tech Mono';font-size:8px;letter-spacing:1.5px;color:var(--tx3);white-space:nowrap}
+  .ring .rl.a{top:-2px;left:-6px}.ring .rl.b{top:-2px;right:-6px}.ring .rl.c{bottom:-2px;left:-6px}.ring .rl.d{bottom:-2px;right:-6px}
+  .feature .sub{font-family:'Share Tech Mono';font-size:12.5px;letter-spacing:2.5px;color:var(--tx2);margin-top:2px}
+  .feature .boot{font-family:'Share Tech Mono';font-size:12px;color:var(--tx3);margin-top:16px;height:16px}
+  .feature .boot .c{display:inline-block;width:5px;height:11px;background:var(--acc);vertical-align:-1px;margin-left:1px;animation:bl 1.1s step-end infinite}
+  @keyframes bl{50%{opacity:0}}
+
+  /* ===== nav — 스토리지 어레이 / 디스크 슬롯 ===== */
+  .nav{display:flex;flex-direction:column;gap:1px;background:var(--line);border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:24px}
+  .nav .hdr{background:var(--bg2);display:flex;justify-content:space-between;align-items:center;padding:7px 16px;font-family:'Share Tech Mono';font-size:9px;letter-spacing:1.5px;color:var(--tx3)}
+  .nav .hdr .r{color:var(--tx3)}
+  .nav .hdr .r b{color:var(--lime);font-weight:400}
+
+  /* 슬롯 한 줄 = 서버룸 스토리지 유닛 */
+  .slot{position:relative;background:var(--panel);display:grid;
+    grid-template-columns:20px 132px 1fr auto auto;align-items:center;gap:16px;
+    padding:15px 18px;transition:background .25s}
+  .slot .bar{position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--acc);transform:scaleY(0);transform-origin:center;transition:transform .3s}
+
+  /* 인덱스 번호 */
+  .slot .idx{font-family:'Share Tech Mono';font-size:10px;letter-spacing:.5px;color:var(--tx3)}
+
+  /* 유닛 라벨 */
+  .slot .name{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .slot .name .en{font-family:'Chakra Petch';font-weight:500;font-size:15.5px;letter-spacing:.5px;color:var(--tx2)}
+  .slot .name .ko{font-size:11.5px;color:var(--tx3)}
+
+  /* 용량 게이지 — ████████░░ */
+  .slot .gauge{font-family:'Share Tech Mono';font-size:12px;letter-spacing:0;line-height:1;white-space:nowrap;color:var(--tx3);display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden}
+  .slot .gauge .track{position:relative;flex:0 0 auto;width:120px;height:9px;border:1px solid var(--line2);background:var(--bg)}
+  .slot .gauge .track i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--chrome);opacity:.55;transition:width 1s cubic-bezier(.4,0,.2,1)}
+  .slot .gauge .cap{font-size:9px;letter-spacing:.5px;color:var(--tx3)}
+
+  /* 데이터량 */
+  .slot .amt{font-family:'Share Tech Mono';font-size:11px;letter-spacing:.5px;color:var(--tx3);text-align:right;white-space:nowrap}
+
+  /* 상태 LED */
+  .slot .led{display:flex;align-items:center;gap:7px;font-family:'Share Tech Mono';font-size:8px;letter-spacing:1px;color:var(--tx3);white-space:nowrap}
+  .slot .led .dot{width:9px;height:9px;border-radius:50%;border:1px solid var(--line2);background:transparent}
+
+  /* --- ACTIVE (CHARACTER) --- */
+  .slot.on{cursor:pointer}
+  .slot.on .bar{transform:scaleY(1)}
+  .slot.on .name .en{color:var(--tx)}
+  .slot.on .idx{color:var(--acc)}
+  .slot.on .gauge{color:var(--acc)}
+  .slot.on .gauge .track{border-color:var(--acc)}
+  .slot.on .gauge .track i{background:var(--acc);opacity:.85;box-shadow:0 0 6px color-mix(in srgb,var(--acc) 55%,transparent)}
+  .slot.on .amt{color:var(--acc)}
+  .slot.on .led{color:var(--lime)}
+  .slot.on .led .dot{background:var(--lime);border-color:var(--lime);box-shadow:0 0 7px color-mix(in srgb,var(--lime) 70%,transparent);animation:pulse 1.8s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+  .slot.on:hover{background:var(--bg2)}
+  .slot.on .go{font-family:'Share Tech Mono';font-size:13px;color:var(--acc);opacity:0;transform:translateX(-4px);transition:.25s;margin-left:2px}
+  .slot.on:hover .go{opacity:1;transform:translateX(0)}
+
+  /* --- LOCKED --- */
+  .slot.lock{pointer-events:none;opacity:.5}
+  .slot.lock .led{color:var(--tx3)}
+
+  @media(max-width:640px){
+    .slot{grid-template-columns:18px 1fr auto;gap:12px;padding:14px 16px}
+    .slot .gauge{display:none}
+  }
+</style>
+</head>
+<body>
+  <div class="screen">
+    <div class="osbar mono">
+      <img class="lg" src="../assets/img/ts_typo.png" alt="">
+      <span class="os">TS·OS</span>
+      <span class="sec"><span class="d"></span>SECURE LINK</span>
+      <div class="right">
+        <span>CENTRAL DB</span>
+        <span class="sig"><i></i><i></i><i></i><i></i></span>
+        <span class="bat"><span id="batp">82%</span><span class="b"><i></i></span></span>
+        <span id="clock">--:--</span>
+        <button class="tg" id="themeBtn" title="테마 전환">◐</button>
+      </div>
+    </div>
+
+    <main class="feature">
+      <div class="kick mono">DATABASE ACCESS</div>
+      <div class="ring">
+        <svg viewBox="0 0 300 300" aria-hidden="true">
+          <circle cx="150" cy="150" r="132" fill="none" stroke="var(--line2)" stroke-width="1"/>
+          <g class="spin"><circle cx="150" cy="150" r="132" fill="none" stroke="var(--acc)" stroke-width="1.4" stroke-dasharray="40 360" stroke-linecap="round"/><circle cx="150" cy="18" r="2" fill="var(--acc)"/></g>
+          <line x1="150" y1="8" x2="150" y2="20" stroke="var(--acc)" stroke-width="1" opacity=".6"/>
+          <line x1="150" y1="280" x2="150" y2="292" stroke="var(--line2)" stroke-width="1"/>
+          <line x1="8" y1="150" x2="20" y2="150" stroke="var(--line2)" stroke-width="1"/>
+          <line x1="280" y1="150" x2="292" y2="150" stroke="var(--line2)" stroke-width="1"/>
+        </svg>
+        <img class="logo" src="../assets/img/ts_typo.png" alt="TROUBLESHOOTER">
+        <span class="rl a">◈ ROOT · TS-DB</span><span class="rl b">ENCRYPTED</span><span class="rl c">SIG ///</span><span class="rl d">READ-ONLY</span>
+      </div>
+      <div class="sub mono">INTEGRATED ARCHIVE · 통합 아카이브</div>
+      <div class="boot mono"><span id="boot2"></span><span class="c"></span></div>
+    </main>
+
+    <nav class="nav">
+      <div class="hdr mono"><span>STORAGE ARRAY · TS-DB VOL.01</span><span class="r"><b>1</b> / 4 MOUNTED</span></div>
+
+      <div class="slot lock">
+        <span class="bar"></span>
+        <span class="idx mono">01</span>
+        <span class="name"><span class="en">WORLD</span><span class="ko">세계관</span></span>
+        <span class="gauge mono"><span class="track"><i style="width:0%"></i></span><span class="cap">OFFLINE</span></span>
+        <span class="amt mono">0 REC</span>
+        <span class="led mono"><span class="dot"></span>LOCKED</span>
+      </div>
+
+      <a class="slot on" href="../characters.html">
+        <span class="bar"></span>
+        <span class="idx mono">02</span>
+        <span class="name"><span class="en">CHARACTER</span><span class="ko">캐릭터</span></span>
+        <span class="gauge mono"><span class="track"><i id="capfill" style="width:0%"></i></span><span class="cap">SECTOR 01</span></span>
+        <span class="amt mono">6 REC</span>
+        <span class="led mono"><span class="dot"></span>MOUNTED</span>
+        <span class="go mono">→</span>
+      </a>
+
+      <div class="slot lock">
+        <span class="bar"></span>
+        <span class="idx mono">03</span>
+        <span class="name"><span class="en">RELATIONS</span><span class="ko">관계도</span></span>
+        <span class="gauge mono"><span class="track"><i style="width:0%"></i></span><span class="cap">OFFLINE</span></span>
+        <span class="amt mono">0 REC</span>
+        <span class="led mono"><span class="dot"></span>LOCKED</span>
+      </div>
+
+      <div class="slot lock">
+        <span class="bar"></span>
+        <span class="idx mono">04</span>
+        <span class="name"><span class="en">GALLERY</span><span class="ko">갤러리</span></span>
+        <span class="gauge mono"><span class="track"><i style="width:0%"></i></span><span class="cap">OFFLINE</span></span>
+        <span class="amt mono">0 REC</span>
+        <span class="led mono"><span class="dot"></span>LOCKED</span>
+      </div>
+    </nav>
+
+    <footer class="foot">
+      <span><span class="g">GUEST</span> · UID 000-ACCESS</span>
+      <span class="r">TS-DB · TERMINAL v2.04</span>
+    </footer>
+  </div>
+
+  <!-- 접속 시퀀스 오버레이 -->
+  <div class="connect" id="connect">
+    <div class="ct mono">TS·OS <b>HANDHELD ARCHIVE TERMINAL</b> v2.04</div>
+    <div class="cl mono" id="cl"></div>
+    <div class="pbar"><i id="pb"></i></div>
+  </div>
+
+<script>
+  // 접속 시퀀스 (홈 전용) — 테마/시계는 assets/ts.js 공통 처리
+  var steps=[
+    'POWER ON · TS-TERM MDL-2',
+    'ESTABLISHING SECURE LINK',
+    'AUTHENTICATING OPERATOR · GUEST',
+    'HANDSHAKE · CENTRAL ARCHIVE',
+    'CHANNEL ENCRYPTED'
+  ];
+  var cl=document.getElementById('cl'),pb=document.getElementById('pb'),ci=0,html='';
+  function step(){
+    if(ci<steps.length){
+      html+='<div><span class="ok">✓</span> '+steps[ci]+'</div>';
+      cl.innerHTML=html;
+      pb.style.width=Math.round((ci+1)/steps.length*100)+'%';
+      ci++;setTimeout(step,440);
+    }else{
+      cl.innerHTML=html+'<div>ENTERING DATABASE<span class="cur"></span></div>';
+      setTimeout(function(){document.getElementById('connect').classList.add('done');typeBoot();
+        // 접속형 스토리지 용량 게이지 채우기
+        var f=document.getElementById('capfill');if(f){setTimeout(function(){f.style.width='72%';},300);}
+      },700);
+    }
+  }
+  function typeBoot(){var m="CONNECTION ENCRYPTED · AUTHORIZED ACCESS ONLY",e=document.getElementById("boot2"),j=0;(function t(){if(j<=m.length){e.textContent=m.slice(0,j);j++;setTimeout(t,40);}})();}
+  setTimeout(step,400);
+</script>
+</body>
+</html>

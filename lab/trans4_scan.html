@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TS·OS // SCAN TRANSITION</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600&family=Share+Tech+Mono&family=Gothic+A1:wght@300;400;500;700&family=Orbitron:wght@700;800&display=swap" rel="stylesheet">
+
+<!-- 공통 디자인·동작 (배경 그리드/크롬은 common 이 고정으로 주입) -->
+<link rel="stylesheet" href="../assets/css/common.css?v=2">
+<script src="../assets/js/common.js?v=2"></script>
+
+<style>
+  /* 상세 오버레이 스크림 색 (테마별) */
+  :root[data-theme="dark"]{--scrim:rgba(18,22,31,.86);--sedge:rgba(18,22,31,.5)}
+  :root[data-theme="light"]{--scrim:rgba(236,236,236,.88);--sedge:rgba(236,236,236,.5)}
+
+  /* ===== 중앙 : 두 뷰를 겹쳐 두는 무대 (크롬/배경은 고정) ===== */
+  .center{position:relative;flex:1;min-height:0;overflow:hidden}
+  .view{position:absolute;inset:0;display:flex;flex-direction:column;min-height:0}
+  .view.arch{will-change:clip-path}
+
+  /* 스캔 라인 (밝은 가로선이 위→아래로 훑으며 도감을 렌더) */
+  .scan{position:absolute;left:-4px;right:-4px;top:0;height:2px;z-index:40;opacity:0;pointer-events:none;
+    background:linear-gradient(90deg,transparent,var(--acc) 12%,var(--acc) 88%,transparent);
+    box-shadow:0 0 10px 2px var(--acc2),0 0 26px 4px var(--acc2)}
+  .scan::after{content:"";position:absolute;left:0;right:0;top:2px;height:40px;
+    background:linear-gradient(var(--acc2),transparent);opacity:.5}
+
+  /* ===== 홈 (index.html .feature 이식) ===== */
+  .feature{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+  .feature .kick{font-family:'Share Tech Mono';font-size:11px;letter-spacing:4px;color:var(--acc);margin-bottom:18px}
+  .ring{position:relative;width:clamp(200px,28vh,280px);aspect-ratio:1;display:flex;align-items:center;justify-content:center;margin-bottom:30px}
+  .ring svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .ring .spin{transform-origin:150px 150px;animation:sp 90s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .ring .logo{width:56%;opacity:.9}
+  :root[data-theme="light"] .ring .logo{filter:brightness(.6) saturate(1.5)}
+  .ring .rl{position:absolute;font-family:'Share Tech Mono';font-size:8px;letter-spacing:1.5px;color:var(--tx3);white-space:nowrap}
+  .ring .rl.a{top:-2px;left:-6px}.ring .rl.b{top:-2px;right:-6px}.ring .rl.c{bottom:-2px;left:-6px}.ring .rl.d{bottom:-2px;right:-6px}
+  .feature .fsub{font-family:'Share Tech Mono';font-size:12.5px;letter-spacing:2.5px;color:var(--tx2);margin-top:2px}
+
+  /* CHARACTER 진입 컨트롤 */
+  .enter-btn{margin-top:30px;display:inline-flex;align-items:center;gap:16px;cursor:pointer;
+    background:transparent;border:1px solid var(--acc);color:var(--acc);padding:14px 26px;
+    font-family:'Share Tech Mono';letter-spacing:1.5px;transition:.22s}
+  .enter-btn .ko{color:var(--tx2);transition:.22s}
+  .enter-btn .go{font-size:14px}
+  .enter-btn:hover{background:var(--acc);color:var(--bg)}
+  .enter-btn:hover .ko{color:var(--bg)}
+
+  /* ===== 도감 (characters.html 이식) — .sub 는 홈 텍스트와 겹치지 않게 .arch 로 스코프 ===== */
+  .arch .sub{display:flex;align-items:center;gap:16px;height:52px;flex:0 0 52px;border-bottom:1px solid var(--line)}
+  .back{display:flex;align-items:center;gap:8px;font-family:'Share Tech Mono';font-size:11px;letter-spacing:1px;color:var(--tx2);transition:.2s;cursor:pointer;background:transparent;border:0}
+  .back:hover{color:var(--acc)}
+  .arch .sub .ttl .en{display:block;font-family:'Orbitron';font-weight:700;font-size:15px;letter-spacing:1px}
+  .arch .sub .ttl .ko{display:block;font-family:'Share Tech Mono';font-size:10px;letter-spacing:1.5px;color:var(--tx2);margin-top:2px}
+  .arch .sub .r{margin-left:auto;font-family:'Share Tech Mono';font-size:10px;letter-spacing:1px;color:var(--tx3)}
+  .arch .sub .r b{color:var(--acc);font-weight:400}
+
+  /* master-detail */
+  .db{flex:1;display:grid;grid-template-columns:1fr 1.05fr;min-height:0}
+  .list{overflow-y:auto;padding:18px 26px 18px 0;border-right:1px solid var(--line)}
+  .list::-webkit-scrollbar{width:5px}.list::-webkit-scrollbar-thumb{background:var(--line2);border-radius:3px}
+  .sec-h{display:flex;align-items:center;gap:12px;font-family:'Share Tech Mono';font-size:10px;letter-spacing:2px;color:var(--tx2);margin:14px 0 8px}
+  .sec-h:first-child{margin-top:0}
+  .sec-h .num{color:var(--acc)}
+  .sec-h .line{flex:1;height:1px;background:var(--line)}
+  .sec-h.off{color:var(--tx3);opacity:.6}
+
+  .rec{position:relative;display:grid;grid-template-columns:38px 34px 1fr auto;align-items:center;gap:12px;width:100%;text-align:left;
+    background:transparent;border:0;border-bottom:1px solid var(--line);padding:11px 8px;cursor:pointer;color:inherit;transition:background .18s}
+  .rec:hover{background:var(--rowhi)}
+  .rec.sel{background:var(--rowhi)}
+  .rec.sel::before{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:2px;height:70%;background:var(--acc)}
+  .rec .rid{font-family:'Share Tech Mono';font-size:10px;color:var(--tx3);letter-spacing:.5px}
+  .rec .thumb{width:34px;height:34px;border:1px solid var(--line);overflow:hidden;position:relative;background:var(--panel)}
+  .rec .thumb img{position:absolute;left:50%;top:2px;transform:translateX(-50%);height:72px;width:auto}
+  .rec.lock .thumb img{filter:brightness(0) invert(var(--silh)) opacity(.5)}
+  .rec .rn{display:flex;flex-direction:column;gap:1px}
+  .rec .rn .en{font-family:'Chakra Petch';font-weight:600;font-size:14px;letter-spacing:.3px}
+  .rec .rn .ko{font-size:11px;color:var(--tx2)}
+  .rec.lock .rn .en{color:var(--tx2)}
+  .rec .rs{font-family:'Share Tech Mono';font-size:9px;letter-spacing:1px;color:var(--tx3)}
+  .rec.on .rs{color:var(--acc)}
+  .rec.on .rs::before{content:"● "}
+  .rec.lock .rs::before{content:"🔒 "}
+
+  /* 상세 프리뷰 */
+  .detail{position:relative;overflow:hidden;min-height:0;padding:0}
+  .dimg{position:absolute;top:0;bottom:0;right:0;width:72%;z-index:1;overflow:hidden}
+  .dimg img{position:absolute;left:50%;bottom:0;transform:translateX(-50%);height:98%;width:auto;max-width:none}
+  .dimg.lock img{filter:brightness(0) invert(var(--silh)) opacity(.5)}
+  .detail::after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+    background:linear-gradient(90deg,transparent 0%,transparent 88%,var(--sedge) 100%)}
+  .dinfo{position:relative;z-index:3;height:100%;display:flex;flex-direction:column;justify-content:center;padding:0 44% 0 34px}
+  .dinfo .did{font-family:'Share Tech Mono';font-size:10.5px;letter-spacing:2px;color:var(--acc);margin-bottom:12px}
+  .dinfo .dname{font-family:'Orbitron';font-weight:800;font-size:clamp(24px,3vw,34px);letter-spacing:1px;line-height:1}
+  .dinfo .dko{font-family:'Chakra Petch';font-weight:500;font-size:16px;color:var(--tx2);margin-top:6px}
+  .dinfo .drole{font-family:'Share Tech Mono';font-size:12px;letter-spacing:1px;color:var(--tx);margin-top:14px}
+  .dinfo .fields{margin-top:20px;display:flex;flex-direction:column;border-top:1px solid var(--line)}
+  .dinfo .fields .f{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-family:'Share Tech Mono';font-size:11.5px}
+  .dinfo .fields .f .k{color:var(--tx3);letter-spacing:1px}
+  .dinfo .fields .f .v{color:var(--tx);letter-spacing:.5px}
+  .dinfo .fields .f .v.ok{color:var(--acc)}
+  .denter{margin-top:24px;display:inline-flex;align-items:center;justify-content:center;gap:10px;align-self:flex-start;
+    font-family:'Share Tech Mono';font-size:12px;letter-spacing:1.5px;color:var(--acc);border:1px solid var(--acc);padding:12px 24px;transition:.2s;cursor:pointer}
+  .denter:hover{background:var(--acc);color:var(--bg)}
+  .denter.dis{color:var(--tx3);border-color:var(--line2);pointer-events:none}
+
+  @media(max-width:820px){
+    .db{grid-template-columns:1fr}
+    .detail{display:none}
+    .list{border-right:0;padding-right:0}
+  }
+</style>
+</head>
+<body>
+  <div class="screen">
+    <div class="osbar mono">
+      <img class="lg" src="../assets/img/ts_typo.png" alt="">
+      <span class="os">TS·OS</span>
+      <span class="sec"><span class="d"></span>SECURE LINK</span>
+      <div class="right">
+        <span>CENTRAL DB</span>
+        <span class="sig"><i></i><i></i><i></i><i></i></span>
+        <span class="bat"><span>82%</span><span class="b"><i></i></span></span>
+        <span id="clock">--:--</span>
+        <button class="tg" id="themeBtn" title="테마 전환">◐</button>
+      </div>
+    </div>
+
+    <!-- 크롬(상태바/푸터)과 배경 그리드는 고정, 이 무대 안에서만 뷰가 교체됨 -->
+    <div class="center">
+      <!-- (a) HOME -->
+      <section class="view home" id="viewHome">
+        <main class="feature">
+          <div class="kick mono">DATABASE ACCESS</div>
+          <div class="ring">
+            <svg viewBox="0 0 300 300" aria-hidden="true">
+              <circle cx="150" cy="150" r="132" fill="none" stroke="var(--line2)" stroke-width="1"/>
+              <g class="spin"><circle cx="150" cy="150" r="132" fill="none" stroke="var(--acc)" stroke-width="1.4" stroke-dasharray="40 360" stroke-linecap="round"/><circle cx="150" cy="18" r="2" fill="var(--acc)"/></g>
+              <line x1="150" y1="8" x2="150" y2="20" stroke="var(--acc)" stroke-width="1" opacity=".6"/>
+              <line x1="150" y1="280" x2="150" y2="292" stroke="var(--line2)" stroke-width="1"/>
+              <line x1="8" y1="150" x2="20" y2="150" stroke="var(--line2)" stroke-width="1"/>
+              <line x1="280" y1="150" x2="292" y2="150" stroke="var(--line2)" stroke-width="1"/>
+            </svg>
+            <img class="logo" src="../assets/img/ts_typo.png" alt="TROUBLESHOOTER">
+            <span class="rl a">◈ ROOT · TS-DB</span><span class="rl b">ENCRYPTED</span><span class="rl c">SIG ///</span><span class="rl d">READ-ONLY</span>
+          </div>
+          <div class="fsub mono">INTEGRATED ARCHIVE · 통합 아카이브</div>
+          <button class="enter-btn mono" id="enterBtn">CHARACTER · <span class="ko">캐릭터</span> <span class="go">ENTER →</span></button>
+        </main>
+      </section>
+
+      <!-- (b) ARCHIVE -->
+      <section class="view arch" id="viewArch" aria-hidden="true">
+        <div class="sub">
+          <button class="back mono" id="backBtn">◂ back</button>
+          <div class="ttl"><span class="en">CHARACTER ARCHIVE</span><span class="ko">요원 아카이브 · 통합</span></div>
+          <span class="r mono">ONLINE <b>01 / 05</b> · 1 ACCESSIBLE</span>
+        </div>
+
+        <div class="db">
+          <div class="list" id="list">
+            <div class="sec-h"><span class="num">SECTOR 01</span><span>제1지부 · HEADQUARTER</span><span class="line"></span><span>6 REC</span></div>
+            <div class="sec-h off" style="margin-top:22px"><span class="num">SECTOR 02</span><span>서브쿼터 · SUBQUARTER</span><span class="line"></span><span>OFFLINE</span></div>
+            <div class="sec-h off"><span class="num">SECTOR 03</span><span>메갈로폴리스 · MEGALOPOLIS</span><span class="line"></span><span>OFFLINE</span></div>
+            <div class="sec-h off"><span class="num">SECTOR 04</span><span>아우터사이클 · OUTERCYCLE</span><span class="line"></span><span>OFFLINE</span></div>
+            <div class="sec-h off"><span class="num">SECTOR 05</span><span>베른 · BARREN</span><span class="line"></span><span>OFFLINE</span></div>
+          </div>
+
+          <div class="detail">
+            <div class="dimg" id="dimg"><img id="dpic" src="../assets/img/members/myt.png" alt=""></div>
+            <div class="dinfo">
+              <div class="did mono" id="did">RECORD M-04 · SECTOR 01</div>
+              <div class="dname" id="dname">MY.T</div>
+              <div class="dko" id="dko">마이티</div>
+              <div class="drole mono" id="drole">DRIVER · 에코로케이션</div>
+              <div class="fields" id="dfields"></div>
+              <a class="denter mono" id="denter" href="../myt/index.html">ENTER RECORD →</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 스캔 라인 -->
+      <div class="scan" id="scan"></div>
+    </div>
+
+    <footer class="foot">
+      <span><span class="g">GUEST</span> · UID 000-ACCESS</span>
+      <span class="r">TS-DB · SCAN TRANSITION</span>
+    </footer>
+  </div>
+
+<script>
+  /* ===== 도감 데이터 (characters.html AG 이식) ===== */
+  var AG=[
+   {k:'vector',id:'M-01',en:'VECTOR',ko:'벡스터',role:'CAPTAIN · DRIVER',age:'27Y',clr:'■■■',lock:1},
+   {k:'meant', id:'M-02',en:'MEANT', ko:'민트',  role:'HITMAN',         age:'25Y',clr:'■■□',lock:1},
+   {k:'merely',id:'M-03',en:'MERELY',ko:'메릴리',role:'OPERATOR',       age:'25Y',clr:'■■□',lock:1},
+   {k:'myt',   id:'M-04',en:'MY.T',  ko:'마이티',role:'DRIVER · 에코로케이션',age:'24Y',clr:'■■□',lock:0,href:'myt/index.html'},
+   {k:'seluka',id:'M-05',en:'SELUKA',ko:'셀루카',role:'HITMAN',         age:'21Y',clr:'■■□',lock:1},
+   {k:'s',     id:'M-06',en:'S',     ko:'에스',  role:'OPERATOR',       age:'??', clr:'■□□',lock:1}
+  ];
+  var list=document.getElementById('list'), firstH=list.querySelector('.sec-h'), frag=document.createDocumentFragment();
+  AG.forEach(function(a){
+    var b=document.createElement('button');
+    b.className='rec'+(a.lock?' lock':' on');b.dataset.k=a.k;
+    b.innerHTML='<span class="rid mono">'+a.id+'</span>'+
+      '<span class="thumb"><img src="../assets/img/members/'+a.k+'.png" alt=""></span>'+
+      '<span class="rn"><span class="en">'+a.en+'</span><span class="ko">'+a.ko+'</span></span>'+
+      '<span class="rs mono">'+(a.lock?'LOCKED':'ACCESS')+'</span>';
+    b.addEventListener('click',function(){select(a.k);});
+    frag.appendChild(b);
+  });
+  firstH.after(frag);
+
+  function byk(k){for(var i=0;i<AG.length;i++)if(AG[i].k===k)return AG[i];}
+  function select(k){
+    var a=byk(k);
+    document.querySelectorAll('.rec').forEach(function(r){r.classList.toggle('sel',r.dataset.k===k);});
+    document.getElementById('dpic').src='assets/members/'+a.k+'.png';
+    document.getElementById('dimg').classList.toggle('lock',!!a.lock);
+    document.getElementById('did').textContent='RECORD '+a.id+' · SECTOR 01';
+    document.getElementById('dname').textContent=a.en;
+    document.getElementById('dko').textContent=a.ko;
+    document.getElementById('drole').textContent=a.role;
+    document.getElementById('dfields').innerHTML=
+      '<div class="f"><span class="k">AGE</span><span class="v">'+a.age+'</span></div>'+
+      '<div class="f"><span class="k">SECTOR</span><span class="v">01 · HEADQUARTER</span></div>'+
+      '<div class="f"><span class="k">CLEARANCE</span><span class="v">'+a.clr+'</span></div>'+
+      '<div class="f"><span class="k">STATUS</span><span class="v '+(a.lock?'':'ok')+'">'+(a.lock?'LOCKED · 열람 불가':'● ACCESSIBLE')+'</span></div>';
+    var en=document.getElementById('denter');
+    if(a.lock){en.className='denter mono dis';en.textContent='LOCKED';en.removeAttribute('href');}
+    else{en.className='denter mono';en.textContent='ENTER RECORD →';en.setAttribute('href',a.href);}
+  }
+  select('myt');
+
+  /* ===== 스캔 리빌 트랜지션 ===== */
+  var HOME=document.getElementById('viewHome'),
+      ARCH=document.getElementById('viewArch'),
+      SCAN=document.getElementById('scan'),
+      DUR=700, p=0, raf=null;
+
+  function render(){
+    var pc=p<0?0:(p>1?1:p);
+    // 홈 : 페이드 + 살짝 블러로 dissolve
+    HOME.style.opacity=(1-pc);
+    HOME.style.filter='blur('+(pc*3)+'px)';
+    HOME.style.pointerEvents=pc>0.02?'none':'';
+    // 도감 : 위→아래 클립으로 라인 단위 렌더 (아래쪽 inset 이 100→0 으로 열림)
+    var clip='inset(0 0 '+((1-pc)*100).toFixed(3)+'% 0)';
+    ARCH.style.clipPath=clip; ARCH.style.webkitClipPath=clip;
+    ARCH.style.pointerEvents=pc>0.98?'':'none';
+    ARCH.setAttribute('aria-hidden', pc>0.98?'false':'true');
+    // 스캔 라인 : 리빌 경계(위→아래)에 위치, 진행 중에만 표시
+    if(pc>0.001 && pc<0.999){SCAN.style.opacity='1';SCAN.style.top=(pc*100)+'%';}
+    else{SCAN.style.opacity='0';}
+  }
+  render();
+
+  function animateTo(target){
+    if(raf) cancelAnimationFrame(raf);
+    var start=p, delta=target-start, t0=null;
+    if(delta===0){return;}
+    function step(ts){
+      if(t0===null) t0=ts;
+      var e=(ts-t0)/DUR; if(e>1)e=1;
+      var ease = e<0.5 ? 2*e*e : 1-Math.pow(-2*e+2,2)/2; // easeInOutQuad
+      p=start+delta*ease; render();
+      if(e<1){raf=requestAnimationFrame(step);}else{p=target;render();}
+    }
+    raf=requestAnimationFrame(step);
+  }
+
+  document.getElementById('enterBtn').addEventListener('click',function(){animateTo(1);});
+  document.getElementById('backBtn').addEventListener('click',function(){animateTo(0);});
+</script>
+</body>
+</html>
