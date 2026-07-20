@@ -1,0 +1,101 @@
+/* ============================================================
+   TS·OS  —  공통 페이지 트랜지션 스타일  (js/transitions.js 와 짝)
+   페이지 이동(index ↔ characters ↔ myt)에 통일된 전환을 입힘.
+   오버레이는 common.css 의 --screen-inset/--screen-radius 토큰을 공유 →
+   고정폭 단말기(.device) 영역과 정확히 겹쳐 "기기 화면 위에서만" 전환된다.
+   ※ 디자인은 이 파일 한 곳에서만 고치면 전 페이지 반영.
+   ============================================================ */
+
+/* ── 나갈 때 오버레이 : 애니메이션이 재생되는 면 ── */
+.ts-fx{position:fixed;inset:var(--screen-inset);border-radius:var(--screen-radius);overflow:hidden;
+  z-index:46;pointer-events:none;opacity:0;transition:opacity .18s ease}
+.ts-fx.on{opacity:1;pointer-events:auto}
+.ts-fx .scrim{position:absolute;inset:0;transition:background .18s ease;
+  background:radial-gradient(120% 90% at 50% 45%,var(--bg),color-mix(in srgb,var(--bg) 40%,transparent) 80%)}
+.ts-fx.solid .scrim{background:var(--bg)}          /* fade 스타일 : 불투명 */
+
+/* 접속 로그 (accesslog) — 명령을 치면 시스템이 응답하는 언어 */
+.ts-fx .log{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center}
+.ts-fx .box{width:min(420px,74%);font-family:'Share Tech Mono';font-size:13px;letter-spacing:1px;line-height:2.05}
+.ts-fx .ll{color:var(--tx);white-space:nowrap;overflow:hidden}
+.ts-fx .cur{display:inline-block;width:7px;height:13px;background:var(--acc);vertical-align:-2px;margin-left:2px;animation:ts-bl 1s step-end infinite}
+.ts-fx .grant{margin-top:14px;color:var(--acc);font-size:15px;letter-spacing:4px;text-shadow:0 0 16px var(--acc);opacity:0}
+.ts-fx .grant.go{animation:ts-grant .3s ease forwards}
+/* scan : 화면 중앙 GRANTED 플래시 */
+.ts-fx .grant.center{position:absolute;left:50%;top:50%;margin:0;transform:translate(-50%,-50%);
+  border:1px solid var(--acc);padding:9px 20px;box-shadow:0 0 22px -6px var(--acc)}
+.ts-fx .grant.center.go{animation:ts-grantc .6s ease forwards}
+
+/* 스캔 빔 (scan) — 밝은 선 + 아래로 따라오는 잔광 그라디언트 = 훑으며 스캔하는 느낌 */
+.ts-scan{position:absolute;left:-4px;right:-4px;top:0;height:2px;z-index:7;opacity:0;
+  background:linear-gradient(90deg,transparent,var(--acc) 12%,var(--acc) 88%,transparent);
+  box-shadow:0 0 12px 2px var(--acc2)}
+.ts-scan::after{content:"";position:absolute;left:0;right:0;top:2px;height:46px;pointer-events:none;
+  background:linear-gradient(var(--acc2),transparent);opacity:.5}
+.ts-scan.go{animation:ts-scanmove .6s ease-out}
+
+/* resync (일반 전환) — 신호 재동기화 글리치 : 지터+스캔라인 후 불투명해져 이동 */
+.ts-fx.resync{background:var(--bg);
+  background-image:repeating-linear-gradient(0deg,transparent 0 2px,color-mix(in srgb,var(--acc) 9%,transparent) 2px 3px)}
+.ts-fx.resync .scrim{display:none}
+.ts-fx.resync.go{animation:ts-fxResync .44s steps(3,end) forwards}
+@keyframes ts-fxResync{
+  0%{opacity:0;transform:translateX(0)}
+  22%{opacity:.7;transform:translateX(-7px)}
+  42%{opacity:.5;transform:translateX(8px)}
+  64%{opacity:.9;transform:translateX(-3px)}
+  100%{opacity:1;transform:translateX(0)}}
+
+/* ── 도착 커버 : 목적지 콘텐츠 리플로우 깜빡임을 가림 (head에서 즉시 주입) ── */
+.ts-cover{position:fixed;inset:var(--screen-inset);border-radius:var(--screen-radius);overflow:hidden;
+  z-index:46;background:var(--bg);pointer-events:none}
+
+/* ── slide 는 오버레이가 아니라 실제 .screen 을 transform 으로 밀어낸다(js 처리) ── */
+
+/* ── scan(render) : 도착 시 스캔 라인이 위→아래로 내려가며 라인 단위로 페이지를 그려냄 ── */
+.ts-cover.render{clip-path:inset(0 0 0 0)}
+.ts-cover.render.go{animation:ts-render .68s ease-in-out forwards}
+.ts-scan.render.go{animation:ts-scandown .68s ease-in-out forwards}
+
+/* ── 첫 진입 부팅 오버레이 (self-contained ; index.html .connect 대체 가능) ── */
+.ts-boot{position:fixed;inset:var(--screen-inset);border-radius:var(--screen-radius);z-index:50;background:var(--bg);
+  display:flex;flex-direction:column;justify-content:center;padding:0 clamp(40px,10vw,140px);
+  transition:opacity .45s ease,visibility .45s}
+.ts-boot.done{opacity:0;visibility:hidden;pointer-events:none}
+.ts-boot .ct{font-family:'Share Tech Mono';font-size:var(--fs-xs);letter-spacing:3px;color:var(--tx2);margin-bottom:4px}
+.ts-boot .ct b{color:var(--acc)}
+.ts-boot .cl{font-family:'Share Tech Mono';font-size:var(--fs-sm);letter-spacing:.5px;color:var(--tx2);line-height:2;min-height:2em}
+.ts-boot .cl .ok{color:var(--acc)}
+.ts-boot .cl .cur{display:inline-block;width:6px;height:12px;background:var(--acc);vertical-align:-1px;animation:ts-bl 1s step-end infinite}
+.ts-boot .pbar{margin-top:20px;height:2px;background:var(--line2);width:min(360px,60%)}
+.ts-boot .pbar i{display:block;height:100%;width:0;background:var(--acc);transition:width .3s linear}
+
+/* ── 키프레임 ── */
+@keyframes ts-bl{50%{opacity:0}}
+@keyframes ts-grant{0%{opacity:0;transform:translateY(4px)}30%{opacity:1;transform:none}100%{opacity:1}}
+@keyframes ts-grantc{0%{opacity:0;transform:translate(-50%,-50%) scale(.85)}
+  25%{opacity:1;transform:translate(-50%,-50%) scale(1)}70%{opacity:1}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1.06)}}
+@keyframes ts-scanmove{0%{opacity:0;top:0}12%{opacity:.9}100%{opacity:0;top:100%}}
+@keyframes ts-render{to{clip-path:inset(100% 0 0 0)}}
+@keyframes ts-scandown{0%{opacity:0;top:0}8%{opacity:1}90%{opacity:1}100%{opacity:0;top:100%}}
+
+/* ============================================================
+   홈 재구성(디스플레이 모드) 전환 오버레이 (TS.reconfig)
+   ============================================================ */
+.ts-rc{position:fixed;inset:var(--screen-inset);border-radius:var(--screen-radius);overflow:hidden;z-index:47;pointer-events:none;font-family:'Share Tech Mono'}
+
+/* reconfiglog — 재구성 로그 + 프로그레스 */
+.ts-rc.log{background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .34s ease}
+.ts-rc.log.out{opacity:0}
+.ts-rc.log .rc-hd{font-size:12px;letter-spacing:2px;color:var(--tx2)}
+.ts-rc.log .rc-hd b{color:var(--acc);font-weight:400}
+.ts-rc.log .rc-pb{width:min(240px,50%);height:2px;background:var(--line2)}
+.ts-rc.log .rc-pb i{display:block;height:100%;width:0;background:var(--acc);transition:width .5s linear;box-shadow:0 0 8px var(--acc)}
+
+/* 접근성 : 모션 최소화 요청 시 애니메이션 제거 (전환은 즉시 컷) */
+@media(prefers-reduced-motion:reduce){
+  .ts-fx,.ts-cover,.ts-boot{transition:none}
+  .ts-fx .grant.go,.ts-fx .grant.center.go,.ts-scan.go,
+  .ts-cover.render.go,.ts-scan.render.go{animation:none}
+}

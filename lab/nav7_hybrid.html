@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TS·OS // ARCHIVE TERMINAL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600&family=Share+Tech+Mono&family=Gothic+A1:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+<!-- 공통 디자인·동작 (css/common.css · js/common.js 한 곳에서 관리) -->
+<link rel="stylesheet" href="../assets/css/common.css?v=2">
+<script src="../assets/js/common.js?v=2"></script>
+
+<style>
+  /* ===== 홈 전용 스타일 ===== */
+  .feature{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;padding:6px 0}
+  .feature .kick{font-family:'Share Tech Mono';font-size:11px;letter-spacing:4px;color:var(--acc);margin-bottom:8px}
+  .ring{position:relative;width:clamp(200px,26vh,244px);aspect-ratio:1;display:flex;align-items:center;justify-content:center}
+  .ring svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .ring .spin{transform-origin:150px 150px;animation:sp 90s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .ring .logo{width:56%;opacity:.9}
+  :root[data-theme="light"] .ring .logo{filter:brightness(.6) saturate(1.5)}
+  .ring .rl{position:absolute;font-family:'Share Tech Mono';font-size:8px;letter-spacing:1.5px;color:var(--tx3);white-space:nowrap}
+  .ring .rl.a{top:-2px;left:-6px}.ring .rl.b{top:-2px;right:-6px}.ring .rl.c{bottom:-2px;left:-6px}.ring .rl.d{bottom:-2px;right:-6px}
+  .feature .sub{font-family:'Share Tech Mono';font-size:12.5px;letter-spacing:2.5px;color:var(--tx2);margin-top:8px}
+  .feature .boot{font-family:'Share Tech Mono';font-size:12px;color:var(--tx3);margin-top:12px;height:16px}
+  .feature .boot .c{display:inline-block;width:5px;height:11px;background:var(--acc);vertical-align:-1px;margin-left:1px;animation:bl 1.1s step-end infinite}
+  @keyframes bl{50%{opacity:0}}
+
+  /* ===== NAV #7 · 방사형 + 회로 트레이스 + 디코드 =====
+     중앙 ring(=TS-BUS 코어)을 축으로 4개 노드가 나침반 방위에 배치되고,
+     각 노드는 우각/45° PCB 트레이스로 ring 가장자리(버스)와 연결된다.
+     ACTIVE(CHARACTER) 트레이스만 --acc 로 빛나며 광펄스가 흐른다. */
+  .orbit{position:relative;width:min(780px,96vw);aspect-ratio:1000/620;margin:2px auto 2px}
+  .orbit .ring{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;z-index:2}
+
+  /* 회로 트레이스 레이어 (SVG) — ring 뒤(코어에서 뻗어 나오는 배선) */
+  .traces{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
+  .traces .t{fill:none;stroke:var(--line2);stroke-width:1.4;stroke-linecap:square;stroke-linejoin:miter}
+  .traces .via{fill:var(--bg);stroke:var(--line2);stroke-width:1.4}
+  /* ACTIVE 트레이스 */
+  .traces .t.live{stroke:var(--acc);stroke-width:1.7;opacity:.6}
+  .traces .via.live{stroke:var(--acc);fill:var(--bg2)}
+  /* 광펄스 — ACTIVE 경로에만 (ring → node 로 흐름) */
+  .traces .flow{fill:none;stroke:var(--acc);stroke-width:2.2;stroke-linecap:round;
+    stroke-dasharray:16 150;filter:drop-shadow(0 0 4px var(--acc));animation:flow 2.4s linear infinite}
+  @keyframes flow{to{stroke-dashoffset:-166}}
+
+  /* 위성 노드 */
+  .node{position:absolute;transform:translate(-50%,-50%);width:184px;box-sizing:border-box;
+    background:var(--panel);border:1px solid var(--line);padding:14px 16px 15px;
+    display:flex;flex-direction:column;gap:4px;text-decoration:none;z-index:3;outline:none;
+    transition:border-color .25s,background .25s,box-shadow .25s}
+  .node .n{font-family:'Share Tech Mono';font-size:10.5px;letter-spacing:1px;color:var(--tx3)}
+  /* .en = 디코드 대상. 노드 폭 안에 고정·클립하여 스크램블 글리프가 밖으로 새지 않게 */
+  .node .en{font-family:'Share Tech Mono';font-weight:400;font-size:17px;letter-spacing:1px;margin-top:4px;
+    color:var(--tx2);min-height:22px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:clip;max-width:100%}
+  .node .ko{font-family:'Chakra Petch';font-weight:400;font-size:13px;color:var(--tx3);letter-spacing:.5px}
+  .node .st{font-family:'Share Tech Mono';font-size:9px;letter-spacing:.5px;color:var(--tx3);margin-top:7px}
+  .node .lk{position:absolute;right:13px;top:12px;font-family:'Share Tech Mono';font-size:8px;
+    letter-spacing:.5px;color:var(--tx3);display:flex;align-items:center;gap:3px}
+  .node .lk .ico{font-size:9px}
+
+  /* 접점 핀 (ring 방향 가장자리) */
+  .node::before{content:"";position:absolute;width:7px;height:7px;border-radius:50%;
+    background:var(--bg);border:1.5px solid var(--line2);z-index:4}
+  /* 회로기판형 사분면 배치 (nav6 방식) — 코어 로고 ring 을 감싸는 네 코너 */
+  .q-tl{left:18%;top:24%}.q-tr{left:82%;top:24%}.q-bl{left:18%;top:76%}.q-br{left:82%;top:76%}
+  .q-tl::before,.q-bl::before{right:-4px;top:50%;transform:translateY(-50%)}
+  .q-tr::before,.q-br::before{left:-4px;top:50%;transform:translateY(-50%)}
+
+  /* LOCKED — 흐리게 / 비활성, 영구 암호화 */
+  .node.lock{pointer-events:none;opacity:.7}
+  .node.lock .en{color:var(--tx3)}
+
+  /* ACTIVE — CHARACTER (--acc 강조 / 글로우) */
+  .node.on{cursor:pointer;border-color:color-mix(in srgb,var(--acc) 55%,var(--line));
+    background:color-mix(in srgb,var(--acc) 7%,var(--panel));
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 20%,transparent),0 0 22px -8px var(--acc)}
+  .node.on .n{color:var(--acc)}
+  .node.on .en{color:var(--tx)}
+  .node.on .ko{color:var(--tx2)}
+  .node.on .st{color:var(--acc)}
+  .node.on::before{background:var(--acc);border-color:var(--acc);box-shadow:0 0 8px var(--acc)}
+  .node.on .go{position:absolute;right:11px;bottom:9px;font-family:'Share Tech Mono';font-size:12px;
+    color:var(--acc);opacity:0;transform:translateX(-4px);transition:.25s}
+  .node.on:hover,.node.on:focus-visible{background:var(--bg2);
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 40%,transparent),0 0 30px -4px var(--acc)}
+  .node.on:hover .go,.node.on:focus-visible .go{opacity:1;transform:translateX(0)}
+  /* 디코드 중 스캔 스윕 */
+  .node.on.scan::after{content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--acc) 16%,transparent) 50%,transparent);
+    background-size:100% 8px;animation:scanmove .5s linear}
+  @keyframes scanmove{from{background-position:0 -8px}to{background-position:0 100%}}
+
+  /* ===== 부팅 / 접속 오버레이 ===== */
+  .connect{position:fixed;inset:22px 12px 14px;border-radius:18px;z-index:50;background:var(--bg);display:flex;flex-direction:column;justify-content:center;
+    padding:0 clamp(40px,10vw,140px);transition:opacity .6s ease,visibility .6s}
+  .connect.done{opacity:0;visibility:hidden}
+  .connect .ct{font-family:'Share Tech Mono';font-size:11px;letter-spacing:3px;color:var(--tx2);margin-bottom:4px}
+  .connect .ct b{color:var(--acc)}
+  .connect .cl{font-family:'Share Tech Mono';font-size:12px;letter-spacing:.5px;color:var(--tx2);line-height:2;min-height:2em}
+  .connect .cl .ok{color:var(--lime)}
+  .connect .cl .cur{display:inline-block;width:6px;height:12px;background:var(--acc);vertical-align:-1px;animation:bl 1s step-end infinite}
+  .connect .pbar{margin-top:20px;height:2px;background:var(--line2);width:min(360px,60%)}
+  .connect .pbar i{display:block;height:100%;width:0;background:var(--acc);transition:width .3s linear}
+
+  /* ===== 좁은 화면 — 궤도 해제 후 정렬형 그리드로 폴백 ===== */
+  @media(max-width:760px){
+    .orbit{aspect-ratio:auto;display:grid;grid-template-columns:repeat(2,1fr);gap:1px;
+      background:var(--line);width:min(440px,94vw);padding:1px;margin:14px auto 2px}
+    .orbit .ring{position:relative;left:auto;top:auto;transform:none;grid-column:1/-1;justify-self:center;margin:6px 0 8px}
+    .traces{display:none}
+    .node{position:static;transform:none;width:auto}
+    .node::before{display:none}
+    .node.on{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--acc) 45%,transparent)}
+  }
+</style>
+</head>
+<body>
+  <div class="screen">
+    <div class="osbar mono">
+      <img class="lg" src="../assets/img/ts_typo.png" alt="">
+      <span class="os">TS·OS</span>
+      <span class="sec"><span class="d"></span>SECURE LINK</span>
+      <div class="right">
+        <span>CENTRAL DB</span>
+        <span class="sig"><i></i><i></i><i></i><i></i></span>
+        <span class="bat"><span id="batp">82%</span><span class="b"><i></i></span></span>
+        <span id="clock">--:--</span>
+        <button class="tg" id="themeBtn" title="테마 전환">◐</button>
+      </div>
+    </div>
+
+    <main class="feature">
+      <div class="kick mono">DATABASE ACCESS</div>
+
+      <nav class="orbit" id="orbit" aria-label="navigation">
+        <!-- 회로 트레이스 : ring 가장자리(TS-BUS)에서 각 노드로 뻗는 우각/45° 배선 -->
+        <svg class="traces" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
+          <!-- WORLD (좌상) → ring : dim / static -->
+          <path class="t" d="M298,149 H339 L394,204"/>
+          <circle class="via" cx="394" cy="204" r="4"/>
+          <!-- RELATIONS (좌하) → ring : dim / static -->
+          <path class="t" d="M298,471 H339 L394,416"/>
+          <circle class="via" cx="394" cy="416" r="4"/>
+          <!-- GALLERY (우하) → ring : dim / static -->
+          <path class="t" d="M702,471 H661 L606,416"/>
+          <circle class="via" cx="606" cy="416" r="4"/>
+          <!-- CHARACTER (우상) → ring : LIVE, node → core 광펄스 (에너지가 로고로 유입) -->
+          <path class="t live" d="M702,149 H661 L606,204"/>
+          <path class="flow" d="M702,149 H661 L606,204"/>
+          <circle class="via live" cx="606" cy="204" r="4.5"/>
+        </svg>
+
+        <!-- 중앙 코어 = ring 그 자체 (TS-BUS 허브) -->
+        <div class="ring">
+          <svg viewBox="0 0 300 300" aria-hidden="true">
+            <circle cx="150" cy="150" r="132" fill="none" stroke="var(--line2)" stroke-width="1"/>
+            <g class="spin"><circle cx="150" cy="150" r="132" fill="none" stroke="var(--acc)" stroke-width="1.4" stroke-dasharray="40 360" stroke-linecap="round"/><circle cx="150" cy="18" r="2" fill="var(--acc)"/></g>
+            <line x1="150" y1="8" x2="150" y2="20" stroke="var(--acc)" stroke-width="1" opacity=".6"/>
+            <line x1="150" y1="280" x2="150" y2="292" stroke="var(--line2)" stroke-width="1"/>
+            <line x1="8" y1="150" x2="20" y2="150" stroke="var(--line2)" stroke-width="1"/>
+            <line x1="280" y1="150" x2="292" y2="150" stroke="var(--line2)" stroke-width="1"/>
+          </svg>
+          <img class="logo" src="../assets/img/ts_typo.png" alt="TROUBLESHOOTER">
+          <span class="rl a">◈ ROOT · TS-BUS</span><span class="rl b">ENCRYPTED</span><span class="rl c">SIG ///</span><span class="rl d">READ-ONLY</span>
+        </div>
+
+        <!-- 위성 노드 4개 (방위) — EN 라벨은 암호 글리프, CHARACTER 만 해독 -->
+        <a class="node lock q-tl" data-name="WORLD">
+          <span class="lk mono"><span class="ico">🔒</span>ENCRYPTED</span>
+          <span class="n mono">01</span>
+          <span class="en" data-name="WORLD">████████</span>
+          <span class="ko">세계관</span>
+        </a>
+
+        <a class="node on q-tr" href="../characters.html" data-name="CHARACTER">
+          <span class="n mono">02</span>
+          <span class="en" data-name="CHARACTER">█▓▒░█▓▒░█</span>
+          <span class="ko">캐릭터</span>
+          <span class="st mono">6 RECORDS · SECTOR 01</span>
+          <span class="go mono">→</span>
+        </a>
+
+        <a class="node lock q-bl" data-name="RELATIONS">
+          <span class="lk mono"><span class="ico">🔒</span>ENCRYPTED</span>
+          <span class="n mono">03</span>
+          <span class="en" data-name="RELATIONS">█████████</span>
+          <span class="ko">관계도</span>
+        </a>
+
+        <a class="node lock q-br" data-name="GALLERY">
+          <span class="lk mono"><span class="ico">🔒</span>ENCRYPTED</span>
+          <span class="n mono">04</span>
+          <span class="en" data-name="GALLERY">███████</span>
+          <span class="ko">갤러리</span>
+        </a>
+      </nav>
+
+      <div class="sub mono">INTEGRATED ARCHIVE · 통합 아카이브</div>
+      <div class="boot mono"><span id="boot2"></span><span class="c"></span></div>
+    </main>
+
+    <footer class="foot">
+      <span><span class="g">GUEST</span> · UID 000-ACCESS</span>
+      <span class="r">TS-DB · TERMINAL v2.04</span>
+    </footer>
+  </div>
+
+  <!-- 접속 시퀀스 오버레이 -->
+  <div class="connect" id="connect">
+    <div class="ct mono">TS·OS <b>HANDHELD ARCHIVE TERMINAL</b> v2.04</div>
+    <div class="cl mono" id="cl"></div>
+    <div class="pbar"><i id="pb"></i></div>
+  </div>
+
+<script>
+  // 접속 시퀀스 (홈 전용) — 테마/시계는 assets/ts.js 공통 처리
+  var steps=[
+    'POWER ON · TS-TERM MDL-2',
+    'ESTABLISHING SECURE LINK',
+    'AUTHENTICATING OPERATOR · GUEST',
+    'HANDSHAKE · CENTRAL ARCHIVE',
+    'CHANNEL ENCRYPTED'
+  ];
+  var cl=document.getElementById('cl'),pb=document.getElementById('pb'),ci=0,html='';
+  function step(){
+    if(ci<steps.length){
+      html+='<div><span class="ok">✓</span> '+steps[ci]+'</div>';
+      cl.innerHTML=html;
+      pb.style.width=Math.round((ci+1)/steps.length*100)+'%';
+      ci++;setTimeout(step,440);
+    }else{
+      cl.innerHTML=html+'<div>ENTERING DATABASE<span class="cur"></span></div>';
+      setTimeout(function(){document.getElementById('connect').classList.add('done');typeBoot();initDecode();},700);
+    }
+  }
+  function typeBoot(){var m="CONNECTION ENCRYPTED · AUTHORIZED ACCESS ONLY",e=document.getElementById("boot2"),j=0;(function t(){if(j<=m.length){e.textContent=m.slice(0,j);j++;setTimeout(t,40);}})();}
+  setTimeout(step,400);
+
+  /* ===== 노드 EN 라벨 · SCAN / DECODE 애니메이션 (nav5 방식) ===== */
+  (function(){
+    // 암호화 표시에 쓰이는 글리프 (블록 + ASCII + 카타카나풍)
+    var GLYPH="█▓▒░#%&$?/\\<>*+=@ｱｲｳｴｵｶｷｸｹｺｻｼｽ01".split("");
+    var BLOCK="█▓▒░".split("");
+    function rg(a){return a[Math.floor(Math.random()*a.length)];}
+    function garble(len){var s="";for(var i=0;i<len;i++)s+=rg(BLOCK);return s;}
+
+    // LOCKED 노드: 영구 스크램블(절대 해독 안 됨) — 계속 살짝 깜빡이는 암호문
+    function lockLoop(el){
+      var len=(el.getAttribute('data-name')||'').length||8;
+      setInterval(function(){el.textContent=garble(len);}, 600);
+    }
+
+    // ACCESSIBLE 노드: 호버/포커스 시 실시간 해독 스크램블 (~0.5s)
+    function decode(el,name,onDone){
+      var total=name.length, revealed=0, tick=0;
+      clearInterval(el._dec);
+      el._dec=setInterval(function(){
+        tick++;
+        if(tick%3===0 && revealed<total) revealed++;   // 매 3틱마다 글자 확정
+        var out="";
+        for(var i=0;i<total;i++){ out += (i<revealed) ? name[i] : rg(GLYPH); }
+        el.textContent=out;
+        if(revealed>=total){ clearInterval(el._dec); el.textContent=name; if(onDone)onDone(); }
+      },28);
+    }
+
+    function initDecode(){
+      var nav=document.getElementById('orbit');
+      if(!nav)return;
+      // LOCKED — 영구 암호화 루프
+      nav.querySelectorAll('a.node.lock .en').forEach(lockLoop);
+      // ACCESSIBLE — CHARACTER
+      var acc=nav.querySelector('a.node.on'),
+          en=acc?acc.querySelector('.en'):null,
+          name=acc?acc.getAttribute('data-name'):'';
+      if(!acc||!en)return;
+      var open=false;
+      function reveal(){ if(open)return; open=true; acc.classList.add('scan');
+        setTimeout(function(){acc.classList.remove('scan');},520);
+        decode(en,name); }
+      function reset(){ open=false; clearInterval(en._dec); en.textContent=garble(name.length); }
+      acc.addEventListener('mouseenter',reveal);
+      acc.addEventListener('focus',reveal);
+      acc.addEventListener('mouseleave',reset);
+      acc.addEventListener('blur',reset);
+      acc.setAttribute('tabindex','0');
+      en.textContent=garble(name.length);   // 초기엔 암호문 상태
+    }
+    window.initDecode=initDecode;
+  })();
+</script>
+</body>
+</html>

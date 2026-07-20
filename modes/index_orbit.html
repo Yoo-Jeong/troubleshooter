@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TS·OS // ORBIT MODE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Chakra+Petch:wght@300;400;500;600&family=Share+Tech+Mono&family=Gothic+A1:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+<!-- 공통 디자인·동작 (디바이스 크롬·색·상단바·푸터 공유) -->
+<link rel="stylesheet" href="../assets/css/common.css?v=25">
+<link rel="stylesheet" href="../assets/css/transitions.css?v=25">
+<script src="../assets/js/common.js?v=25"></script>
+<script src="../assets/js/transitions.js?v=25"></script>
+
+<style>
+  /* ===== 오빗 모드 — 3D 틸트 궤도 + 좌우 글래스 메뉴 (색은 공통 --acc 파생, 데이터는 현재 기준) ===== */
+  :root{
+    --acc-bright:color-mix(in srgb,var(--acc) 55%,#fff);
+    --acc-glow:color-mix(in srgb,var(--acc) 45%,transparent);
+    --glass-b1:color-mix(in srgb,var(--acc) 15%,transparent);
+    --glass-b2:color-mix(in srgb,var(--acc) 3%,transparent);
+    --glass-bd:color-mix(in srgb,var(--acc) 42%,var(--line2));
+    --glass-glow:color-mix(in srgb,var(--acc) 20%,transparent);
+    --glass-scan:color-mix(in srgb,var(--acc) 6%,transparent);
+    --logo-glow:drop-shadow(0 0 12px color-mix(in srgb,var(--acc) 45%,transparent));
+  }
+  .feature{flex:1;min-height:0;position:relative;overflow:hidden;perspective:1700px;display:flex;align-items:center;justify-content:center}
+
+  /* 배경 데코 (패럴랙스) */
+  .deco{position:absolute;pointer-events:none;z-index:0;opacity:.07;filter:drop-shadow(0 0 6px var(--acc-glow))}
+  .deco.d1{top:-8%;right:-6%;width:30vw}.deco.d2{bottom:-16%;left:-4%;width:36vw}
+  .deco.d3{bottom:-8%;right:-4%;width:24vw}.deco.d4{top:-12%;left:-6%;width:28vw}
+  :root[data-theme="light"] .deco{opacity:.05}
+
+  /* 데이터 코드 스트림 (좌상단 장식) */
+  .codestream{position:absolute;top:8%;left:16%;width:300px;height:44%;overflow:hidden;z-index:1;pointer-events:none;
+    font-family:'Share Tech Mono';font-size:9px;line-height:1.8;color:var(--acc);opacity:.16;letter-spacing:.3px;
+    transform:perspective(680px) rotateY(34deg);transform-origin:right center;
+    -webkit-mask:linear-gradient(90deg,transparent,#000 70%),linear-gradient(180deg,transparent,#000 14%,#000 76%,transparent);
+    mask:linear-gradient(90deg,transparent,#000 70%),linear-gradient(180deg,transparent,#000 14%,#000 76%,transparent);-webkit-mask-composite:source-in;mask-composite:intersect}
+  .codestream .col{animation:ocode 20s linear infinite}
+  @keyframes ocode{from{transform:translateY(0)}to{transform:translateY(-50%)}}
+  .codestream .ln{white-space:nowrap}.codestream .ln b{color:var(--acc-bright)}.codestream .ln .dim{opacity:.5}
+
+  /* 3D 무대 */
+  .kick{position:absolute;top:6%;left:50%;transform:translateX(-50%);z-index:6;font-family:'Share Tech Mono';font-size:var(--fs-xs);letter-spacing:5px;color:var(--acc)}
+  .stage{position:relative;width:min(60vh,520px);height:min(60vh,520px);transform:rotateX(16deg);transform-style:preserve-3d;z-index:3;transition:transform .3s ease-out}
+  .circle{position:absolute;inset:0;transform-style:preserve-3d}
+  .circle svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .rot{transform-origin:250px 250px;animation:ospin 80s linear infinite}
+  .rot.rev{animation-duration:120s;animation-direction:reverse}
+  .rot.orb{animation-duration:30s;animation-direction:reverse}
+  @keyframes ospin{to{transform:rotate(360deg)}}
+  .arc-glow{filter:drop-shadow(0 0 9px var(--acc-glow))}
+  .globe{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;transform:rotateX(-16deg) translateZ(16px);pointer-events:none}
+  .globe svg{width:70%;height:70%;overflow:visible}
+  .cnt{position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transform:rotateX(-16deg) translateZ(46px)}
+  .cnt .logo-t{width:min(24vh,190px);max-width:60%;filter:var(--logo-glow)}
+  :root[data-theme="light"] .cnt .logo-t{filter:brightness(.55) saturate(1.5)}
+  .cnt .en{font-family:'Share Tech Mono';font-size:var(--fs-xs);letter-spacing:4px;color:var(--tx2);margin-top:14px}
+  .cnt .boot{font-family:'Share Tech Mono';font-size:var(--fs-2xs);color:var(--tx3);margin-top:10px;min-height:14px}
+  .cnt .boot .c{display:inline-block;width:5px;height:11px;background:var(--acc);vertical-align:-1px;animation:obl 1s step-end infinite}
+  @keyframes obl{50%{opacity:0}}
+
+  /* 좌우 글래스 메뉴 */
+  .menu{position:absolute;top:50%;z-index:6;display:flex;flex-direction:column;gap:16px;transform:translateY(-50%) translateZ(58px) rotateX(-16deg);transform-style:preserve-3d}
+  /* 대각선 배치: 좌측 열은 위로(좌상단), 우측 열은 아래로(우하단) → 원을 대각선으로 감쌈. 음수 마진으로 중앙에 더 가깝게 */
+  .menu.left{right:100%;margin-right:-80px;align-items:flex-end;top:35%}
+  .menu.right{left:100%;margin-left:-80px;align-items:flex-start;top:65%}
+  .mbtn{position:relative;width:198px;display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--tx);padding:11px 14px;overflow:hidden;
+    background:linear-gradient(120deg,var(--glass-b1),var(--glass-b2));border:1px solid var(--glass-bd);
+    box-shadow:0 0 18px var(--glass-glow),inset 0 0 22px var(--glass-glow);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);
+    transition:box-shadow .2s,border-color .2s,background .2s}
+  .menu.right .mbtn{flex-direction:row-reverse;text-align:right}
+  .mbtn::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 2px,var(--glass-scan) 2px 3px)}
+  .mbtn .ic{flex:0 0 26px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono';font-size:var(--fs-2xs);color:var(--acc);border:1px solid var(--glass-bd);border-radius:3px}
+  .mbtn .tx{display:flex;flex-direction:column}
+  .mbtn .tx .en{font-family:'Orbitron';font-weight:700;font-size:var(--fs-sm);letter-spacing:.4px;line-height:1;color:var(--tx)}
+  .mbtn .tx .ko{font-size:var(--fs-2xs);color:var(--tx2);letter-spacing:1px;margin-top:3px}
+  .mbtn .go{position:absolute;bottom:5px;right:12px;font-family:'Share Tech Mono';font-size:8px;letter-spacing:1px;color:var(--tx3)}
+  .menu.right .mbtn .go{right:auto;left:12px}
+  .mbtn:hover{border-color:var(--acc-bright);box-shadow:0 0 30px var(--glass-glow),0 0 52px var(--glass-glow),inset 0 0 24px var(--glass-glow)}
+  .mbtn.primary{background:linear-gradient(120deg,color-mix(in srgb,var(--acc) 28%,transparent),var(--glass-b2));border-color:var(--acc-bright)}
+  .mbtn.primary::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--acc);box-shadow:0 0 10px var(--acc)}
+  .menu.right .mbtn.primary::before{left:auto;right:0}
+  .mbtn.primary .ic{color:var(--acc-bright);border-color:var(--acc-bright)}
+  .mbtn.primary .go{color:var(--acc-bright);animation:oent 1.6s ease-in-out infinite}
+  @keyframes oent{0%,100%{opacity:.45}50%{opacity:1}}
+
+  @media(max-width:1080px){
+    .stage{transform:none!important;width:min(74vw,320px);height:min(74vw,320px)}
+    .menu{position:static;transform:none!important;flex-direction:row;flex-wrap:wrap;justify-content:center;gap:8px;margin:0 auto}
+    .menu.left,.menu.right{align-items:stretch}
+    .feature{flex-direction:column;gap:14px;justify-content:center}
+    .deco,.codestream{display:none}
+    .mbtn{width:auto;min-width:150px}
+  }
+</style>
+</head>
+<body>
+  <div class="screen">
+    <div class="osbar mono">
+      <img class="lg" src="../assets/img/ts_typo.png" alt="">
+      <span class="os">TS·OS</span>
+      <span class="sec"><span class="d"></span>SECURE LINK</span>
+      <div class="right">
+        <span>CENTRAL DB</span>
+        <span class="sig"><i></i><i></i><i></i><i></i></span>
+        <span class="bat"><span>82%</span><span class="b"><i></i></span></span>
+        <span id="clock">--:--</span>
+        <button class="tg" id="themeBtn" title="테마 전환">◐</button>
+      </div>
+    </div>
+
+    <main class="feature">
+      <img class="deco d4" src="../assets/img/deco_4.png" alt="">
+      <img class="deco d2" src="../assets/img/deco_2.png" alt="">
+      <img class="deco d1" src="../assets/img/deco_1.png" alt="">
+      <img class="deco d3" src="../assets/img/deco_3.png" alt="">
+      <div class="codestream"><div class="col" id="codecol"></div></div>
+      <div class="kick mono">DATABASE ACCESS</div>
+
+      <section class="stage" id="stage">
+        <div class="circle">
+          <svg viewBox="0 0 500 500" aria-hidden="true">
+            <circle cx="250" cy="250" r="242" fill="none" stroke="var(--line)" stroke-width="1"/>
+            <circle cx="250" cy="250" r="210" fill="none" stroke="var(--line)" stroke-width="1" opacity=".6"/>
+            <g class="rot orb"><circle class="arc-glow" cx="250" cy="250" r="232" fill="none" stroke="var(--acc)" stroke-width="5" stroke-linecap="round" stroke-dasharray="560 1460"/></g>
+            <g class="rot"><circle cx="250" cy="250" r="224" fill="none" stroke="var(--acc)" stroke-width="1" stroke-dasharray="2 16" opacity=".5"/><rect x="246" y="18" width="8" height="18" fill="var(--acc)"/></g>
+            <g class="rot rev"><circle cx="250" cy="250" r="196" fill="none" stroke="var(--tx3)" stroke-width="1" stroke-dasharray="1 28" opacity=".5"/></g>
+          </svg>
+        </div>
+        <div class="globe"><svg viewBox="0 0 300 300" aria-hidden="true"><g stroke="var(--acc)" stroke-width="1" fill="none" opacity=".2"><circle cx="150" cy="150" r="120"/><ellipse cx="150" cy="150" rx="44" ry="120"/><ellipse cx="150" cy="150" rx="86" ry="120"/><ellipse cx="150" cy="150" rx="120" ry="44"/><ellipse cx="150" cy="150" rx="120" ry="86"/></g></svg></div>
+        <div class="cnt">
+          <img class="logo-t" src="../assets/img/ts_typo.png" alt="TROUBLESHOOTER">
+          <div class="en mono">INTEGRATED ARCHIVE · 통합 아카이브</div>
+          <div class="boot mono"><span id="boot2"></span><span class="c"></span></div>
+        </div>
+
+        <div class="menu left">
+          <a class="mbtn" href="#"><span class="ic mono">01</span><span class="tx"><span class="en">WORLD</span><span class="ko">세계관</span></span><span class="go mono">ENTER</span></a>
+          <a class="mbtn" href="../characters.html" data-ts="accesslog">
+            <span class="ic mono">02</span><span class="tx"><span class="en">CHARACTER</span><span class="ko">인물 기록</span></span><span class="go mono">ENTER</span></a>
+        </div>
+        <div class="menu right">
+          <a class="mbtn" href="#"><span class="ic mono">03</span><span class="tx"><span class="en">RELATIONS</span><span class="ko">관계도</span></span><span class="go mono">ENTER</span></a>
+          <a class="mbtn" href="#"><span class="ic mono">04</span><span class="tx"><span class="en">GALLERY</span><span class="ko">갤러리</span></span><span class="go mono">ENTER</span></a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <span><span class="g">AGENT</span> · UID 000-ACCESS</span>
+      <span class="r">TS-DB · ORBIT v2.04</span>
+    </footer>
+  </div>
+
+<script>
+  // 코드 스트림
+  (function(){var col=document.getElementById('codecol');if(!col)return;var hx='0123456789ABCDEF';
+    function h(n){var s='';for(var i=0;i<n;i++)s+=hx[(i*7+n*3+5)%16];return s;}
+    var tpl=['&gt; 0x'+h(6)+' LINK <b>OK</b>','<span class="dim">TS-DB::</span> '+h(2)+' '+h(2)+' '+h(2)+' '+h(2),'&gt; ACCESS NODE :: 0x'+h(4)+' <b>GRANTED</b>','REC '+h(3)+' / 006 <b>OK</b>','<span class="dim">'+h(2)+' '+h(2)+' '+h(2)+' '+h(2)+'</span>','&gt; DECRYPT 0x'+h(8),'HQ &gt;&gt; NODE 0x'+h(4)+' SYNC <b>OK</b>'];
+    var lines='';for(var i=0;i<32;i++)lines+='<div class="ln">'+tpl[i%tpl.length]+'</div>';col.innerHTML=lines+lines;})();
+  // 부팅 타이핑
+  function typeBoot(){var m="CONNECTION ENCRYPTED · AGENT",e=document.getElementById("boot2"),j=0;(function t(){if(j<=m.length){e.textContent=m.slice(0,j);j++;setTimeout(t,40);}})();}
+  if(document.documentElement.hasAttribute('data-bare')){ typeBoot(); }
+  else { TS.boot({ onDone:function(){ typeBoot(); } }); }
+  // 마우스 패럴랙스 (틸트 무대 + 데코)
+  (function(){
+    var S=document.getElementById('stage'),decos=document.querySelectorAll('.deco'),tx=0,ty=0,cx=0,cy=0;
+    if(!S||window.matchMedia('(max-width:1080px)').matches)return;
+    window.addEventListener('mousemove',function(e){tx=(e.clientX/window.innerWidth-.5)*2;ty=(e.clientY/window.innerHeight-.5)*2;});
+    (function anim(){cx+=(tx-cx)*.06;cy+=(ty-cy)*.06;
+      S.style.transform='rotateX('+(16-cy*6)+'deg) rotateY('+(cx*7)+'deg)';
+      var f=[40,26,32,20];decos.forEach(function(d,i){d.style.transform='translate('+(cx*f[i%4])+'px,'+(cy*f[i%4]*.6)+'px)';});
+      requestAnimationFrame(anim);})();
+  })();
+</script>
+</body>
+</html>

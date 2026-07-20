@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TROUBLESHOOTER // DATABASE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600&family=Share+Tech+Mono&family=Gothic+A1:wght@300;400;500;700&family=Orbitron:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root,:root[data-theme="dark"]{
+    --bg:#0a0d13;--bg2:#0d1119;
+    --tx:#e9edf2;--tx2:#8b95a2;--tx3:#4c555f;
+    --line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);
+    --acc:#4bbad6;--acc-soft:rgba(75,186,214,.5);
+    --lime:#8fd44a;
+  }
+  :root[data-theme="light"]{
+    --bg:#eef1f5;--bg2:#f6f8fa;
+    --tx:#1a2129;--tx2:#5c6772;--tx3:#a2acb6;
+    --line:rgba(20,30,45,.1);--line2:rgba(20,30,45,.18);
+    --acc:#2f8ba3;--acc-soft:rgba(47,139,163,.4);
+    --lime:#5a9e1e;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:'Chakra Petch','Gothic A1',sans-serif;color:var(--tx);
+    background:radial-gradient(120% 90% at 50% 8%,var(--bg2),var(--bg) 70%);
+    min-height:100vh;position:relative;overflow:hidden;transition:background .4s,color .4s;
+    -webkit-font-smoothing:antialiased}
+  .mono{font-family:'Share Tech Mono';letter-spacing:.5px}
+  a{text-decoration:none;color:inherit}
+
+  .screen{position:relative;z-index:2;height:100vh;min-height:600px;display:flex;flex-direction:column;
+    max-width:1200px;margin:0 auto;padding:0 clamp(28px,6vw,80px)}
+
+  /* top */
+  .top{display:flex;align-items:center;height:76px;flex:0 0 76px;border-bottom:1px solid var(--line)}
+  .top .brand{display:flex;align-items:center;gap:14px}
+  .top .brand img{height:16px;opacity:.92}
+  .top .brand .t{font-family:'Share Tech Mono';font-size:11px;letter-spacing:2px;color:var(--tx2)}
+  .top .right{margin-left:auto;display:flex;align-items:center;gap:22px;font-family:'Share Tech Mono';font-size:11px;letter-spacing:1px;color:var(--tx3)}
+  .top .clk{color:var(--tx2)}
+  .top .live::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--acc);margin-right:7px;vertical-align:1px}
+  .tg{width:26px;height:26px;border:1px solid var(--line2);background:transparent;color:var(--acc);border-radius:50%;font-size:12px;cursor:pointer;line-height:1;transition:.2s}
+  .tg:hover{background:var(--acc);color:var(--bg)}
+
+  /* center feature */
+  .feature{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;position:relative}
+  .ring{position:relative;width:clamp(220px,32vh,300px);aspect-ratio:1;display:flex;align-items:center;justify-content:center;margin-bottom:34px}
+  .ring svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .ring .spin{transform-origin:150px 150px;animation:sp 90s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .ring .logo{width:58%;opacity:.96}
+  :root[data-theme="light"] .ring .logo,:root[data-theme="light"] .top .brand img{filter:brightness(.6) saturate(1.5)}
+  .feature .kick{font-family:'Share Tech Mono';font-size:10px;letter-spacing:5px;color:var(--acc);margin-bottom:16px}
+  .feature .sub{font-family:'Share Tech Mono';font-size:11px;letter-spacing:3px;color:var(--tx2);margin-top:2px}
+  .feature .boot{font-family:'Share Tech Mono';font-size:10.5px;letter-spacing:.5px;color:var(--tx3);margin-top:16px;height:14px}
+  .feature .boot .c{display:inline-block;width:5px;height:11px;background:var(--acc);vertical-align:-1px;margin-left:1px;animation:bl 1.1s step-end infinite}
+  @keyframes bl{50%{opacity:0}}
+
+  /* nav row */
+  .nav{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--line);border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:26px}
+  .nav a{position:relative;background:var(--bg);padding:22px 18px 20px;display:flex;flex-direction:column;gap:4px;transition:background .25s}
+  .nav a .n{font-family:'Share Tech Mono';font-size:10px;letter-spacing:1px;color:var(--tx3)}
+  .nav a .en{font-family:'Chakra Petch';font-weight:500;font-size:15px;letter-spacing:.5px;margin-top:6px}
+  .nav a .ko{font-size:11px;color:var(--tx2);letter-spacing:1px}
+  .nav a .bar{position:absolute;left:0;right:0;top:-1px;height:1px;background:var(--acc);transform:scaleX(0);transform-origin:left;transition:transform .3s ease}
+  .nav a.on .n{color:var(--acc)}
+  .nav a.on .bar{transform:scaleX(1);background:var(--acc)}
+  .nav a.on:hover{background:var(--bg2)}
+  .nav a.on .go{position:absolute;right:18px;bottom:20px;font-family:'Share Tech Mono';font-size:11px;color:var(--acc);opacity:0;transform:translateX(-4px);transition:.25s}
+  .nav a.on:hover .go{opacity:1;transform:translateX(0)}
+  .nav a.lock{pointer-events:none}
+  .nav a.lock .en{color:var(--tx2)}
+  .nav a.lock .lk{position:absolute;right:18px;top:22px;font-family:'Share Tech Mono';font-size:8px;letter-spacing:1px;color:var(--tx3)}
+
+  /* footer */
+  .foot{display:flex;align-items:center;height:56px;flex:0 0 56px;border-top:1px solid var(--line);font-family:'Share Tech Mono';font-size:10.5px;letter-spacing:1px;color:var(--tx3)}
+  .foot .g{color:var(--tx2)}
+  .foot .r{margin-left:auto}
+
+  @media(max-width:760px){
+    .nav{grid-template-columns:repeat(3,1fr)}
+    .top .brand .t{display:none}
+    .screen{padding:0 22px}
+  }
+  @media(max-width:460px){.nav{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="screen">
+
+  <header class="top">
+    <div class="brand"><img src="../assets/img/ts_typo.png" alt="TROUBLESHOOTER"><span class="t">DATABASE</span></div>
+    <div class="right">
+      <span class="live">ONLINE</span>
+      <span class="clk" id="clock">--:--:--</span>
+      <button class="tg" id="themeBtn" title="테마 전환">◐</button>
+    </div>
+  </header>
+
+  <main class="feature">
+    <div class="kick mono">DATABASE ACCESS</div>
+    <div class="ring">
+      <svg viewBox="0 0 300 300" aria-hidden="true">
+        <circle cx="150" cy="150" r="132" fill="none" stroke="var(--line2)" stroke-width="1"/>
+        <g class="spin">
+          <circle cx="150" cy="150" r="132" fill="none" stroke="var(--acc)" stroke-width="1.4" stroke-dasharray="40 360" stroke-linecap="round"/>
+          <circle cx="150" cy="18" r="2" fill="var(--acc)"/>
+        </g>
+        <line x1="150" y1="8" x2="150" y2="20" stroke="var(--acc)" stroke-width="1" opacity=".6"/>
+        <line x1="150" y1="280" x2="150" y2="292" stroke="var(--line2)" stroke-width="1"/>
+        <line x1="8" y1="150" x2="20" y2="150" stroke="var(--line2)" stroke-width="1"/>
+        <line x1="280" y1="150" x2="292" y2="150" stroke="var(--line2)" stroke-width="1"/>
+      </svg>
+      <img class="logo" src="../assets/img/ts_typo.png" alt="TROUBLESHOOTER">
+    </div>
+    <div class="sub mono">FIRST HEADQUARTER · 제 1지부</div>
+    <div class="boot mono"><span id="boot"></span><span class="c"></span></div>
+  </main>
+
+  <nav class="nav">
+    <a class="on" href="characters.html"><span class="bar"></span><span class="n mono">01</span><span class="en">CHARACTER</span><span class="ko">캐릭터</span><span class="go mono">→</span></a>
+    <a class="lock"><span class="bar"></span><span class="n mono">02</span><span class="en">WORLD</span><span class="ko">세계관</span><span class="lk mono">LOCKED</span></a>
+    <a class="lock"><span class="bar"></span><span class="n mono">03</span><span class="en">RELATIONS</span><span class="ko">관계도</span><span class="lk mono">LOCKED</span></a>
+    <a class="lock"><span class="bar"></span><span class="n mono">04</span><span class="en">GALLERY</span><span class="ko">갤러리</span><span class="lk mono">LOCKED</span></a>
+    <a class="lock"><span class="bar"></span><span class="n mono">05</span><span class="en">COMMISSION</span><span class="ko">커미션</span><span class="lk mono">LOCKED</span></a>
+    <a class="lock"><span class="bar"></span><span class="n mono">06</span><span class="en">VIDEO</span><span class="ko">영상</span><span class="lk mono">LOCKED</span></a>
+  </nav>
+
+  <footer class="foot">
+    <span><span class="g">GUEST</span> · UID 000-ACCESS</span>
+    <span class="r">TROUBLESHOOTER ARCHIVE · TS-DB</span>
+  </footer>
+
+</div>
+
+<script>
+  var p=n=>String(n).padStart(2,'0');
+  (function(){var r=document.documentElement;var s=localStorage.getItem('ts-theme')||'dark';r.setAttribute('data-theme',s);
+    document.getElementById('themeBtn').addEventListener('click',function(){var t=r.getAttribute('data-theme')==='light'?'dark':'light';r.setAttribute('data-theme',t);localStorage.setItem('ts-theme',t);});})();
+  function tick(){var d=new Date();document.getElementById('clock').textContent=p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());}
+  tick();setInterval(tick,1000);
+  var msg="ACCESS GRANTED · 1 / 12 RECORDS RESTORED";
+  var boot=document.getElementById('boot'),i=0;
+  (function ty(){if(i<=msg.length){boot.textContent=msg.slice(0,i);i++;setTimeout(ty,42);}})();
+</script>
+</body>
+</html>
