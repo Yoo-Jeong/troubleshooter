@@ -12,6 +12,28 @@
 
 ---
 
+## 💻 다른 컴퓨터에서 이어가기
+
+이 저장소는 GitHub(`origin`)에 올라가 있으므로, 다른 컴퓨터에서도 그대로 이어서 작업할 수 있습니다.
+
+1. **처음 받는 컴퓨터**라면 터미널에서:
+   ```powershell
+   git clone https://github.com/Yoo-Jeong/troubleshooter.git
+   cd troubleshooter
+   ```
+2. **이미 클론해둔 컴퓨터**로 돌아왔다면 최신 내용만 받으면 됩니다:
+   ```powershell
+   git pull
+   ```
+3. 아래 [🖥 로컬에서 사이트 켜는 법](#-로컬에서-사이트-켜는-법-미리보기)대로 Ruby + Jekyll을 설치(최초 1회, 컴퓨터마다)하고 `jekyll serve --livereload`로 켜서 확인합니다.
+4. 작업이 끝나면 그 컴퓨터에서 직접 `git add` / `git commit` / `git push`로 GitHub에 올려야, 다른 컴퓨터에서 `git pull` 했을 때 받아집니다. (Claude는 git 작업을 대신 실행하지 않습니다 — 항상 사용자가 직접.)
+
+> ⚠️ **AI(Claude)와의 이전 대화 기억은 계정별로 저장돼 있어 컴퓨터/계정을 옮기면 따라오지 않습니다.**
+> 대신 이 저장소 안의 **`CLAUDE.md`**(에이전트가 매 세션 읽는 작업 규칙·최근 작업 요약)와 **`README.md`**(지금 이 파일)가
+> git으로 어디든 함께 이동하는 **진짜 인수인계 문서**입니다. 큰 작업을 마쳤다면 이 두 파일도 최신 상태로 갱신해두는 것이 좋습니다.
+
+---
+
 ## 📁 폴더 구조
 
 > **핵심: 내가 쓰는 "원본"은 전부 `src/` 안. 루트엔 설정·결과물만.**
@@ -38,7 +60,7 @@ troubleshooter/
 │   ├── _data/
 │   │   └── gallery.yml        #   ★갤러리 색인(태그 목록). 그림마다 캐릭터·유형·출처·매체·작가 태그
 │   │
-│   ├── world/  gallery/   #   미래 섹션(현재 "준비중"). gallery/는 _data/gallery.yml을 읽어 표시
+│   ├── world/  gallery/   #   미래 섹션(현재 "준비중"). gallery/는 _data/gallery.yml을 읽어 표시(태그 색인만 있고 화면은 아직)
 │   ├── logs/               #   익명 게시판(LOGS·교신기록) — Cusdis 위젯 임베드
 │   │
 │   ├── modes/                 #   ★홈 화면 "조각"(단일 출처). index.html이 골라 끼움
@@ -47,16 +69,23 @@ troubleshooter/
 │   │   ├── index_minimal.html #     미니멀 모드          ← 프리뷰 EXTRA
 │   │   └── index_orbit.html   #     Orbit 모드(3D 궤도)  ← 프리뷰 EXTRA
 │   │
+│   ├── tools/
+│   │   └── profile-builder.html #  ★비개발자용 캐릭터 프로필 작성 폼(코드 몰라도 사용 가능). 자세히↓
+│   │
 │   └── assets/                #   공용 자산(CSS·JS·이미지)
 │       ├── css/  common.css · profile.css · transitions.css
-│       ├── js/   common.js · profile.js · stage-fx.js · transitions.js
+│       ├── js/   common.js · profile.js · stage-fx.js · transitions.js · motion.js(모션 감소 옵션)
+│       │         cusdis-config.js(LOGS 위젯 설정) · list-editor.js
 │       │         edit-core.js · editor.js  (?edit 조정 도구, 필요할 때만 로드)
 │       └── img/  ui/(로고·워드마크) · deco/(배경 데코) · lineup/(도감 라인업·생성물) · lineup_raw/(라인업 원본)
 │
 ├── _config.yml                # Jekyll 설정 (source: src → destination: _site)
 ├── _site/                     # 빌드 결과물(자동 생성 · .gitignore) — 지워도 됨, 다시 빌드하면 생김
 ├── _local/                    # 개인 자료(레퍼런스·백업 · .gitignore) — 사이트 아님
-├── tools/                     # 관리 스크립트(사이트 화면과 무관)
+├── tools/                     # 관리 스크립트(사이트 화면과 무관, 터미널에서 실행)
+│   ├── build-lineup.py        #   도감 라인업 이미지 생성(아래 별도 섹션)
+│   ├── bump-cache.ps1         #   ?v= 캐시 버전 일괄 올리기(PowerShell)
+│   └── bump-cache.bat         #   위와 같은 기능(cmd)
 ├── README.md · .gitignore
 ```
 
@@ -126,7 +155,7 @@ generations:                      # 세대(1·2·3세대). main=현재 실제 �
   current: "3"
   items:
     - { id: "1", label: "1세대", sub: "ORIGIN", img: "" }
-    - { id: "3", label: "3세대", sub: "HEIR", img: "vector_full.png", main: true, effect: ["film", { fx: "decode" }] }
+    - { id: "3", label: "3세대", sub: "HEIR", img: "vector_full.png", main: true, effect: [{ fx: "film", place: "back" }, { fx: "decode", place: "back" }, { fx: "decode", place: "front" }] }
 ---
 <!-- 여기 아래 = 우측 정보(.file) 본문 = 캐릭터 내용(이름·사원증·서술 등) -->
 ```
@@ -136,16 +165,41 @@ generations:                      # 세대(1·2·3세대). main=현재 실제 �
 - ⚠️ **YAML 주의**: `on:`·색값(`#…`)·`%`값은 **반드시 따옴표**(`"on": true`, `"#bfc7d4"`). `on`은 YAML 예약어라 안 감싸면 깨집니다.
 - **새 캐릭터 추가** = `characters/새이름/index.html`(front matter+본문) + 이미지. 뼈대는 재사용.
 
+> 💡 front matter를 손으로 직접 안 쓰고 폼으로 채워서 만들고 싶다면 아래 [🧰 프로필 작성 툴](#-프로필-작성-툴-비개발자용) 참고.
+
+---
+
+## 🧰 프로필 작성 툴 (비개발자용)
+
+`src/tools/profile-builder.html` — **코드·페이지 구조를 몰라도** 새 캐릭터 프로필을 만들거나 기존 프로필을 고칠 수 있는 폼입니다.
+이름·소속·능력치·서술·이미지 등을 폼에 입력하면 오른쪽에 **실제 페이지와 거의 동일한 실시간 미리보기**가 뜨고,
+완성하면 `src/characters/<이름>/index.html`에 들어갈 코드를 만들어줍니다.
+
+1. `jekyll serve`로 켠 뒤 `http://localhost:4000/tools/profile-builder.html` 접속(또는 `file://`로 그냥 더블클릭해도 폼 자체는 열립니다 — 상단에 안내 문구가 뜸).
+2. 폼을 채우면 오른쪽 미리보기가 바로 갱신됩니다. 서술/확장 카드는 미리보기 안에서 직접 클릭해 노션처럼 편집도 가능.
+3. 무대 효과(아래 섹션)도 이 툴의 **효과 고르기 갤러리**에서 실제로 움직이는 미리보기를 보면서 골라 쌓을 수 있어, `stage-fx.js` 코드를 몰라도 조합할 수 있습니다.
+4. 완성 후 두 가지 중 하나:
+   - **💾 저장** — 이 컴퓨터에 사이트 폴더가 있는 관리자용. 대상 `index.html` 파일을 골라 자동으로 써넣습니다.
+   - **📤 제출** — GitHub 계정이 없는 동맹원용. 디스코드 웹훅으로 관리자에게 전송, 관리자가 검토 후 반영합니다.
+
+> 도감 라인업용 전신 이미지 정규화도 이 툴에서 같이 할 수 있습니다(아래 [📏 도감 라인업 이미지](#-도감-라인업-이미지-toolsbuild-lineuppy) 참고).
+
 ---
 
 ## 🎭 무대 뒤 능력 연출 (`stage-fx.js`) + 세대 전환
 
-- 무대 효과는 **`TSFX` 컨트롤러**가 `CHAR_GENERATIONS`의 `effect`를 읽어 캔버스를 동적 생성·재생합니다(`profile.js`가 자동 장착).
-- 효과 종류: `film`(벡스터·필름) · `decode`(벡스터 순간효과) · `ecg`(마이티·심박) · `crack`(민트·균열) · `snow`(셀루카·눈) · `glitch`(S·글리치) · `recall`(메릴리·기억).
-  - 조합·순간효과·색 지정 가능: `["film", { fx: "decode" }]`, `[{ fx: "glitch", color: "#5ec8dd" }]`.
+- 무대 효과는 **`TSFX` 컨트롤러**가 각 세대 항목의 `effect`를 읽어 캔버스를 동적 생성·재생합니다(`profile.js`가 자동 장착).
+- **효과 하나 = 그림함수 하나.** `effect:`는 그 효과들을 **레이어로 쌓은 배열**입니다 — 각 레이어가 `{ fx: "효과이름", place: "back" | "front" }`로 캐릭터 그림 **뒤**에 그릴지 **앞**에 그릴지 정하고, 같은 면에 여러 개를 쌓을 수도 있습니다.
+  ```yaml
+  effect: [{ fx: "film", place: "back" }, { fx: "decode", place: "back" }, { fx: "decode", place: "front" }]
+  ```
+  - 효과 수가 60종 이상으로 많아 이 문서엔 전부 나열하지 않습니다 — 목록은 **프로필 작성 툴의 효과 고르기 갤러리**(실제로 움직이는 미리보기 포함)가 최신 상태의 유일한 출처입니다.
+  - 자주 같이 쓰는 앞/뒤 조합은 **세트(PRESETS)** 로 미리 묶여 있어(균열·데이터 스트림·기록 스캔 등) 이름 하나만 써도 앞뒤 레이어가 자동으로 펼쳐집니다: `effect: ["crack"]`.
+  - `glitch`처럼 화면 전체를 장악하는 연출은 `kind:'takeover'`로 표시돼 있고, 이런 효과는 항상 맨 앞에 고정됩니다(뒤로 지정해도 자동으로 앞).
 - **세대 전환**: 세대가 2개 이상이면 상단에 타임라인이 자동으로 뜹니다. 세대를 바꾸면
-  **그림·효과·색·우측 패널·무대 뒤 코드명(bg-type)** 이 통째로 교체됩니다(이미지 없는 세대는 "준비중" 플레이스홀더 + 효과 숨김).
-- 새 효과 추가 = `stage-fx.js`의 `FX`/`INIT`에 함수 하나 + `FX_LAYERS`에 한 줄.
+  **그림·효과·색·우측 패널·무대 뒤 코드명** 이 통째로 교체됩니다(이미지 없는 세대는 "준비중" 플레이스홀더 + 효과 숨김).
+- 방문자는 무대 우상단 `FX ON`/`FX OFF` 버튼으로 이 효과들을 껐다 켤 수 있습니다(브라우저에 기억, 기본은 켜짐).
+- 새 효과 추가 = `stage-fx.js`의 `FX`(그림함수)·`INIT`(초깃값)에 하나씩 + `EFFECTS`에 한 줄 → 프로필 작성 툴 갤러리에 자동으로 나타납니다.
 
 ---
 
@@ -220,11 +274,13 @@ lineup_raw/<이름>.png   →   [build-lineup.py]   →   lineup/<이름>.png
 ## 🔄 캐시 버전 (`?v=`)
 
 브라우저가 CSS/JS를 캐시하므로, `assets/` 파일을 고치면 뒤의 **버전 번호**(`common.css?v=1` 등)를 올려야
-방문자가 새 파일을 받습니다. 현재 버전: `common.css v1` · `profile.css v7` · `transitions.css v1` ·
-`common.js v4` · `profile.js v11` · `stage-fx.js v38` · `transitions.js v2`.
+방문자가 새 파일을 받습니다. 정확한 현재 번호는 `src/_layouts/character.html`의 `?v=`를 보는 게 가장 확실합니다
+(이 README는 사람이 손으로 갱신하는 문서라 버전 숫자가 늦게 반영될 수 있음). 참고로 이 문서를 마지막으로 손본 시점 기준: `common.css v2` · `profile.css v44` · `transitions.css v1` ·
+`common.js v4` · `profile.js v29` · `stage-fx.js v126` · `transitions.js v3` · `motion.js v3`.
 
 - **개발 중** → 번호 안 올려도 `jekyll serve` 재빌드 + 브라우저 **`Ctrl`+`Shift`+`R`**.
-- **배포 전** → 고친 파일의 `?v=` 를 올려주세요(참조하는 모든 `.html`/레이아웃에서 동일하게). `tools/`의 bump 스크립트는 `src/` 기준으로 손봐야 할 수 있습니다.
+- **배포 전** → 고친 파일의 `?v=` 를 올려주세요. 참조하는 곳이 **여러 군데**일 수 있습니다 — 예를 들어 `profile.css`·`stage-fx.js`는 실제 캐릭터 레이아웃(`_layouts/character.html`) 말고도 **프로필 작성 툴의 미리보기(`buildSrcdoc()` 등)** 에서도 따로 불러오므로 그곳도 같이 올려야 툴 미리보기에서도 최신 버전이 반영됩니다.
+- `tools/bump-cache.ps1`(또는 더블클릭용 `.bat`)을 실행하면 **모든 `.html`의 모든 `?v=` 번호를 한 번에 같은 새 번호로** 맞춰줍니다 — 파일마다 각자 다른 번호를 매기고 싶다면(지금처럼) 쓰지 말고 해당 줄만 직접 올리세요.
 
 ---
 
