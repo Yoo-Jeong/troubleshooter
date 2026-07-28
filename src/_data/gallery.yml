@@ -1,0 +1,70 @@
+# ============================================================
+#  갤러리 색인 — 그림/영상/글 하나당 덩어리('- ') 하나
+#  갤러리 페이지(gallery/index.html)가 이 목록을 읽어 태그로 필터·정렬한다.
+#  새 항목 추가 = 아래에 '- ' 덩어리 하나 붙이기. (페이지 코드는 안 건드림)
+#
+#  필드
+#  · file:   실제 파일 경로 ('/'부터 = 사이트 루트). 글(kind:text)이면 생략 가능
+#  · chars:  등장 캐릭터(여러 명 가능) 예) [vector, seluka]
+#  · type:   유형   sd | illust | ref | comic | fanart …
+#  · source: 출처   official(공식) | commission(커미션·받은그림) | fanart(팬아트) | collab(합작)
+#  · kind:   매체   image(이미지) | video(영상) | text(글)
+#  · artist: 그린 사람(커미션이면 작가명). 비워두면 미상
+#  · date:   'YYYY-MM'
+#  · title:  제목/짧은 설명
+#  ※ 값에 #, %, : 가 들어가면 따옴표로 감쌀 것 (YAML 규칙)
+# ============================================================
+
+- file: /characters/vector/gallery/sd_01.png
+  chars: [vector]
+  type: sd
+  source: official
+  kind: image
+  artist:
+  date: 2020-07
+  title: 벡스터 SD
+
+- file: /characters/myt/gallery/sd_01.png
+  chars: [myt]
+  type: sd
+  source: official
+  kind: image
+  artist:
+  date: 2020-07
+  title: 마이티 SD
+
+- file: /characters/meant/gallery/sd_01.png
+  chars: [meant]
+  type: sd
+  source: official
+  kind: image
+  artist:
+  date: 2020-07
+  title: SD
+
+- file: /characters/merely/gallery/sd_01.png
+  chars: [merely]
+  type: sd
+  source: official
+  kind: image
+  artist:
+  date: 2020-07
+  title: SD
+
+- file: /characters/s/gallery/sd_01.png
+  chars: [s]
+  type: sd
+  source: official
+  kind: image
+  artist:
+  date: 2020-07
+  title: SD
+
+- file: /characters/seluka/gallery/sd_01.png
+  chars: [seluka]
+  type: sd
+  source: official
+  kind: image
+  artist:
+  date: 2020-07
+  title: SD

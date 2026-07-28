@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TS·OS // TRANSITION PREVIEW</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600&family=Share+Tech+Mono&family=Gothic+A1:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+<!-- 실제 사이트와 똑같은 공통 모듈 로드 → 트랜지션 수정 시 이 페이지에 바로 반영됨 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
+<link rel="stylesheet" href="assets/css/common.css?v=2">
+<link rel="stylesheet" href="assets/css/transitions.css?v=1">
+<script src="assets/js/common.js?v=4"></script>
+<script src="assets/js/transitions.js?v=3"></script>
+
+<style>
+  /* 스크롤바·.prev·.phead 는 common.css 공통 스타일 사용 */
+  /* 이동 흐름 요약 */
+  .flow{margin:24px 0 20px;font-family:'Share Tech Mono';font-size:var(--fs-sm);letter-spacing:1.2px;
+    color:var(--tx2);display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+  .flow .n{color:var(--tx)}
+  .flow .a{color:var(--acc)}
+  .flow .rev{width:100%;color:var(--tx3);margin-top:4px}
+  .pnote{font-family:'Share Tech Mono';font-size:var(--fs-xs);line-height:1.85;letter-spacing:.3px;
+    color:var(--tx3);margin:-8px 0 22px;max-width:660px;border-left:2px solid var(--line2);padding-left:12px}
+
+  /* 트랜지션 카드 */
+  .cards{display:flex;flex-direction:column;gap:10px;max-width:720px}
+  .card{display:flex;align-items:center;justify-content:space-between;gap:20px;
+    border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:15px 20px;transition:border-color .2s}
+  .card:hover{border-color:var(--line2)}
+  .card .ci{display:flex;flex-direction:column;gap:5px;min-width:0}
+  .card .cn{font-family:'Share Tech Mono';font-size:var(--fs-md);letter-spacing:1px;color:var(--tx);font-weight:bold}
+  .card .cd{font-size:var(--fs-sm);color:var(--tx2)}
+  .card .cu{font-family:'Share Tech Mono';font-size:var(--fs-xs);letter-spacing:.8px;color:var(--tx3)}
+  /* 사용법 코드 스니펫 — 링크에 이 속성만 달면 그 전환이 적용됨 */
+  .card .cc{font-family:'Share Tech Mono';font-size:var(--fs-xs);letter-spacing:.2px;color:var(--tx2);
+    background:var(--bg2);border:1px solid var(--line);border-radius:5px;padding:5px 9px;margin-top:3px;
+    align-self:flex-start;max-width:100%;overflow-x:auto;white-space:nowrap}
+  .card .cc b{color:var(--acc);font-weight:400}
+  .play{font-family:'Share Tech Mono';font-size:var(--fs-sm);letter-spacing:1.5px;color:var(--acc);
+    border:1px solid color-mix(in srgb,var(--acc) 45%,var(--line));background:transparent;
+    padding:10px 18px;border-radius:6px;cursor:pointer;white-space:nowrap;transition:.2s}
+  .play:hover{background:var(--acc);color:var(--bg);border-color:var(--acc)}
+  .play:active{transform:translateY(1px)}
+</style>
+</head>
+<body>
+  <div class="screen">
+    <div class="osbar mono">
+      <img class="lg" src="assets/img/ui/ts_typo.png" alt="">
+      <span class="os">TS·OS</span>
+      <span class="sec"><span class="d"></span>SECURE LINK</span>
+      <div class="right">
+        <span>PREVIEW</span>
+        <span class="sig"><i></i><i></i><i></i><i></i></span>
+        <span id="clock">--:--</span>
+        <button class="tg" id="themeBtn" title="테마 전환">◐</button>
+      </div>
+    </div>
+
+    <main class="prev">
+      <div class="phead">
+        <div class="kick mono">TRANSITION PREVIEW</div>
+        <h1>트랜지션</h1>
+        <p class="note">실제 모듈(assets/css/transitions.css · assets/js/transitions.js)을 그대로 재생합니다.<br>
+          트랜지션을 수정한 뒤 이 페이지를 새로고침(F5)하면 바로 반영됩니다.<br>
+          각 카드의 <span style="color:var(--tx2)">회색 코드박스</span> = 그 전환을 실제로 쓰는 방법(대개 링크에 <span style="color:var(--acc)">data-ts</span> 속성만 달면 적용).<br>
+          우측 상단 ◐ 로 라이트·다크 두 테마 모두 확인할 수 있습니다.</p>
+      </div>
+
+      <div class="flow">
+        <span class="n">HOME</span><span class="a">— accesslog ▸</span>
+        <span class="n">CHARACTERS</span><span class="a">— scan access ▸</span>
+        <span class="n">프로필</span>
+        <span class="rev">◂ fade · 복귀 (프로필→CHARACTERS · CHARACTERS→HOME)</span>
+      </div>
+      <div class="pnote">※ '프로필' = 캐릭터 프로필 페이지.
+      </div>
+
+      <ul class="cards">
+        <li class="card" data-demo="accesslog">
+          <div class="ci">
+            <span class="cn">accesslog</span>
+            <span class="cd">접속 로그 타이핑 → ACCESS GRANTED</span>
+            <span class="cu">HOME → CHARACTERS · 목록 진입</span>
+            <code class="cc">&lt;a href="…" data-ts="<b>accesslog</b>"&gt;</code>
+          </div>
+          <button class="play">▶ 재생</button>
+        </li>
+        <li class="card" data-demo="scan-access">
+          <div class="ci">
+            <span class="cn">scan access</span>
+            <span class="cd">스캔 빔이 훑고 지나간 뒤 → ACCESS GRANTED</span>
+            <span class="cu">CHARACTERS → 프로필 · 프로필 진입</span>
+            <code class="cc">&lt;a href="…" data-ts="<b>scan-access</b>"&gt;</code>
+          </div>
+          <button class="play">▶ 재생</button>
+        </li>
+        <li class="card" data-demo="grant">
+          <div class="ci">
+            <span class="cn">grant</span>
+            <span class="cd">조용한 페이드 + ● ACCESS GRANTED (스캔·타이핑 없이 깔끔한 접속 승인)</span>
+            <span class="cu">CHARACTERS → 프로필 · 레코드 진입 (현재 적용)</span>
+            <code class="cc">&lt;a href="…" data-ts="<b>grant</b>"&gt;</code>
+          </div>
+          <button class="play">▶ 재생</button>
+        </li>
+        <li class="card" data-demo="scan">
+          <div class="ci">
+            <span class="cn">scan</span>
+            <span class="cd">스캔 라인이 위→아래로 훑으며 화면을 라인 단위로 그려냄 (렌더 리빌)</span>
+            <span class="cu">라이브러리 · 아직 라우트 미배선</span>
+            <code class="cc">&lt;a href="…" data-ts="<b>scan</b>"&gt;</code>
+          </div>
+          <button class="play">▶ 재생</button>
+        </li>
+        <li class="card" data-demo="resync">
+          <div class="ci">
+            <span class="cn">resync</span>
+            <span class="cd">신호 재동기화 · 절제된 글리치 후 화면 전환</span>
+            <span class="cu">라이브러리 · 아직 라우트 미배선</span>
+            <code class="cc">&lt;a href="…" data-ts="<b>resync</b>"&gt;</code>
+          </div>
+          <button class="play">▶ 재생</button>
+        </li>
+        <li class="card" data-demo="slide-left">
+          <div class="ci">
+            <span class="cn">slide-left</span>
+            <span class="cd">실제 화면이 왼쪽으로 이동 · 새 화면이 오른쪽에서 들어옴 (가로 슬라이드)</span>
+            <span class="cu">라이브러리 · 아직 라우트 미배선</span>
+            <code class="cc">&lt;a href="…" data-ts="<b>slide-left</b>"&gt;</code>
+          </div>
+          <button class="play">▶ 재생</button>
+        </li>
+        <li class="card" data-demo="slide-up">
+          <div class="ci">
+            <span class="cn">slide-up</span>
+            <span class="cd">실제 화면이 위로 이동 · 새 화면이 아래에서 올라옴 (세로 슬라이드)</span>
+            <span class="cu">라이브러리 · 아직 라우트 미배선</span>
+            <code class="cc">&lt;a href="…" data-ts="<b>slide-up</b>"&gt;</code>
+          </div>
+          <button class="play">▶ 재생</button>
+        </li>
+        <li class="card" data-demo="fade">
+          <div class="ci">
+            <span class="cn">fade</span>
+            <span class="cd">조용한 페이드</span>
+            <span class="cu">복귀 전용 · 프로필→CHARACTERS · CHARACTERS→HOME</span>
+            <code class="cc">&lt;a href="…" data-ts="<b>fade</b>"&gt;</code>
+          </div>
+          <button class="play">▶ 재생</button>
+        </li>
+        <li class="card" data-demo="instant">
+          <div class="ci">
+            <span class="cn">instant</span>
+            <span class="cd">즉시 컷 (애니메이션 없음)</span>
+            <span class="cu">모션 최소화 요청 시 폴백</span>
+            <code class="cc">&lt;a href="…" data-ts="<b>instant</b>"&gt;</code>
+          </div>
+          <button class="play">▶ 재생</button>
+        </li>
+        <li class="card" data-demo="boot">
+          <div class="ci">
+            <span class="cn">boot</span>
+            <span class="cd">첫 진입 부팅 시퀀스 (핸드셰이크 → 암호화 → 진입)</span>
+            <span class="cu">세션당 1회 · HOME 최초 진입</span>
+            <code class="cc">TS.boot({ onDone: <b>fn</b> })</code>
+          </div>
+          <button class="play">▶ 재생</button>
+        </li>
+      </ul>
+
+      <div class="phead" style="margin-top:38px">
+        <div class="kick mono">HOME RECONFIGURE</div>
+        <h1 style="font-size:20px">홈 재구성 전환</h1>
+        <p class="note">SYSTEM CONFIG 에서 홈 디스플레이 모드(PCB ↔ 터미널)를 바꿀 때 재생되는 연출입니다.
+          여기선 교체 없이 연출만 미리보기합니다.</p>
+      </div>
+
+      <ul class="cards">
+        <li class="card" data-reconfig="reconfiglog">
+          <div class="ci">
+            <span class="cn">reconfiglog</span>
+            <span class="cd">RECONFIGURING 로그 + 프로그레스 → 새 화면</span>
+            <span class="cu">홈 모드 전환 · 현재 적용</span>
+            <code class="cc">TS.reconfig('<b>reconfiglog</b>', applyFn)</code>
+          </div>
+          <button class="play">▶ 재생</button>
+        </li>
+      </ul>
+    </main>
+  </div>
+
+<script>
+  document.querySelectorAll('.card').forEach(function(card){
+    card.querySelector('.play').addEventListener('click', function(){
+      var rc = card.getAttribute('data-reconfig');
+      if(rc){ TS.reconfig(rc); return; }              // 홈 재구성 연출 (교체 없이 미리보기)
+      var d = card.getAttribute('data-demo');
+      if(d === 'boot'){
+        try{ sessionStorage.removeItem('ts-booted'); }catch(e){}
+        TS.boot({});                 // 자체 오버레이 생성 후 스스로 정리
+      } else {
+        TS.demo(d);                  // 나가는 연출 → 도착 reveal 한 자리에서 재생
+      }
+    });
+  });
+</script>
+</body>
+</html>

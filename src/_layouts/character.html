@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TROUBLESHOOTER{% if page.meta.title %} // {{ page.meta.title }}{% endif %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Chakra+Petch:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Share+Tech+Mono&family=Gothic+A1:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
+
+<link rel="stylesheet" href="../../assets/css/common.css?v=2">
+<link rel="stylesheet" href="../../assets/css/transitions.css?v=1">
+<link rel="stylesheet" href="../../assets/css/profile.css?v=44">
+<script src="../../assets/js/common.js?v=4"></script>
+<script src="../../assets/js/transitions.js?v=3"></script>
+
+<style>
+  /* 캐릭터 색 : --accent 만 지정하면 나머지는 profile.css가 파생 */
+  :root,:root[data-theme="dark"]{ --accent:{{ page.accent }};{% if page.accent2 and page.accent2 != "" %} --accent2:{{ page.accent2 }};{% endif %}{% if page.stat_plus and page.stat_plus != "" %} --stat-plus:{{ page.stat_plus }};{% endif %} }
+  :root[data-theme="light"]{ --accent:{{ page.accent_light }};{% if page.accent2_light and page.accent2_light != "" %} --accent2:{{ page.accent2_light }};{% endif %} }
+  {% if page.root %}:root{ {% for v in page.root %}--{{ v[0] }}:{{ v[1] }};{% endfor %} }{% endif %}
+</style>
+</head>
+<body>
+  <div class="mscreen">
+    <div class="osbar mono">
+      <img class="lg" src="../../assets/img/ui/ts_typo.png" alt="">
+      <span class="os">TS·OS</span>
+      <span class="sec"><span class="d"></span>SECURE LINK</span>
+      <div class="right">
+        <span data-meta="record"></span>
+        <span class="sig"><i></i><i></i><i></i><i></i></span>
+        <span class="bat"><span>82%</span><span class="b"><i></i></span></span>
+        <span id="clock">--:--</span>
+        <button class="tg" id="themeBtn" title="테마 전환">◐</button>
+      </div>
+    </div>
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="bt">TROUBLE<span>SHOOTER</span> <span class="tag" data-meta="sector"></span></div>
+      <div class="crumb"><a href="../../characters.html" data-ts="fade">◂ CHARACTERS</a> · <b data-meta="crumb"></b></div>
+    </div>
+  </div>
+
+  <div class="sheet">
+    <div class="left-fixed">
+    <aside class="wardrobe"><div class="track"></div></aside>
+
+    <div class="stage-col">
+    <section class="stage">
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <span class="corner bl"></span><span class="corner br"></span>
+      <div class="bg-type" data-meta="code" aria-hidden="true"></div>
+      <!-- 무대 효과는 stage-fx 컨트롤러가 캔버스를 동적 생성 -->
+      <div class="stage-head">
+        <span data-meta="id"></span>
+        <!-- fx-toggle: 무대 효과 끄기/켜기 — profile.js initGens가 상태·클릭 처리(단일 출처). 그림·능력치는 그대로, 움직이는 효과만 껐다 켬 -->
+        <span class="rec"><span class="dot"></span>REC · VISUAL FEED<button class="fx-toggle mono" id="fxToggle" type="button" title="무대 효과 끄기/켜기">FX ON</button></span>
+      </div>
+
+      <img class="ghost" id="stageGhost" src="{{ page.art }}" alt="">
+      <img class="art" id="stageArt" src="{{ page.art }}" alt="{{ page.art_alt | default: page.meta.title }}">
+      <!-- 일러 작가 크레딧 : 옷장 슬롯·세대 전환에 맞춰 profile.js가 텍스트를 바꿔 넣음(단일 요소 재사용).
+           "art. " 접두어는 profile.css가 붙이므로 여기·profile.js는 이름만 넣음. -->
+      <div class="art-credit" id="artCredit">{{ page.art_artist }}</div>
+    </section>
+    </div>
+    </div>
+
+    <!-- 우측 정보. 신원(namehead)·사원증(idcard) '틀'은 여기(레이아웃) 한 곳에서 front matter 데이터로 그림
+         → 캐릭터 파일은 데이터만 갖고, 이 모양을 바꿀 땐 여기만 고치면 6명 전원 반영.
+         능력치·서술 카드(캐릭터별 내용)는 아래 결과 삽입 자리로 들어옴.
+         ★주의: 여기 주석에 "content" 뒤 중괄호 두 겹을 그대로 적으면 Liquid가 그 자리에도 본문을 통째로 끼워 넣어(코멘트 안이라 화면엔 안 보여도) 파일 용량만 두 배로 늘어남 → 절대 그 표기를 이 주석 안에 쓰지 말 것. -->
+    <section class="file">
+      <div class="gen-panel" data-gen="{{ page.generations.current }}">
+      <div class="namehead span2">
+        {% if page.namehead.eyebrow and page.namehead.eyebrow != "" %}<div class="eyebrow">{{ page.namehead.eyebrow }}</div>{% endif %}
+        <div class="kr">{{ page.namehead.kr }}{% if page.namehead.en and page.namehead.en != "" %} <span class="en">{{ page.namehead.en }}</span>{% endif %}</div>
+        {% if page.namehead.idmeta and page.namehead.idmeta != "" %}<div class="idmeta">{{ page.namehead.idmeta }}</div>{% endif %}
+        {% if page.namehead.quote and page.namehead.quote != "" %}<div class="quote">{{ page.namehead.quote }}</div>{% endif %}
+      </div>
+      {% if page.idcard %}
+      <div class="card span2 idcard">
+        <div class="card-h"><span class="idx">ID</span><h3>Agent Pass</h3><span class="kr-sub">사원증 · 인증 기록</span><button class="fx-toggle mono" id="idScanToggle" type="button" title="사원증 스캔 효과 끄기/켜기">SCAN ON</button></div>
+        <div class="idcard-b"><div class="idcard-stage">
+          <span class="idc-corner tl"></span><span class="idc-corner tr"></span><span class="idc-corner bl"></span><span class="idc-corner br"></span>
+          <img src="{{ page.idcard.img }}" alt="{{ page.roster.ko }} 사원증">
+          <span class="idc-scan" id="idScan"></span><span class="idc-stamp">● AUTHENTICATED</span>
+        </div><div class="idc-meta">
+          <span>RETRIEVED · <b>CENTRAL DATABASE</b></span>
+          <span>ID · <b>{{ page.meta.id }}</b></span>
+          <span>STATUS · <b class="ok">{{ page.idcard.status | default: 'ACTIVE' }}</b></span>
+          {% if page.idcard.artist and page.idcard.artist != "" %}<span>@{{ page.idcard.artist }}</span>{% endif %}
+        </div></div>
+      </div>
+      {% endif %}
+{{ content }}
+      </div>
+    </section>
+  </div>
+  </div>
+
+<script>
+  /* 데이터는 front matter(YAML) → 여기서 전역으로. profile.js/stage-fx.js가 사용 */
+  window.CHAR_META        = {{ page.meta        | jsonify }};
+  window.CHAR_STATS       = {{ page.stats       | jsonify }};
+  window.CHAR_WARDROBE    = {{ page.wardrobe    | jsonify }};
+  window.CHAR_GENERATIONS = {{ page.generations | jsonify }};
+  window.CHAR_ROSTER      = {{ page.roster      | jsonify }};
+</script>
+<script src="../../assets/js/profile.js?v=29"></script>
+<script src="../../assets/js/stage-fx.js?v=126"></script>
+<script src="../../assets/js/motion.js?v=3"></script>
+<!-- 서술/확장 카드 안 코드블럭(```로 감싼 부분) 문법강조. 코드블럭이 없는 캐릭터는 그냥 아무 일도 안 함. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+  if (window.hljs) {
+    hljs.highlightAll();
+    // 언어를 안 적어 자동판별된 경우까지 포함해 오른쪽 위 이름표(data-lang)를 채움 — profile.css의 pre.p-code[data-lang]::before가 그림.
+    document.querySelectorAll('pre.p-code code[class*="language-"]').forEach(function(c){
+      var m = c.className.match(/language-(\S+)/);
+      if (m) c.closest('pre').setAttribute('data-lang', m[1]);
+    });
+  }
+</script>
+</body>
+</html>

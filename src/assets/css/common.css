@@ -1,0 +1,189 @@
+/* ============================================================
+   TS·OS  —  공통 디자인 (팔레트 + 기기 크롬)
+   이 파일 하나만 고치면 홈·캐릭터 목록 전 페이지에 반영됩니다.
+   ============================================================ */
+
+:root,:root[data-theme="dark"]{
+  --bg:#12161f;--bg2:#181f2a;--panel:#161c26;
+  /* 텍스트 3단계 위계 — tx=본문/제목(고대비) · tx2=보조(중) · tx3=캡션/라벨(가독 하한 보장, WCAG AA 근접) */
+  --tx:#eaeff4;--tx2:#aab4c0;--tx3:#828d9a;
+  --line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);
+  --acc:#4bbad6;--acc2:rgba(75,186,214,.5);--lime:#8fd44a;
+  --bezel:#05070a;--bezeledge:rgba(255,255,255,.06);--dgrid:rgba(130,180,210,.03);--devsh:rgba(0,0,0,.5);--devedge:rgba(0,0,0,.4);
+  --rowhi:rgba(75,186,214,.08);--silh:1;--chrome:#a7b3bf;
+}
+:root[data-theme="light"]{
+  --bg:#ececec;--bg2:#eeeeee;--panel:#f0f0f0;
+  --tx:#1a2129;--tx2:#4c5966;--tx3:#6d7a86;
+  --line:rgba(20,30,45,.09);--line2:rgba(20,30,45,.16);
+  --acc:#2f8ba3;--acc2:rgba(47,139,163,.4);--lime:#5a9e1e;
+  --bezel:#c9c9cc;--bezeledge:rgba(0,0,0,.08);--dgrid:rgba(40,40,46,.015);--devsh:rgba(155,155,158,.1);--devedge:rgba(40,42,48,.1);
+  --rowhi:rgba(47,139,163,.09);--silh:0;--chrome:#69737e;
+}
+/* ============================================================
+   타이포 스케일 — 한 곳에서 관리. 글자 크기 조정은 여기 값만 바꾸면 전 페이지 반영.
+   tiny = 배경 더미/장식 · 2xs~xs = 라벨·HUD·캡션 · sm = 보조/모노 라벨
+   base = 본문 · md = 강조 본문·항목명 · lg = 소제목 · xl~2xl = 제목
+   ============================================================ */
+:root{
+  /* 중요도 위계 — 인접 단계 간 대비를 키워(상위일수록 큰 폭) 제목·본문·라벨이 명확히 구분되게.
+     라벨(xs/2xs) ← 본문(base 15) ← 강조/항목명(md 17) ← 소제목(lg 20) ← 제목(xl 26) ← 히어로(2xl 33) */
+  --fs-tiny:10px;  --fs-2xs:11px;  --fs-xs:12px;  --fs-sm:13.5px;
+  --fs-base:15px;  --fs-md:17px;  --fs-lg:20px;  --fs-xl:26px;  --fs-2xl:33px;
+
+  /* ★단말기 고정폭 = 웹 표준 컨테이너(1200px). 창을 좌우로 넓혀도 이 폭에서 멈춤(양옆 레터박스).
+     --device-side = 좌우 여백: 창이 넓으면 (창-단말폭)/2 로 벌어지고, 좁으면 최소 12px(폴백 축소) */
+  --device-w:1200px;
+  --device-side:max(12px, calc((100vw - var(--device-w)) / 2));
+  /* 단말기 높이 — 뷰포트 세로를 꽉 채움(표준 max-width 레이아웃, 답답하지 않게).
+     초대형 모니터에선 1080에서 멈춰 과도한 여백 방지. 콘텐츠는 세로 중앙 정렬(위아래 여백 동일) */
+  --device-h:min(1080px, calc(100vh - 28px));
+  --device-vside:max(14px, calc((100vh - var(--device-h)) / 2));
+  /* 콘텐츠·상단바·푸터 실제 폭 = 디바이스 안쪽(좌우 끝까지). 배터리·푸터가 끝에 붙음 */
+  --frame-w:min(var(--device-w), calc(100vw - 24px));
+  --frame-pad:38px;
+  --screen-inset:var(--device-vside) var(--device-side) var(--device-vside);  --screen-radius:18px;
+  --osbar-h:44px;   /* 상단 상태바(.osbar) 높이 — 캐릭터 페이지 profile.css가 sticky 위치 계산에 그대로 씀(단일 출처) */
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'Chakra Petch','Pretendard','Gothic A1',sans-serif;color:var(--tx);background:var(--bezel);
+  min-height:100vh;position:relative;overflow:hidden;transition:background .4s,color .4s;-webkit-font-smoothing:antialiased;
+  word-break:keep-all;overflow-wrap:break-word;   /* 한국어: 단어(어절) 단위로만 줄바꿈 */
+  display:flex;align-items:center;justify-content:center}   /* 고정크기 .screen 을 뷰포트 중앙에(위아래 레터박스) */
+.mono{font-family:'Share Tech Mono';letter-spacing:.5px}
+a{text-decoration:none;color:inherit}
+
+/* ===== 기기 베젤 (외곽 프레임) ===== */
+.device{position:fixed;inset:var(--screen-inset);border-radius:var(--screen-radius);overflow:hidden;
+  background:linear-gradient(var(--dgrid) 1px,transparent 1px),linear-gradient(90deg,var(--dgrid) 1px,transparent 1px),radial-gradient(120% 90% at 50% 6%,var(--bg2),var(--bg) 72%);
+  background-size:46px 46px,46px 46px,100% 100%;
+  box-shadow:inset 0 0 0 1px var(--bezeledge),inset 0 0 55px var(--devsh),0 0 0 1px var(--devedge);transition:background .4s}
+
+/* ===== 화면 광택/비네트 ===== */
+.fx{position:fixed;inset:var(--screen-inset);border-radius:var(--screen-radius);pointer-events:none;z-index:30;overflow:hidden}
+.fx::before{content:"";position:absolute;inset:0;background:linear-gradient(118deg,rgba(255,255,255,.05) 0%,transparent 20%,transparent 80%,rgba(255,255,255,.02) 100%)}
+.fx::after{content:"";position:absolute;inset:0;background:radial-gradient(135% 125% at 50% 42%,transparent 66%,rgba(0,0,0,.48) 100%)}
+:root[data-theme="light"] .fx::before{background:linear-gradient(118deg,rgba(255,255,255,.2) 0%,transparent 24%,transparent 82%,rgba(255,255,255,.1) 100%)}
+:root[data-theme="light"] .fx::after{background:radial-gradient(140% 130% at 50% 45%,transparent 82%,rgba(150,150,153,.05) 100%)}
+
+/* ===== 화면 콘텐츠 컨테이너 ===== */
+.screen{position:relative;z-index:10;height:var(--device-h);display:flex;flex-direction:column;
+  width:var(--frame-w);padding:0 var(--frame-pad) 18px;overflow:hidden}   /* 좁은/짧은 창에서 내용이 단말기 프레임 밖으로 안 삐져나가게 */
+
+/* ===== OS 상태바 =====
+   ⚠︎ margin-top:14px 는 캐릭터 페이지(profile.css)에서 margin:0 auto 로 덮여 무효화됨(그 페이지는 여백 없이 딱 붙음).
+   여기 값을 고치면 캐릭터 페이지가 아닌 다른 화면(홈·목록 등)에만 반영되니 착각하지 말 것. */
+.osbar{display:flex;align-items:center;height:var(--osbar-h);flex:0 0 var(--osbar-h);font-family:'Share Tech Mono';font-size:var(--fs-sm);letter-spacing:1px;color:var(--tx2);margin-top:14px;padding:0 4px;border-bottom:1px solid var(--line)}
+.osbar .lg{height:15px;margin-right:11px;opacity:.9}
+.osbar .os{font-size:var(--fs-sm)}
+:root[data-theme="light"] .osbar .lg{filter:brightness(.6) saturate(1.5)}
+.osbar .os{color:var(--tx);letter-spacing:2px}
+/* 좌상단 로고+OS명 = 홈(index) 복귀 버튼 (common.js 가 <a class="home">로 감쌈) */
+.osbar a.home{display:inline-flex;align-items:center;text-decoration:none;color:inherit;cursor:pointer;transition:filter .2s,opacity .2s}
+.osbar a.home:hover{filter:drop-shadow(0 0 5px color-mix(in srgb,var(--acc) 55%,transparent)) brightness(1.14)}
+.osbar a.home.here{cursor:default}                 /* 이미 홈 화면: 반응 약하게 */
+.osbar a.home.here:hover{filter:none;opacity:.82}
+.osbar .sec{display:flex;align-items:center;gap:6px;margin-left:16px;color:var(--chrome)}
+.osbar .sec .d{width:5px;height:5px;border-radius:50%;background:var(--acc);box-shadow:0 0 6px var(--acc);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.osbar .right{margin-left:auto;display:flex;align-items:center;gap:18px}
+.sig{display:flex;align-items:flex-end;gap:2px;height:12px}
+.sig i{width:3px;background:var(--tx2)}
+.sig i:nth-child(1){height:5px}.sig i:nth-child(2){height:7px}.sig i:nth-child(3){height:9px}.sig i:nth-child(4){height:12px;background:var(--tx3)}
+.bat{display:flex;align-items:center;gap:6px}
+.bat .b{width:23px;height:11px;border:1px solid var(--tx2);border-radius:2px;position:relative;padding:1px}
+.bat .b::after{content:"";position:absolute;right:-3px;top:3px;width:2px;height:4px;background:var(--tx2);border-radius:0 1px 1px 0}
+.bat .b i{display:block;height:100%;width:82%;background:var(--chrome)}
+.tg{width:24px;height:24px;border:1px solid var(--line2);background:transparent;color:var(--chrome);border-radius:50%;font-size:var(--fs-xs);cursor:pointer;line-height:1;transition:.2s}
+.tg:hover{background:var(--chrome);color:var(--bg)}
+/* 좁은 창(모바일 비율): 상단바 부가 정보(SECURE LINK·라벨·신호·배터리) 숨겨 토글·기어가 프레임 안에 유지 */
+@media(max-width:700px){
+  .osbar .sec,.osbar .sig,.osbar .bat,.osbar .right>span:first-of-type{display:none}
+  .osbar .right{gap:12px}
+}
+
+/* ============================================================
+   SYSTEM CONFIG — 전 페이지 공통 (common.js 가 톱니+패널 주입)
+   ============================================================ */
+.osbar .dv{width:1px;height:14px;background:var(--line2);margin:0 3px}
+.gear{width:24px;height:24px;border:1px solid var(--line2);background:transparent;color:var(--chrome);border-radius:6px;
+  font-size:var(--fs-sm);cursor:pointer;line-height:1;transition:.2s;display:inline-flex;align-items:center;justify-content:center}
+.gear:hover{background:var(--chrome);color:var(--bg)}
+.gear.on{border-color:var(--acc);color:var(--acc)}
+
+.cfg-scrim{position:fixed;inset:var(--screen-inset);border-radius:var(--screen-radius);z-index:48;background:color-mix(in srgb,var(--bg) 55%,transparent);
+  opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s}
+.cfg-scrim.open{opacity:1;visibility:visible}
+/* 클립 창 = 단말기 화면 영역. 패널이 이 안에서만 슬라이드해 밖(레터박스)으로 안 나감 → 몰입감 */
+.cfg-clip{position:fixed;inset:var(--screen-inset);border-radius:var(--screen-radius);overflow:hidden;z-index:49;pointer-events:none}
+.cfg{position:absolute;top:0;bottom:0;right:0;width:min(384px,86vw);
+  background:var(--bg);border-left:1px solid var(--line);
+  transform:translateX(100%);transition:transform .34s cubic-bezier(.4,0,.2,1);   /* 닫힘: 화면 우측 경계 밖으로(클립에 가려 안 보임) */
+  display:flex;flex-direction:column;overflow:hidden;pointer-events:auto}
+/* 그림자는 열렸을 때만 — 닫힘 상태에선 우측 경계 밖 패널의 그림자가 화면 안으로 새어 그라데이션처럼 보였음 */
+.cfg.open{transform:translateX(0);box-shadow:-24px 0 60px -34px #000}
+.cfg-hd{display:flex;align-items:center;gap:10px;padding:20px 22px 15px;border-bottom:1px solid var(--line)}
+.cfg-hd .ti{font-family:'Share Tech Mono';font-size:var(--fs-base);letter-spacing:2px;color:var(--tx2)}
+.cfg-hd .ti b{color:var(--acc);font-weight:400}
+.cfg-hd .x{margin-left:auto;width:26px;height:26px;border:1px solid var(--line2);background:transparent;color:var(--tx2);border-radius:6px;cursor:pointer;font-size:var(--fs-sm);transition:.2s}
+.cfg-hd .x:hover{border-color:var(--acc);color:var(--acc)}
+.cfg-bd{flex:1;overflow-y:auto;padding:18px 22px 26px;scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
+.cfg-sec{margin-bottom:26px}
+.cfg-sec .sh{font-family:'Share Tech Mono';font-size:var(--fs-xs);letter-spacing:2px;color:var(--acc);margin-bottom:6px}
+.cfg-sec .sd{font-family:'Share Tech Mono';font-size:var(--fs-xs);letter-spacing:.3px;color:var(--tx3);margin-bottom:13px;line-height:1.75}
+.cfg-opt{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:1px solid var(--line);background:var(--panel);
+  border-radius:6px;padding:12px 14px;margin-bottom:8px;cursor:pointer;color:inherit;transition:.18s;font-family:inherit}
+.cfg-opt:hover{border-color:var(--line2)}
+.cfg-opt.sel{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 8%,var(--panel))}
+.cfg-opt .rd{width:14px;height:14px;border-radius:50%;border:1px solid var(--line2);flex:0 0 auto;position:relative;transition:.18s}
+.cfg-opt.sel .rd{border-color:var(--acc)}
+.cfg-opt.sel .rd::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--acc)}
+.cfg-opt .oi{display:flex;flex-direction:column;gap:3px}
+.cfg-opt .on{font-family:'Chakra Petch';font-weight:600;font-size:var(--fs-base);color:var(--tx)}
+.cfg-opt .od{font-family:'Share Tech Mono';font-size:var(--fs-xs);letter-spacing:.3px;color:var(--tx3)}
+.cfg-link{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:13px 14px;
+  text-decoration:none;color:var(--tx);font-family:'Share Tech Mono';font-size:var(--fs-sm);letter-spacing:.5px;transition:.18s}
+.cfg-link:hover{border-color:var(--acc);color:var(--acc)}
+.cfg-link .ar{margin-left:auto;color:var(--tx3);transition:.18s}
+.cfg-link:hover .ar{color:var(--acc);transform:translateX(3px)}
+.cfg-log{list-style:none;font-family:'Share Tech Mono';border-left:1px solid var(--line);padding-left:16px;display:flex;flex-direction:column;gap:11px}
+.cfg-log li{position:relative;font-size:var(--fs-xs);line-height:1.65;color:var(--tx2);text-wrap:pretty}
+.cfg-log li::before{content:"";position:absolute;left:-18.5px;top:5px;width:5px;height:5px;border-radius:50%;background:var(--line2)}
+.cfg-log li.new::before{background:var(--acc);box-shadow:0 0 6px var(--acc)}
+.cfg-log li .dt{color:var(--acc);letter-spacing:.5px}
+
+/* ============================================================
+   공통 스크롤바 — TS·OS 단말기 톤 (전 페이지 동일, webkit-only)
+   · 눈에 보이는 스크롤 "레일"(채널) + 각진 블록 thumb (모던 둥근 pill 아님)
+   · thumb 은 그립 눈금 + 시안 이너라인, hover 시 시안 발광 → 단말기 부품 느낌
+   · track 좌측 라인으로 레일 경계, 투명 보더로 프레임 안쪽에 띄움, 위아래 여백으로 둥근모서리 회피
+   ※ 페이지에서 scrollbar-width(표준) 쓰지 말 것(쓰면 Chrome이 이 스타일 무시).
+   ============================================================ */
+::-webkit-scrollbar{width:13px;height:13px}
+::-webkit-scrollbar-button{display:none}
+::-webkit-scrollbar-corner{background:transparent}
+::-webkit-scrollbar-track{margin:9px 3px;border-left:1px solid var(--line);
+  background:repeating-linear-gradient(0deg,transparent 0 6px,color-mix(in srgb,var(--line) 55%,transparent) 6px 7px)}
+::-webkit-scrollbar-thumb{border-radius:2px;border:3px solid transparent;background-clip:padding-box;
+  background:linear-gradient(var(--line2),var(--line2)) padding-box,
+    repeating-linear-gradient(0deg,transparent 0 2px,color-mix(in srgb,var(--bg) 45%,transparent) 2px 3px) padding-box;
+  box-shadow:inset 0 0 0 1px var(--line2)}
+/* hover = 중립 그레이로 밝아지기만(시안 강조·발광 없음) */
+::-webkit-scrollbar-thumb:hover{background:linear-gradient(var(--tx3),var(--tx3)) padding-box,
+    repeating-linear-gradient(0deg,transparent 0 2px,color-mix(in srgb,var(--bg) 45%,transparent) 2px 3px) padding-box;
+  box-shadow:inset 0 0 0 1px var(--tx3)}
+
+/* ============================================================
+   화면 프리뷰 공통 (display_preview · transitions_preview 공유 헤더/스크롤 영역)
+   ============================================================ */
+.prev{flex:1;overflow-y:auto;padding:clamp(16px,4vh,38px) clamp(20px,5vw,66px)}
+.phead .kick{font-family:'Share Tech Mono';font-size:var(--fs-xs);letter-spacing:4px;color:var(--acc);margin-bottom:10px}
+.phead h1{font-family:'Chakra Petch';font-weight:600;font-size:var(--fs-xl);letter-spacing:1px;color:var(--tx);margin-bottom:10px}
+.phead .note{font-family:'Share Tech Mono';font-size:var(--fs-xs);line-height:1.95;color:var(--tx3);letter-spacing:.3px;max-width:660px}
+
+/* ===== 하단 푸터 ===== */
+.foot{display:flex;align-items:center;height:50px;flex:0 0 50px;border-top:1px solid var(--line);font-family:'Share Tech Mono';font-size:var(--fs-xs);letter-spacing:1px;color:var(--tx3)}
+.foot .g{color:var(--tx2)}
+.foot .r{margin-left:auto}

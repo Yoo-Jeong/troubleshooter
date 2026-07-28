@@ -1,0 +1,57 @@
+<!-- ============================================================
+     홈 화면 조각 · 미니멀 모드 (중앙 링 + 하단 그리드 nav)
+     ※ index.html 이 가져가 끼우는 "화면 한 장". 색·데이터는 공통 기준.
+        경로는 루트 기준(assets/…, characters.html).
+     ============================================================ -->
+<style>
+  .feature{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;padding:6px 0;overflow:hidden}
+  .feature .kick{font-family:'Share Tech Mono';font-size:var(--fs-sm);letter-spacing:5px;color:var(--acc);margin-bottom:18px}
+  .feature .sub{font-family:'Share Tech Mono';font-size:var(--fs-xs);letter-spacing:2.5px;color:var(--tx2);margin-top:34px}
+  .feature .boot{font-family:'Share Tech Mono';font-size:var(--fs-2xs);color:var(--tx3);margin-top:10px;height:16px}
+  .feature .boot .c{display:inline-block;width:5px;height:11px;background:var(--acc);vertical-align:-1px;margin-left:1px;animation:mbl 1.1s step-end infinite}
+  @keyframes mbl{50%{opacity:0}}
+
+  .mring{position:relative;width:clamp(210px,30vh,280px);aspect-ratio:1;display:flex;align-items:center;justify-content:center}
+  .mring svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .mring .spin{transform-origin:150px 150px;animation:msp 90s linear infinite}
+  @keyframes msp{to{transform:rotate(360deg)}}
+  .mring .logo{width:56%;opacity:.92}
+  :root[data-theme="light"] .mring .logo{filter:brightness(.6) saturate(1.5)}
+
+  /* 하단 그리드 nav — 화면 하단 고정(콘솔처럼) */
+  .mgrid{width:min(1100px,calc(100% - 24px));margin:0 auto 18px;display:grid;grid-template-columns:repeat(4,1fr);
+    gap:1px;background:var(--line);border:1px solid var(--line)}
+  .mgrid a{position:relative;background:var(--panel);padding:20px 18px 18px;display:flex;flex-direction:column;gap:4px;
+    text-decoration:none;color:inherit;transition:background .22s}
+  .mgrid a .bar{position:absolute;left:0;right:0;top:-1px;height:1px;background:var(--acc);transform:scaleX(0);transform-origin:left;transition:transform .3s ease}
+  .mgrid a .n{font-family:'Share Tech Mono';font-size:var(--fs-xs);letter-spacing:1px;color:var(--tx3)}
+  .mgrid a .en{font-family:'Chakra Petch';font-weight:500;font-size:var(--fs-md);letter-spacing:.5px;margin-top:6px;color:var(--tx2)}
+  .mgrid a .ko{font-size:var(--fs-sm);color:var(--tx3);letter-spacing:.5px}
+  .mgrid a .go{position:absolute;right:18px;bottom:20px;font-family:'Share Tech Mono';font-size:var(--fs-sm);color:var(--tx3);opacity:.7;white-space:nowrap;transition:.25s}
+  .mgrid a:hover{background:color-mix(in srgb,var(--acc) 8%,var(--panel))}
+  .mgrid a:hover .bar{transform:scaleX(1)}
+  .mgrid a:hover .n,.mgrid a:hover .en{color:var(--acc)}
+  .mgrid a:hover .go{color:var(--acc);opacity:.95}
+
+  @media(max-width:760px){.mgrid{grid-template-columns:repeat(2,1fr)}}
+</style>
+
+<main class="feature">
+  <div class="kick mono">DATABASE ACCESS</div>
+  <div class="mring">
+    <svg viewBox="0 0 300 300" aria-hidden="true">
+      <circle cx="150" cy="150" r="132" fill="none" stroke="var(--line2)" stroke-width="1"/>
+      <g class="spin"><circle cx="150" cy="150" r="132" fill="none" stroke="var(--acc)" stroke-width="1.4" stroke-dasharray="40 360" stroke-linecap="round"/><circle cx="150" cy="18" r="2" fill="var(--acc)"/></g>
+    </svg>
+    <img class="logo" src="assets/img/ui/ts_typo.png" alt="TROUBLESHOOTER">
+  </div>
+  <div class="sub mono">INTEGRATED DATABASE · 통합 데이터베이스</div>
+  <div class="boot mono"><span id="boot2"></span><span class="c"></span></div>
+</main>
+
+<nav class="mgrid" aria-label="데이터베이스 접근">
+  <a href="world/" data-ts="accesslog"><span class="bar"></span><span class="n mono">01</span><span class="en">WORLD</span><span class="ko">세계관</span><span class="go mono">→ ENTER</span></a>
+  <a href="characters.html" data-ts="accesslog"><span class="bar"></span><span class="n mono">02</span><span class="en">CHARACTERS</span><span class="ko">인물</span><span class="go mono">→ ACCESS</span></a>
+  <a href="gallery/" data-ts="accesslog"><span class="bar"></span><span class="n mono">03</span><span class="en">GALLERY</span><span class="ko">갤러리</span><span class="go mono">→ ENTER</span></a>
+  <a href="logs/" data-ts="accesslog"><span class="bar"></span><span class="n mono">04</span><span class="en">LOGS</span><span class="ko">교신기록</span><span class="go mono">→ ENTER</span></a>
+</nav>

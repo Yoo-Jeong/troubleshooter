@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TROUBLESHOOTER // GALLERY</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/common.css?v=2">
+<!-- data-theme를 사이트 공통 설정(다크/라이트)에 맞춰줌 — 이게 없으면 아래 CSS 변수가 항상 다크 값으로만 고정됨 -->
+<script src="../assets/js/common.js?v=4"></script>
+<style>
+  /* ★색은 common.css 변수(--tx*/--bg*/--acc*)로 — 예전엔 profile.css 쪽 이름(--ink-faint 등)을 잘못 가져다 써서
+     이 페이지에선 정의되지 않은 변수라 항상 괄호 안 하드코딩 색(다크 고정)으로만 보였음(2026-07-27 라이트테마 지적으로 수정). */
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+    background:var(--bg);color:var(--tx3);font-family:'Share Tech Mono',monospace}
+  /* common.js가 모든 페이지에 공통으로 주입하는 기기 외곽(.device/.fx, position:fixed)이 이 내용 위를 덮어버려서
+     (제자리에 있긴 하지만 안 보임 — position:fixed 요소는 z-index 없이도 일반 흐름 요소보다 항상 나중에 그려짐)
+     .screen과 같은 방식(position:relative + z-index)으로 그 위로 끌어올린다(2026-07-27 라이트테마 작업 중 발견). */
+  .ph-wrap{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;gap:12px}
+  .ph-code{font-family:'Orbitron';font-weight:900;font-size:clamp(48px,10vw,96px);color:transparent;
+    -webkit-text-stroke:1.5px var(--acc2);letter-spacing:6px}
+  /* ★라이트 테마만 스트로크를 불투명 --acc로(2026-07-27 가시성 지적으로 수정) — 반투명 --acc2는 다크 배경에선
+     은은하게 잘 어울렸지만 밝은 배경 위에선 대비가 너무 죽어 잘 안 보였음. 다크는 원래(은은한) 그대로 두고
+     라이트만 홈 화면 로고 링·SECURE LINK 점과 같은 방식(불투명 --acc)으로 또렷하게. */
+  :root[data-theme="light"] .ph-code{-webkit-text-stroke-color:var(--acc)}
+  .ph-name{font-size:14px;letter-spacing:4px;color:var(--tx2)}
+  .ph-sub{font-size:11px;letter-spacing:2px;opacity:.6}
+  a{color:var(--acc);text-decoration:none;font-size:12px;letter-spacing:2px;margin-top:16px}
+  a:hover{opacity:.75}
+</style>
+</head>
+<body>
+  <div class="ph-wrap">
+    <div class="ph-code">GALLERY</div>
+    <div class="ph-name">갤러리</div>
+    <div class="ph-sub">· 준비중 ·</div>
+    <a href="../index.html" data-ts="fade">◂ TS·OS HOME</a>
+  </div>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TS·OS // DISPLAY MODE PREVIEW</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600&family=Share+Tech+Mono&family=Gothic+A1:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
+<link rel="stylesheet" href="assets/css/common.css?v=2">
+<link rel="stylesheet" href="assets/css/transitions.css?v=1">
+<script src="assets/js/common.js?v=4"></script>
+<script src="assets/js/transitions.js?v=3"></script>
+
+<style>
+  /* 스크롤바·.prev·.phead 는 common.css 공통 스타일 사용 */
+  .modes{display:flex;flex-direction:column;gap:30px;margin-top:26px;max-width:960px}
+  .mcard{border:1px solid var(--line);background:var(--panel);border-radius:10px;overflow:hidden;
+    display:flex;flex-direction:column;transition:border-color .2s}
+  .mcard.cur{border-color:var(--acc);box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 30%,transparent)}
+  /* 실시간 미리보기 (index 를 해당 모드로 강제한 iframe, 스케일 다운) */
+  .mframe{position:relative;width:100%;overflow:hidden;background:var(--bg);border-bottom:1px solid var(--line);pointer-events:none}
+  .mframe iframe{position:absolute;top:0;left:0;width:1280px;height:960px;border:0;transform-origin:top left}
+  .minfo{display:flex;align-items:center;gap:14px;padding:15px 18px}
+  .minfo .mi{flex:1;min-width:0}
+  .minfo .mname{font-family:'Chakra Petch';font-weight:600;font-size:var(--fs-md);color:var(--tx);display:flex;align-items:center;gap:10px}
+  .minfo .cur-badge{font-family:'Share Tech Mono';font-size:var(--fs-2xs);letter-spacing:1px;color:var(--acc);border:1px solid color-mix(in srgb,var(--acc) 50%,var(--line));border-radius:3px;padding:2px 6px;display:none}
+  .mcard.cur .cur-badge{display:inline-block}
+  .minfo .mdesc{font-family:'Share Tech Mono';font-size:var(--fs-xs);letter-spacing:.4px;color:var(--tx3);margin-top:5px}
+  .mapply{font-family:'Share Tech Mono';font-size:var(--fs-xs);letter-spacing:1px;color:var(--acc);white-space:nowrap;
+    border:1px solid color-mix(in srgb,var(--acc) 45%,var(--line));background:transparent;padding:10px 16px;border-radius:6px;cursor:pointer;transition:.18s}
+  .mapply:hover{background:var(--acc);color:var(--bg);border-color:var(--acc)}
+  .mcard.cur .mapply{opacity:.5;pointer-events:none}
+  /* EXTRA(추가) 칩 — 이름 옆 작은 표식. 설정 토글엔 없지만 여기선 적용 가능함을 알림 */
+  .mtag{font-family:'Share Tech Mono';font-size:var(--fs-2xs);letter-spacing:1px;color:var(--tx3);vertical-align:1px;
+    border:1px dashed var(--line2);border-radius:4px;padding:1px 6px}
+  .gohome{display:inline-flex;align-items:center;gap:8px;margin-top:24px;font-family:'Share Tech Mono';font-size:var(--fs-sm);letter-spacing:1px;
+    color:var(--tx2);text-decoration:none;border:1px solid var(--line);border-radius:6px;padding:11px 18px;transition:.18s}
+  .gohome:hover{border-color:var(--acc);color:var(--acc)}
+</style>
+</head>
+<body data-os="DISPLAY PREVIEW">
+  <div class="screen">
+    <div class="osbar mono">
+      <img class="lg" src="assets/img/ui/ts_typo.png" alt="">
+      <span class="os">TS·OS</span>
+      <span class="sec"><span class="d"></span>SECURE LINK</span>
+      <div class="right">
+        <span>DISPLAY PREVIEW</span>
+        <span class="sig"><i></i><i></i><i></i><i></i></span>
+        <span id="clock">--:--</span>
+        <button class="tg" id="themeBtn" title="테마 전환">◐</button>
+      </div>
+    </div>
+
+    <main class="prev">
+      <div class="phead">
+        <div class="kick mono">DISPLAY MODE PREVIEW</div>
+        <h1>홈 디스플레이 모드</h1>
+        <p class="note">홈 화면 레이아웃을 실시간 미리보기로 비교합니다. 아래는 실제 index 를 각 모드로 렌더한 화면입니다.
+          "이 모드로 설정"을 누르면 기본 모드가 저장되고, 홈에서 재구성 전환과 함께 적용됩니다.
+          <span style="color:var(--tx2)">EXTRA</span> 표시(미니멀·Orbit)는 추가 레이아웃입니다 — 설정 패널 토글엔 안 나오지만, 이 프리뷰에서는 4종 모두 실제 적용할 수 있습니다.</p>
+      </div>
+
+      <div class="modes" id="modes"></div>
+
+      <a class="gohome" href="index.html" data-ts="fade">◂ 홈으로 가서 확인</a>
+    </main>
+  </div>
+
+<script>
+  // 홈 디스플레이 모드 — common.js 가 노출한 단일 출처를 참조 (하드코딩 제거).
+  // 프리뷰는 전체 4종(TS_PREVIEW_MODES) 표시. exp:true(미니멀·오빗)는 미리보기 전용 → 설정 버튼 대신 EXP 배지.
+  var MODES = window.TS_PREVIEW_MODES || window.TS_HOME_MODES || [];
+  function curMode(){ try{ return localStorage.getItem('ts-home') || 'pcb'; }catch(e){ return 'pcb'; } }
+
+  var box = document.getElementById('modes');
+  MODES.forEach(function(m){
+    var card = document.createElement('div');
+    card.className = 'mcard' + (curMode()===m.id ? ' cur' : '');
+    card.setAttribute('data-mode', m.id);
+    // EXTRA(추가) 모드는 설정 패널 토글엔 없지만, 여기 프리뷰에선 4종 모두 실제 적용 가능
+    var expChip = m.exp ? ' <span class="mtag mono">EXTRA</span>' : '';
+    card.innerHTML =
+      '<div class="mframe"><iframe loading="lazy" scrolling="no" title="'+m.name+' 미리보기" src="index.html?home='+m.id+'&bare=1"></iframe></div>'+
+      '<div class="minfo"><div class="mi">'+
+        '<div class="mname">'+m.name+expChip+' <span class="cur-badge">현재 적용됨</span></div>'+
+        '<div class="mdesc">'+m.desc+'</div></div>'+
+        '<button class="mapply">이 모드로 설정 →</button></div>';
+    card.querySelector('.mapply').addEventListener('click', function(){
+      try{ localStorage.setItem('ts-home', m.id); }catch(e){}
+      document.querySelectorAll('.mcard').forEach(function(c){ c.classList.toggle('cur', c.getAttribute('data-mode')===m.id); });
+    });
+    box.appendChild(card);
+  });
+
+  // iframe 을 카드 폭에 맞춰 스케일 다운 (index 는 1280×800 기준으로 렌더)
+  function fit(){
+    document.querySelectorAll('.mframe').forEach(function(fr){
+      var f = fr.querySelector('iframe');
+      var s = fr.clientWidth / 1280;
+      f.style.transform = 'scale(' + s + ')';
+      fr.style.height = (960 * s) + 'px';
+    });
+  }
+  window.addEventListener('resize', fit);
+  fit(); setTimeout(fit, 300);
+
+  // 테마 토글(◐) → 부모 data-theme 변경을 iframe 미리보기에도 즉시 반영 (same-origin)
+  function syncTheme(){
+    var t = document.documentElement.getAttribute('data-theme');
+    document.querySelectorAll('.mframe iframe').forEach(function(f){
+      try{ if(f.contentDocument) f.contentDocument.documentElement.setAttribute('data-theme', t); }catch(e){}
+    });
+  }
+  new MutationObserver(syncTheme).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+  // iframe 로드 완료 시점에도 한 번 맞춰줌 (로드 순서 상관없이)
+  document.querySelectorAll('.mframe iframe').forEach(function(f){ f.addEventListener('load', syncTheme); });
+</script>
+</body>
+</html>

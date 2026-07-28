@@ -1,0 +1,15 @@
+# ============================================================
+#  TROUBLESHOOTER · TS·OS 아카이브 — Jekyll 설정
+#  · 원본(사람이 쓴 것)은 전부 src/ 안에 있음 (source: src)
+#  · 빌드 결과물은 _site/ 로 나옴 (jekyll serve 로 로컬 미리보기)
+# ============================================================
+title: TROUBLESHOOTER
+lang: ko
+
+source: src          # ★ 원본 폴더 (src 안의 것만 빌드)
+destination: _site   # 결과물 폴더 (루트)
+
+# 브라우저 파일 저장 API(작성 툴 💾)가 남기는 임시 스왑 파일(.crswap)은 빌드에서 제외.
+# (제외 안 하면 index.html.crswap 이 index.html 사본이라 캐릭터가 목록에 중복으로 뜸)
+exclude:
+  - "**/*.crswap"

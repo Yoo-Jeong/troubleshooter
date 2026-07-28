@@ -1,2 +1,10 @@
 # 개인 작업공간 (git 제외) — 원본 자료 / 레퍼런스 / 코드 백업
 _local/
+
+# Jekyll 빌드 산출물 / 캐시 (커밋 안 함)
+_site/
+.jekyll-cache/
+.sass-cache/
+
+# 브라우저 파일 저장 API(작성 툴 💾)가 남기는 임시 스왑 파일
+*.crswap
