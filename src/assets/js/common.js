@@ -3,6 +3,10 @@
    이 파일 하나만 고치면 홈·캐릭터 목록 전 페이지에 반영됩니다.
    ============================================================ */
 
+// 이 스크립트 자신이 실제로 로드된 주소를 지금(동기 실행 중) 잡아둔다 — TSROOT()가 이걸로 사이트 루트를 계산.
+//   DOMContentLoaded 안(비동기)에서 document.currentScript를 읽으면 이미 null이라 반드시 여기서 미리 저장해야 함.
+var TS_SELF_SRC = document.currentScript && document.currentScript.src;
+
 /* 1) 테마 + 홈 디스플레이 모드를 렌더 전에 즉시 적용 (깜빡임 방지) — <head>에서 실행됨
    · URL ?home=pcb|terminal 로 모드 강제(프리뷰 iframe용, localStorage 안 건드림)
    · URL ?bare=1 이면 부팅/설정톱니 생략(프리뷰 iframe용) → data-bare */
@@ -60,8 +64,19 @@ document.addEventListener('DOMContentLoaded', function(){
       '<div class="fx"></div>');
   }
 
-  // 현재 페이지 → 사이트 루트까지의 상대 접두어("" | "../" | "../../" …). 폴더 깊이 자동(characters/x/ 등).
+  // 현재 페이지 → 사이트 루트까지의 접두어.
+  //   ★이 스크립트(common.js)는 항상 "<사이트 루트>/assets/js/common.js"에 있다는 사실을 이용 —
+  //   자신이 실제로 로드된 주소(TS_SELF_SRC)에서 "assets/js/common.js…" 뒷부분을 떼어내면 사이트 루트가 나온다.
+  //   이 방식은 사이트가 도메인 루트(username.github.io/)에 있든, GitHub Pages 프로젝트 페이지처럼
+  //   하위경로(username.github.io/저장소이름/)에 있든 항상 정확하다(예전엔 URL 슬래시 개수만 세서
+  //   "../"를 몇 개 붙일지 계산했는데, 그건 사이트가 도메인 루트에 있다고 가정한 계산이라 하위경로
+  //   배포에선 한 단계씩 부족해 로고·SYSTEM CONFIG 링크가 사이트 바깥으로 새는 버그가 있었음, 2026-08-02).
   function TSROOT(){
+    if(TS_SELF_SRC){
+      var m = TS_SELF_SRC.match(/^(.*\/)assets\/js\/common\.js(?:[?#].*)?$/);
+      if(m) return m[1];
+    }
+    // 위 방법이 안 통할 때(스크립트 태그를 다른 이름/경로로 불러온 경우 등)만 예전 방식으로 대체.
     var dir = location.pathname.replace(/[^/]*$/, '');          // 파일명 제거 → 디렉토리
     var depth = (dir.match(/\//g) || []).length - 1;            // 슬래시 수 - 1(선두)
     return depth > 0 ? new Array(depth + 1).join('../') : '';
@@ -71,10 +86,13 @@ document.addEventListener('DOMContentLoaded', function(){
   (function(){
     var lg = document.querySelector('.osbar .lg');
     if(!lg || (lg.parentNode && lg.parentNode.classList && lg.parentNode.classList.contains('home'))) return;
-    var p = location.pathname;
-    var pfx = TSROOT();                                         // 루트까지 접두어
+    var pfx = TSROOT();                                         // 루트까지 접두어(이제 절대 URL일 수도 있음)
     var home = pfx + 'index.html';
-    var isHome = pfx==='' && /(^|\/)(index\.html)?$/.test(p); // 루트 index.html 또는 '/'
+    // ★TSROOT()가 이제 상대경로("../")뿐 아니라 절대 URL도 돌려줄 수 있어서, 예전처럼 pfx==='' 로
+    //   "지금이 루트냐"를 판단할 수 없다 — 두 후보(홈 파일 자체 · 파일명 없이 폴더로 접속한 경우) 모두
+    //   절대 URL로 정규화해 지금 주소와 직접 비교(도메인 루트든 하위경로든 항상 정확).
+    var hereAbs = location.href.split(/[?#]/)[0];
+    var isHome = hereAbs === new URL(home, location.href).href || hereAbs === new URL(pfx || '.', location.href).href;
     var osbar = lg.parentNode;
     var a = document.createElement('a');
     a.className = 'home' + (isHome ? ' here' : '');
