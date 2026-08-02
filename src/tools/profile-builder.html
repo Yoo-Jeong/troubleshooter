@@ -564,7 +564,7 @@
 <!-- 무대 효과 컨트롤러: 부모창에서도 TSFX.effects()/presets() 를 읽어 효과 목록을 구성(단일 출처). ?v= 는 캐시 무력화(stage-fx 갱신 시 character.html 과 함께 bump).
      ★경로는 이 파일(tools/profile-builder.html) 기준 상대경로(../)로 씀 — 루트에 절대경로("/...")를 쓰면 GitHub Pages처럼
      사이트가 도메인 루트가 아닌 하위경로(예: /troubleshooter/)에 배포됐을 때 전부 깨진다. -->
-<script src="../assets/js/stage-fx.js?v=129"></script>
+<script src="../assets/js/stage-fx.js?v=130"></script>
 <script>
 "use strict";
 var $ = function(s){ return document.querySelector(s); };
@@ -1856,7 +1856,7 @@ function buildSrcdoc(st){
       'window.CHAR_WARDROBE='+CH(ward)+';window.CHAR_GENERATIONS='+CH(gens)+';<\/script>'+
     '<script src="../../assets/js/common.js?v=7"><\/script>'+
     '<script src="../../assets/js/profile.js?v=32"><\/script>'+
-    '<script src="../../assets/js/stage-fx.js?v=129"><\/script>'+
+    '<script src="../../assets/js/stage-fx.js?v=130"><\/script>'+
     // 서술/확장 카드 안 코드블럭 문법강조(실제 페이지 _layouts/character.html과 같은 CDN 라이브러리 — 모양 바꾸면 거기도 같이).
     //   미리보기는 폼을 고칠 때마다 liveText()가 이 패널만 다시 그리는데, 그때는 페이지 재로드가 아니라서 이 스크립트가 다시
     //   안 돌아감 → liveText() 쪽에서 win.hljs.highlightAll()을 직접 한 번 더 불러줌(중복 호출은 hljs가 알아서 건너뜀, 안전).

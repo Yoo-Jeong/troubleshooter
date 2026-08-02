@@ -2149,6 +2149,8 @@ window.TSFX = (function () {
       ctx.clearRect(homeX, y, dwr, tearPx);
       ctx.drawImage(art, sxr, srcY, swr, srcH, homeX + dx, y + dy, dwr, tearPx);
       if (flash) {                                          // 번쩍이는 순간 = 같은 조각을 단색으로 덧칠
+        // ★옷장 의상이 바뀌면(art.src 변경) 이 캐시도 같이 비워야 옛 의상이 안 보임 — getSil과 같은 이유(2026-08-03).
+        if (s.tintSrc !== art.currentSrc) { s.tintCache = {}; s.tintSrc = art.currentSrc; }
         var tinted = tintImage(s, art, flash);
         ctx.save(); ctx.globalAlpha = s.flashAlpha;
         ctx.drawImage(tinted, sxr, srcY, swr, srcH, homeX + dx, y + dy, dwr, tearPx);
@@ -2161,6 +2163,10 @@ window.TSFX = (function () {
   //   테마/캐릭터색이 바뀌면 색 문자열이 달라져 자동으로 새로 만든다.
   function getSil(s, art, color){
     if(!art || !art.complete || !art.naturalWidth) return null;
+    // ★옷장에서 의상을 바꿔 art.src가 바뀌면 실루엣도 새로 그려야 한다(2026-08-03) —
+    //   전엔 색상별로만 캐시해서, 한 번 그려두면 옷장을 바꿔도 처음 그렸을 때의 옛 의상 실루엣이
+    //   그대로 남아 있었음(예: 셀루카 '이중인격' 효과가 항상 후드 실루엣만 보여주던 버그).
+    if (s.silSrc !== art.currentSrc) { s.silCache = {}; s.silSrc = art.currentSrc; }
     s.silCache = s.silCache || {};
     if(!s.silCache[color]){
       var c = document.createElement('canvas');
