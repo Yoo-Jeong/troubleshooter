@@ -561,8 +561,10 @@
   </div>
 </div>
 
-<!-- 무대 효과 컨트롤러: 부모창에서도 TSFX.effects()/presets() 를 읽어 효과 목록을 구성(단일 출처). ?v= 는 캐시 무력화(stage-fx 갱신 시 character.html 과 함께 bump). -->
-<script src="/assets/js/stage-fx.js?v=129"></script>
+<!-- 무대 효과 컨트롤러: 부모창에서도 TSFX.effects()/presets() 를 읽어 효과 목록을 구성(단일 출처). ?v= 는 캐시 무력화(stage-fx 갱신 시 character.html 과 함께 bump).
+     ★경로는 이 파일(tools/profile-builder.html) 기준 상대경로(../)로 씀 — 루트에 절대경로("/...")를 쓰면 GitHub Pages처럼
+     사이트가 도메인 루트가 아닌 하위경로(예: /troubleshooter/)에 배포됐을 때 전부 깨진다. -->
+<script src="../assets/js/stage-fx.js?v=129"></script>
 <script>
 "use strict";
 var $ = function(s){ return document.querySelector(s); };
@@ -772,7 +774,7 @@ function pick(html, re){ var m=html.match(re); return m? m[1] : null; }
 function loadCharacter(slug){
   if(!slug) return;
   loadMsg('불러오는 중… '+slug);
-  fetch('/characters/'+encodeURIComponent(slug)+'/').then(function(r){
+  fetch('../characters/'+encodeURIComponent(slug)+'/').then(function(r){
     if(!r.ok) throw new Error('HTTP '+r.status); return r.text();
   }).then(function(html){
     var d={ slug:slug,
@@ -1760,7 +1762,9 @@ function buildFile(st){ return '---\n'+buildFM(st)+'\n---\n'+st.body+'\n'; }
 /* ---------- 상태 → 미리보기 iframe(srcdoc) ---------- */
 var EDIT_MODE = false;   // 무대 배치 편집 모드 — 켜면 buildSrcdoc 가 미리보기에 편집기를 넣음
 function buildSrcdoc(st){
-  var base = '/characters/' + (st.slug || '_preview') + '/';
+  // ★상대경로(../)로 계산 — 이 페이지(tools/profile-builder.html) 기준 실제 캐릭터 페이지 위치를 흉내냄.
+  //   절대경로("/characters/...")를 쓰면 사이트가 도메인 루트가 아닌 하위경로에 배포됐을 때(예: GitHub Pages 프로젝트 페이지) 깨진다.
+  var base = '../characters/' + (st.slug || '_preview') + '/';
   // 미리보기는 '지금 편집 중인 세대(CUR_GEN)'를 보여줌 → current=CUR_GEN, 대표색·프레임도 그 세대 것
   var curGd = GEN_FORMS[CUR_GEN] || blankGen();
   var accent = curGd.accent || st.accent || '#bfc7d4';
@@ -1777,7 +1781,7 @@ function buildSrcdoc(st){
   // 무대 배치 편집(=페이지 ?edit) : 편집 모드일 때만 edit-core.js + 툴 어댑터를 미리보기에 주입.
   //   어댑터 = editor.js 와 같은 레이어(일러/고스트)를 쓰되, 파일쓰기 대신 값을 parent.pvStageEdit 로 되돌림(편집 코어 재사용, 이중구현 없음).
   var editorScript = !EDIT_MODE ? '' :
-    '<script src="/assets/js/edit-core.js?v=1"><\/script>'+
+    '<script src="../../assets/js/edit-core.js?v=1"><\/script>'+
     '<script>(function(){var P=window.TSProfile;if(!P||!P.art||!window.TSEditCore)return;'+
     'var F=[{id:"art",name:"▤ 일러",anchorBottom:true,el:function(){return P.art;},fields:['+
       '{k:"크기",v:"--art-h",min:30,max:220,def:118,kind:"h",a:"data-arth"},'+
@@ -1804,9 +1808,9 @@ function buildSrcdoc(st){
   return '<!DOCTYPE html><html lang="ko" data-theme="'+THEME+'"><head><meta charset="UTF-8">'+
     '<base href="'+base+'">'+
     '<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Chakra+Petch:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Share+Tech+Mono&family=Gothic+A1:wght@300;400;500;700;800&display=swap" rel="stylesheet">'+
-    '<link rel="stylesheet" href="/assets/css/common.css">'+
-    '<link rel="stylesheet" href="/assets/css/transitions.css">'+
-    '<link rel="stylesheet" href="/assets/css/profile.css?v=46">'+
+    '<link rel="stylesheet" href="../../assets/css/common.css">'+
+    '<link rel="stylesheet" href="../../assets/css/transitions.css">'+
+    '<link rel="stylesheet" href="../../assets/css/profile.css?v=46">'+
     '<style>:root,:root[data-theme="dark"]{--accent:'+accent+';--accent2:'+accent2+';'+(st.statPlus?'--stat-plus:'+st.statPlus+';':'')+'}:root[data-theme="light"]{--accent:'+accentL+';'+(accent2L?'--accent2:'+accent2L+';':'')+'}'+
     '.stage .ghost{display:block}'+   /* 미리보기(폭 좁음)에서 고스트 확실히 표시 — profile.css 캐시와 무관하게. !important 안 씀=이미지 없을 때 profile.js 인라인 숨김은 존중 */
     '[data-edit]{cursor:text;border-radius:3px}[data-edit]:hover{box-shadow:0 0 0 1px var(--accent-line,#7aa)}[data-edit]:focus{outline:none;box-shadow:0 0 0 2px var(--accent);background:rgba(120,180,210,.07)}'+
@@ -1827,14 +1831,14 @@ function buildSrcdoc(st){
     '.fmt-bar button:hover{background:rgba(255,255,255,.15)}'+
     '.fmt-bar button.on{background:var(--accent);color:#fff}</style>'+
     '</head><body><div class="mscreen">'+
-      '<div class="osbar mono"><img class="lg" src="/assets/img/ui/ts_typo.png" alt="">'+
+      '<div class="osbar mono"><img class="lg" src="../../assets/img/ui/ts_typo.png" alt="">'+
       '<span class="os">TS·OS</span><span class="sec"><span class="d"></span>SECURE LINK</span>'+
       '<div class="right"><span data-meta="record"></span>'+
       '<span class="sig"><i></i><i></i><i></i><i></i></span>'+
       '<span class="bat"><span>82%</span><span class="b"><i></i></span></span>'+
       '<span id="clock">--:--</span><button class="tg" id="themeBtn" title="테마">◐</button></div></div>'+
       '<div class="topbar"><div class="brand"><div class="bt">TROUBLE<span>SHOOTER</span> <span class="tag" data-meta="sector"></span></div>'+
-      '<div class="crumb"><a href="/characters.html">◂ CHARACTERS</a> · <b data-meta="crumb"></b></div></div></div>'+
+      '<div class="crumb"><a href="../../characters.html">◂ CHARACTERS</a> · <b data-meta="crumb"></b></div></div></div>'+
       '<div class="sheet"><div class="left-fixed">'+
       '<button class="stage-fold-tab mono" id="stageViewToggle" type="button" title="옷장·무대 접기/펼치기">‹</button>'+
       '<aside class="wardrobe"><div class="track"></div></aside>'+
@@ -1850,9 +1854,9 @@ function buildSrcdoc(st){
       '<div class="fmt-bar" id="fmtBar" hidden><button type="button" data-fmt="bold"><b>B</b></button><button type="button" data-fmt="italic"><i>I</i></button><button type="button" data-fmt="quote" title="인용문으로">&ldquo;</button><button type="button" data-fmt="faint" title="회색 글자로(연하게)" style="opacity:.6">A</button><button type="button" data-fmt="code" title="코드블럭으로(고른 문단 전체)" style="font-family:monospace">&lt;/&gt;</button></div>'+   // 글자 선택 시 뜨는 서식 툴바
     '<script>window.CHAR_META='+CH(st.meta)+';window.CHAR_STATS='+CH(st.stats)+';'+
       'window.CHAR_WARDROBE='+CH(ward)+';window.CHAR_GENERATIONS='+CH(gens)+';<\/script>'+
-    '<script src="/assets/js/common.js?v=6"><\/script>'+
-    '<script src="/assets/js/profile.js?v=31"><\/script>'+
-    '<script src="/assets/js/stage-fx.js?v=129"><\/script>'+
+    '<script src="../../assets/js/common.js?v=6"><\/script>'+
+    '<script src="../../assets/js/profile.js?v=31"><\/script>'+
+    '<script src="../../assets/js/stage-fx.js?v=129"><\/script>'+
     // 서술/확장 카드 안 코드블럭 문법강조(실제 페이지 _layouts/character.html과 같은 CDN 라이브러리 — 모양 바꾸면 거기도 같이).
     //   미리보기는 폼을 고칠 때마다 liveText()가 이 패널만 다시 그리는데, 그때는 페이지 재로드가 아니라서 이 스크립트가 다시
     //   안 돌아감 → liveText() 쪽에서 win.hljs.highlightAll()을 직접 한 번 더 불러줌(중복 호출은 hljs가 알아서 건너뜀, 안전).
@@ -2487,7 +2491,7 @@ $('#loadPick').onchange = function(){ if(this.value) loadCharacter(this.value); 
 // 불러오기 드롭다운을 실제 캐릭터 목록(characters.html 로스터)과 동기화 → 신규 캐릭터 자동 표시.
 // 못 읽으면(오프라인 등) HTML에 박아둔 기본 목록을 그대로 둔다.
 (function syncLoadList(){
-  fetch('/characters.html').then(function(r){ return r.ok ? r.text() : ''; }).then(function(html){
+  fetch('../characters.html').then(function(r){ return r.ok ? r.text() : ''; }).then(function(html){
     // id·ko 는 값이 없으면 목록이 null(따옴표 없이)로 출력 → 그 캐릭터도 누락 없이 잡히게 "값" 또는 null 모두 허용.
     var re=/\{\s*k:\s*"([^"]+)"[^}]*?id:\s*(?:"([^"]*)"|null)[^}]*?ko:\s*(?:"([^"]*)"|null)[^}]*?ht:\s*(\d+)/g, m, items=[];
     while(m=re.exec(html)) items.push({ slug:m[1], id:m[2]||'', ko:m[3]||'', ht:+m[4] });   // ht = 키(cm) · 라인업 비교 라벨용
@@ -2714,7 +2718,7 @@ async function saveToSite(repick){
     // 4) 저장 완료 안내 + 그 캐릭터 페이지 바로 열기 링크
     var e=$('#saveMsg'); if(e){ e.style.color='var(--ok)';
       var isNewChar=!TOOL_ROSTER.some(function(r){ return r.slug===slug; });   // 이번에 처음 만든 캐릭터?
-      e.innerHTML='✓ 저장됨 · <a href="/characters/'+encodeURIComponent(slug)+'/" target="_blank" rel="noopener" style="color:var(--acc)">그 페이지 열기 ↗</a>'+
+      e.innerHTML='✓ 저장됨 · <a href="../characters/'+encodeURIComponent(slug)+'/" target="_blank" rel="noopener" style="color:var(--acc)">그 페이지 열기 ↗</a>'+
         (n?' <span style="color:var(--dim)">(이미지 '+n+'개)</span>':'')+
         (lineupSaved?' <span style="color:var(--dim)">(키 비교 라인업 저장됨)</span>':'')+
         (lineupPending?' <br><span style="color:var(--warn)">⚠ 키 비교 이미지는 아직 준비 중이라 저장 안 됨 — 미리보기가 뜬 뒤 다시 저장하세요</span>':'')+
@@ -2746,7 +2750,7 @@ var LINEUP = {
 // 상수 단일 출처: JSON을 읽어 위 기본값을 덮어씀 → JSON 한 곳만 고치면 py·툴 양쪽 반영.
 // (fetch 실패 시엔 위 기본값 그대로 사용해서 툴이 멈추지 않음. 기본값은 JSON과 같게 유지할 것.)
 (function loadLineupConst(){
-  fetch('/assets/lineup-constants.json').then(function(r){ return r.ok ? r.json() : null; }).then(function(c){
+  fetch('../assets/lineup-constants.json').then(function(r){ return r.ok ? r.json() : null; }).then(function(c){
     if(!c) return;
     ['CANVAS_W','OUT_H','FLOOR_GAP','MAX_SIL','TALLEST'].forEach(function(k){
       if(typeof c[k]==='number') LINEUP[k]=c[k];
@@ -2800,7 +2804,7 @@ function loadMainImg(cb){   // 옷장 main 그림을 Image 로 로드 — 로컬
   function done(res){ if(isBlob){ try{ URL.revokeObjectURL(img.src); }catch(e){} } cb(res); }   // blob URL 누수 방지(로드 끝나면 해제)
   img.onload=function(){ done(img); }; img.onerror=function(){ done(null); };
   if(isBlob) img.src=URL.createObjectURL(FILEOBJ[name]);
-  else img.src='/characters/'+encodeURIComponent($('#slug').value.trim())+'/'+encodeURIComponent(name);
+  else img.src='../characters/'+encodeURIComponent($('#slug').value.trim())+'/'+encodeURIComponent(name);
 }
 
 // 키(cm) → 스테이지에서 머리끝 높이(바닥부터 %). 그리드·이름표 위치 계산에 공통 사용.
@@ -2912,7 +2916,7 @@ function probeLineup(slug){
   var img=new Image();
   img.onload=function(){ box.checked=true; toggleResizeBox(); regenLineup(); };
   img.onerror=function(){ box.checked=false; toggleResizeBox(); };
-  img.src='/assets/img/lineup/'+encodeURIComponent(slug)+'.png?'+Date.now();
+  img.src='../assets/img/lineup/'+encodeURIComponent(slug)+'.png?'+Date.now();
 }
 
 render();
