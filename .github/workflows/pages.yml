@@ -34,7 +34,7 @@ jobs:
       - name: Jekyll 설치 (로컬과 같은 버전)
         run: gem install jekyll -v 4.4.1
 
-      - name: 빌드 (source: src → destination: _site, _config.yml 기준)
+      - name: "빌드 (source: src → destination: _site, _config.yml 기준)"
         run: jekyll build
 
       - name: Pages 설정
