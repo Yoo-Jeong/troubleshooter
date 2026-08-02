@@ -11,8 +11,8 @@
 
 <link rel="stylesheet" href="../../assets/css/common.css?v=2">
 <link rel="stylesheet" href="../../assets/css/transitions.css?v=1">
-<link rel="stylesheet" href="../../assets/css/profile.css?v=44">
-<script src="../../assets/js/common.js?v=4"></script>
+<link rel="stylesheet" href="../../assets/css/profile.css?v=46">
+<script src="../../assets/js/common.js?v=6"></script>
 <script src="../../assets/js/transitions.js?v=3"></script>
 
 <style>
@@ -46,6 +46,10 @@
 
   <div class="sheet">
     <div class="left-fixed">
+    <!-- 읽기 모드 : 옷장·무대(.left-fixed)를 접고 서술카드(.file)만 넓게 보기. 옷장·무대와 카드 사이 경계에 걸치는
+         작은 탭이라 "이걸 누르면 옆 패널이 접힌다"는 게 바로 보임(FX ON 같은 상태칩과는 다른 모양).
+         profile.js 맨 아래 IIFE가 상태·클릭 처리(단일 출처) — 방문 취향은 기억 안 함(새로고침·다른 캐릭터 이동 시 항상 기본=무대 보임). -->
+    <button class="stage-fold-tab mono" id="stageViewToggle" type="button" title="옷장·무대 접기/펼치기">‹</button>
     <aside class="wardrobe"><div class="track"></div></aside>
 
     <div class="stage-col">
@@ -110,8 +114,8 @@
   window.CHAR_GENERATIONS = {{ page.generations | jsonify }};
   window.CHAR_ROSTER      = {{ page.roster      | jsonify }};
 </script>
-<script src="../../assets/js/profile.js?v=29"></script>
-<script src="../../assets/js/stage-fx.js?v=126"></script>
+<script src="../../assets/js/profile.js?v=31"></script>
+<script src="../../assets/js/stage-fx.js?v=129"></script>
 <script src="../../assets/js/motion.js?v=3"></script>
 <!-- 서술/확장 카드 안 코드블럭(```로 감싼 부분) 문법강조. 코드블럭이 없는 캐릭터는 그냥 아무 일도 안 함. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>

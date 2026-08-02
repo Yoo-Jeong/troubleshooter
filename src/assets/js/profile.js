@@ -439,3 +439,23 @@
     paint();
   });
 })();
+
+// 읽기 모드(2026-08-01) — 옷장·무대(.left-fixed) 오른쪽 끝의 작은 탭(.stage-fold-tab)으로 접고,
+//   서술카드(.file)만 넓게 본다. 탭 자체가 패널 경계에 걸쳐 있어 "이걸 누르면 옆이 접힌다"가 모양으로 보이므로
+//   글자 라벨 대신 화살표 방향(‹ 접기 / › 펼치기)만 바꾼다.
+//   ★방문 취향을 기억하지 않음(FX/SCAN 스위치와 다른 점) — 새로고침·다른 캐릭터로 이동하면 항상 기본값(펼침)으로 돌아온다.
+(function(){
+  var btn = document.getElementById('stageViewToggle'), sheet = document.querySelector('.sheet');
+  if(!btn || !sheet) return;
+  var expanded = true;
+  function paint(){
+    sheet.classList.toggle('read-mode', !expanded);
+    btn.textContent = expanded ? '‹' : '›';
+    btn.title = expanded ? '옷장·무대 접기' : '옷장·무대 펼치기';
+  }
+  paint();
+  btn.addEventListener('click', function(){
+    expanded = !expanded;
+    paint();
+  });
+})();

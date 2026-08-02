@@ -3,39 +3,228 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TROUBLESHOOTER // GALLERY</title>
+<title>TS·OS // GALLERY</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&family=Chakra+Petch:wght@300;400;500;600&family=Share+Tech+Mono&family=Gothic+A1:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
+
+<!-- 다른 실제 페이지(characters.html·logs 등)와 같은 공통 골격 — 상단바·기기 베젤·테마 토글·시계·
+     시스템 설정 톱니까지 전부 common.js/common.css가 처리(단일 출처). -->
 <link rel="stylesheet" href="../assets/css/common.css?v=2">
-<!-- data-theme를 사이트 공통 설정(다크/라이트)에 맞춰줌 — 이게 없으면 아래 CSS 변수가 항상 다크 값으로만 고정됨 -->
-<script src="../assets/js/common.js?v=4"></script>
+<script src="../assets/js/common.js?v=6"></script>
+<!-- 그림 목록 데이터(단일 출처) — 홈 화면의 "N RECORDS" 표시도 이 파일을 같이 봄(gallery-data.js 안 주석 참고) -->
+<script src="../assets/js/gallery-data.js?v=1"></script>
+
 <style>
-  /* ★색은 common.css 변수(--tx*/--bg*/--acc*)로 — 예전엔 profile.css 쪽 이름(--ink-faint 등)을 잘못 가져다 써서
-     이 페이지에선 정의되지 않은 변수라 항상 괄호 안 하드코딩 색(다크 고정)으로만 보였음(2026-07-27 라이트테마 지적으로 수정). */
-  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
-    background:var(--bg);color:var(--tx3);font-family:'Share Tech Mono',monospace}
-  /* common.js가 모든 페이지에 공통으로 주입하는 기기 외곽(.device/.fx, position:fixed)이 이 내용 위를 덮어버려서
-     (제자리에 있긴 하지만 안 보임 — position:fixed 요소는 z-index 없이도 일반 흐름 요소보다 항상 나중에 그려짐)
-     .screen과 같은 방식(position:relative + z-index)으로 그 위로 끌어올린다(2026-07-27 라이트테마 작업 중 발견). */
-  .ph-wrap{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;gap:12px}
-  .ph-code{font-family:'Orbitron';font-weight:900;font-size:clamp(48px,10vw,96px);color:transparent;
-    -webkit-text-stroke:1.5px var(--acc2);letter-spacing:6px}
-  /* ★라이트 테마만 스트로크를 불투명 --acc로(2026-07-27 가시성 지적으로 수정) — 반투명 --acc2는 다크 배경에선
-     은은하게 잘 어울렸지만 밝은 배경 위에선 대비가 너무 죽어 잘 안 보였음. 다크는 원래(은은한) 그대로 두고
-     라이트만 홈 화면 로고 링·SECURE LINK 점과 같은 방식(불투명 --acc)으로 또렷하게. */
-  :root[data-theme="light"] .ph-code{-webkit-text-stroke-color:var(--acc)}
-  .ph-name{font-size:14px;letter-spacing:4px;color:var(--tx2)}
-  .ph-sub{font-size:11px;letter-spacing:2px;opacity:.6}
-  a{color:var(--acc);text-decoration:none;font-size:12px;letter-spacing:2px;margin-top:16px}
-  a:hover{opacity:.75}
+  /* ===== 이 페이지 전용 스타일 (characters.html/logs 의 .sub 패턴과 같은 방식) ===== */
+  .sub{display:flex;align-items:center;gap:16px;height:52px;flex:0 0 52px;border-bottom:1px solid var(--line)}
+  .back{display:flex;align-items:center;gap:8px;font-family:'Share Tech Mono';font-size:var(--fs-xs);letter-spacing:1px;color:var(--tx2);transition:.2s}
+  .back:hover{color:var(--acc)}
+  .sub .ttl .en{display:block;font-family:'Orbitron';font-weight:700;font-size:var(--fs-lg);letter-spacing:1px}
+  .sub .ttl .ko{display:block;font-family:'Share Tech Mono';font-size:var(--fs-xs);letter-spacing:1.5px;color:var(--tx2);margin-top:2px}
+  .sub .r{margin-left:auto;font-family:'Share Tech Mono';font-size:var(--fs-xs);letter-spacing:1px;color:var(--tx3)}
+
+  /* 본문 = .screen(고정 높이) 안에서 이 영역만 스크롤(다른 목록 페이지의 .list와 같은 방식) */
+  .gbody{flex:1;min-height:0;overflow-y:auto;padding:22px 2px 34px}
+  .g-empty{font-family:'Share Tech Mono';font-size:var(--fs-xs);letter-spacing:1px;color:var(--tx3);text-align:center;padding:60px 0}
+
+  /* ===== 그림 그리드 ===== */
+  .g-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+  .g-card{display:flex;flex-direction:column;text-align:left;background:transparent;border:1px solid var(--line);
+    border-radius:8px;overflow:hidden;cursor:pointer;color:inherit;padding:0;font:inherit;transition:border-color .18s}
+  .g-card:hover{border-color:var(--acc)}
+  .g-card:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+  /* 썸네일 = 비율 고정 박스에 꽉 채워 자르기(요원 목록 카드처럼 균일한 격자 유지). 원본은 확대보기에서 그대로 보임 */
+  .g-thumb{position:relative;aspect-ratio:4/3;overflow:hidden;background:var(--panel)}
+  /* 로딩 중 표시 — 용량 큰 그림은 뜨는 데 시간이 걸려서(18MB 테스트 이미지로 실제 확인), 그동안 빈 회색 칸이 아니라
+     은은하게 맥박치는 결로 "받아오는 중"임을 보여줌. 이미지 로드 완료(JS가 .loaded 붙임) 시 사라지고 페이드인. */
+  .g-thumb::before{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 40%,var(--line2) 50%,transparent 60%);
+    background-size:200% 100%;animation:g-load 1.3s ease-in-out infinite}
+  @keyframes g-load{0%{background-position:140% 0}100%{background-position:-40% 0}}
+  .g-thumb img{position:relative;width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .25s ease,transform .3s ease}
+  .g-thumb img.loaded{opacity:1}
+  .g-thumb:has(img.loaded)::before{display:none}
+  .g-card:hover .g-thumb img{transform:scale(1.04)}
+  /* 글(연성 등) 카드 표시 — 그림이 아니라 외부 링크로 열리는 카드임을 미리 알려줌 */
+  .g-badge{position:absolute;top:8px;left:8px;z-index:2;font-family:'Share Tech Mono';font-size:var(--fs-2xs);
+    letter-spacing:1.5px;color:var(--tx);background:color-mix(in srgb,var(--bg) 72%,transparent);
+    border:1px solid var(--line2);border-radius:20px;padding:3px 9px}
+  .g-cap{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-top:1px solid var(--line)}
+  .g-t{font-family:'Chakra Petch';font-weight:600;font-size:var(--fs-sm);letter-spacing:.2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .g-d{font-family:'Share Tech Mono';font-size:var(--fs-2xs);letter-spacing:.5px;color:var(--tx3);flex:none}
+
+  /* ===== 확대보기(라이트박스) — 배경은 다크/라이트 테마와 무관하게 항상 어둡게(프로필 카드 그림 확대와 같은 관례) ===== */
+  .lbx{position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.86);padding:60px 20px;opacity:0;pointer-events:none;transition:opacity .18s ease}
+  .lbx.on{opacity:1;pointer-events:auto}
+  .lbx-stage{position:relative;display:flex;align-items:center;justify-content:center;max-width:min(1100px,92vw);max-height:66vh}
+  .lbx-stage img{max-width:100%;max-height:66vh;border-radius:6px;box-shadow:0 20px 60px rgba(0,0,0,.5);display:block}
+  .lbx-meta{margin-top:20px;max-width:min(680px,92vw);text-align:center}
+  /* ★Orbitron은 영문 전용 폰트라 한글이 섞이면 폴백 폰트로 따로 렌더돼 폰트가 뒤섞여 보임(2026-07-31 지적으로 수정)
+     — 그리드 카드 제목(.g-t)과 같은 한글 지원 폰트(Chakra Petch)로 통일 */
+  .lbx-title{font-family:'Chakra Petch';font-weight:600;font-size:var(--fs-xl);letter-spacing:.3px;color:#eaeff4}
+  .lbx-sub{font-family:'Share Tech Mono';font-size:var(--fs-xs);letter-spacing:1px;color:#9aa5b0;margin-top:7px}
+  .lbx-tags{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:11px}
+  .lbx-tag{font-family:'Share Tech Mono';font-size:var(--fs-2xs);letter-spacing:.5px;color:#dbe4e9;
+    border:1px solid rgba(255,255,255,.22);border-radius:20px;padding:3px 10px}
+  .lbx-desc{font-family:'Chakra Petch','Pretendard',sans-serif;font-size:var(--fs-sm);color:#c3cbd2;margin-top:13px;line-height:1.65}
+  /* 글(연성 등) 카드 전용 — 라이트박스로 한 번 보여준 다음, 원문(외부 링크)으로 넘어가는 버튼 */
+  .lbx-link{display:inline-flex;align-items:center;gap:8px;margin-top:16px;font-family:'Share Tech Mono';
+    font-size:var(--fs-xs);letter-spacing:1px;color:#eaeff4;border:1px solid rgba(255,255,255,.35);
+    border-radius:20px;padding:9px 18px;text-decoration:none;transition:.2s}
+  .lbx-link:hover{background:#fff;color:#111}
+  .lbx-x{position:absolute;top:16px;right:16px;width:34px;height:34px;border:1px solid rgba(255,255,255,.25);border-radius:50%;
+    background:transparent;color:#eaeff4;font-size:var(--fs-sm);cursor:pointer;transition:.2s}
+  .lbx-x:hover{background:#fff;color:#111}
+  .lbx-nav{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border:1px solid rgba(255,255,255,.25);
+    border-radius:50%;background:rgba(0,0,0,.3);color:#eaeff4;font-size:var(--fs-lg);cursor:pointer;transition:.2s;
+    display:flex;align-items:center;justify-content:center}
+  .lbx-nav:hover{background:#fff;color:#111}
+  .lbx-nav.prev{left:8px}
+  .lbx-nav.next{right:8px}
+  @media(max-width:700px){.lbx-nav{display:none}}   /* 좁은 화면은 화살표 버튼 대신 좌우 스와이프로 넘김(터치 표준) */
+  /* 지금 몇 번째 그림인지(그림이 많아지면 유용) — 그림이 1장뿐이면 JS가 아예 안 채움 */
+  .lbx-count{position:absolute;top:16px;left:16px;font-family:'Share Tech Mono';font-size:var(--fs-xs);
+    letter-spacing:1px;color:#9aa5b0;border:1px solid rgba(255,255,255,.22);border-radius:20px;padding:4px 11px}
 </style>
 </head>
 <body>
-  <div class="ph-wrap">
-    <div class="ph-code">GALLERY</div>
-    <div class="ph-name">갤러리</div>
-    <div class="ph-sub">· 준비중 ·</div>
-    <a href="../index.html" data-ts="fade">◂ TS·OS HOME</a>
+  <div class="screen">
+    <div class="osbar mono">
+      <img class="lg" src="../assets/img/ui/ts_typo.png" alt="">
+      <span class="os">TS·OS</span>
+      <span class="sec"><span class="d"></span>SECURE LINK</span>
+      <div class="right">
+        <span class="sig"><i></i><i></i><i></i><i></i></span>
+        <span class="bat"><span>82%</span><span class="b"><i></i></span></span>
+        <span id="clock">--:--</span>
+        <button class="tg" id="themeBtn" title="테마 전환">◐</button>
+      </div>
+    </div>
+
+    <div class="sub">
+      <a class="back mono" href="../index.html" data-ts="fade">◂ DATABASE</a>
+      <div class="ttl"><span class="en">GALLERY</span><span class="ko">갤러리</span></div>
+      <span class="r mono" id="gcount">0 ITEMS</span>
+    </div>
+
+    <div class="gbody">
+      <div class="g-grid" id="grid"></div>
+    </div>
+
+    <footer class="foot">
+      <span><span class="g">AGENT</span> · UID 000-ACCESS</span>
+      <span class="r">TS-DB · GALLERY</span>
+    </footer>
   </div>
+
+  <!-- 확대보기(라이트박스) — 그림마다 새로 안 만들고 이 오버레이 하나를 재사용 -->
+  <div class="lbx" id="lbx">
+    <button class="lbx-x" id="lbxClose" aria-label="닫기">✕</button>
+    <div class="lbx-count mono" id="lbxCount"></div>
+    <button class="lbx-nav prev" id="lbxPrev" aria-label="이전 그림">‹</button>
+    <button class="lbx-nav next" id="lbxNext" aria-label="다음 그림">›</button>
+    <div class="lbx-stage"><img id="lbxImg" src="" alt=""></div>
+    <div class="lbx-meta">
+      <div class="lbx-title" id="lbxTitle"></div>
+      <div class="lbx-sub mono" id="lbxSub"></div>
+      <div class="lbx-tags" id="lbxTags"></div>
+      <div class="lbx-desc" id="lbxDesc"></div>
+      <a class="lbx-link mono" id="lbxLink" target="_blank" rel="noopener">원문 보러가기 ↗</a>
+    </div>
+  </div>
+
+<script>
+  // 그림 목록 데이터는 assets/js/gallery-data.js(단일 출처, 홈 화면과 공유)에서 옴 — 여기서 직접 안 채움
+  var GALLERY_ITEMS = window.GALLERY_ITEMS || [];
+
+  function esc(s){ return String(s||'').replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+  var ITEMS = GALLERY_ITEMS.slice().sort(function(a,b){ return a.date < b.date ? 1 : (a.date > b.date ? -1 : 0); });
+
+  var grid = document.getElementById('grid');
+  document.getElementById('gcount').textContent = ITEMS.length + ' ITEMS';
+  if(!ITEMS.length){
+    grid.outerHTML = '<div class="g-empty">· 등록된 그림이 없습니다 ·</div>';
+  } else {
+    grid.innerHTML = ITEMS.map(function(it, i){
+      // 글(연성 등, type:'fic')도 그림과 똑같이 카드를 누르면 일단 라이트박스로 먼저 보여줌(썸네일+정보) —
+      // 거기 안에 있는 "원문 보러가기" 버튼을 눌러야 그때 실제 외부 주소로 새 탭이 열림(openLbx 참고).
+      var isFic = it.type === 'fic';
+      return '<button class="g-card" data-i="'+i+'">'+
+        '<span class="g-thumb">' + (isFic ? '<span class="g-badge mono">TEXT</span>' : '') +
+          '<img src="../assets/img/gallery/'+esc(it.file)+'" alt="'+esc(it.title)+'" loading="lazy" decoding="async"></span>'+
+        '<span class="g-cap"><span class="g-t">'+esc(it.title)+'</span><span class="g-d">'+esc(it.date)+'</span></span>'+
+      '</button>';
+    }).join('');
+    // 로딩 중 표시(맥박 애니메이션)는 CSS(.g-thumb::before)가 항상 켜져 있다가, 이미지가 실제로 뜨면 .loaded를
+    // 붙여 가림 — 이미 브라우저 캐시에 있어 로드가 순간적으로 끝난 경우(img.complete)도 놓치지 않게 둘 다 처리.
+    grid.querySelectorAll('.g-thumb img').forEach(function(img){
+      function mark(){ img.classList.add('loaded'); }
+      if(img.complete) mark(); else img.addEventListener('load', mark, { once:true });
+      img.addEventListener('error', mark, { once:true });   // 깨진 그림도 무한 맥박 대신 그냥 빈 칸으로
+    });
+  }
+
+  /* ===== 확대보기(라이트박스) 열기/닫기/이전·다음 ===== */
+  var lbx = document.getElementById('lbx'), lbxImg = document.getElementById('lbxImg'),
+      lbxTitle = document.getElementById('lbxTitle'), lbxSub = document.getElementById('lbxSub'),
+      lbxTags = document.getElementById('lbxTags'), lbxDesc = document.getElementById('lbxDesc'),
+      lbxCount = document.getElementById('lbxCount'), lbxLink = document.getElementById('lbxLink');
+  var curI = -1;
+  function openLbx(i){
+    var it = ITEMS[i]; if(!it) return;
+    curI = i;
+    lbxImg.src = '../assets/img/gallery/'+it.file; lbxImg.alt = it.title;
+    lbxTitle.textContent = it.title;
+    lbxSub.textContent = [it.date, it.artist ? '@'+it.artist : ''].filter(Boolean).join('  ·  ');
+    lbxTags.innerHTML = (it.characters||[]).map(function(c){ return '<span class="lbx-tag">'+esc(c)+'</span>'; }).join('');
+    lbxDesc.textContent = it.desc || '';
+    lbxDesc.style.display = it.desc ? '' : 'none';
+    // 글(연성 등)일 때만 "원문 보러가기" 버튼을 보여줌 — 그림 카드에선 이 버튼 자체가 없음
+    lbxLink.style.display = (it.type === 'fic' && it.url) ? '' : 'none';
+    if(it.type === 'fic' && it.url) lbxLink.href = it.url;
+    // 그림이 1장뿐이면 화살표도 "몇 번째/전체"도 다 의미가 없어서 숨김
+    var multi = ITEMS.length > 1;
+    document.getElementById('lbxPrev').style.visibility = multi ? '' : 'hidden';
+    document.getElementById('lbxNext').style.visibility = multi ? '' : 'hidden';
+    lbxCount.textContent = multi ? (i+1)+' / '+ITEMS.length : '';
+    lbx.classList.add('on');
+  }
+  function closeLbx(){ lbx.classList.remove('on'); }
+  function stepLbx(d){ if(!ITEMS.length) return; openLbx((curI + d + ITEMS.length) % ITEMS.length); }
+
+  grid.addEventListener('click', function(e){
+    var c = e.target.closest && e.target.closest('.g-card'); if(!c) return;
+    openLbx(+c.dataset.i);
+  });
+  document.getElementById('lbxClose').addEventListener('click', closeLbx);
+  document.getElementById('lbxPrev').addEventListener('click', function(){ stepLbx(-1); });
+  document.getElementById('lbxNext').addEventListener('click', function(){ stepLbx(1); });
+  lbx.addEventListener('click', function(e){ if(e.target === lbx) closeLbx(); });   // 그림·정보 바깥(어두운 배경) 클릭 시 닫기
+  document.addEventListener('keydown', function(e){
+    if(!lbx.classList.contains('on')) return;
+    if(e.key === 'Escape') closeLbx();
+    else if(e.key === 'ArrowLeft') stepLbx(-1);
+    else if(e.key === 'ArrowRight') stepLbx(1);
+  });
+
+  // 좁은 화면은 화살표 버튼을 숨기므로(위 CSS) 좌우로 쓸어넘기면(스와이프) 이전/다음 그림으로 —
+  // 터치가 되는 화면이면 폭과 무관하게 항상 동작(넓은 화면 터치스크린에서도 자연스럽게 씀).
+  (function(){
+    var sx = 0, sy = 0, tracking = false;
+    lbx.addEventListener('touchstart', function(e){
+      if(e.touches.length !== 1) return;
+      sx = e.touches[0].clientX; sy = e.touches[0].clientY; tracking = true;
+    }, { passive:true });
+    lbx.addEventListener('touchend', function(e){
+      if(!tracking) return; tracking = false;
+      var dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+      if(Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;   // 너무 짧거나 위아래 위주면 무시(오탐 방지)
+      stepLbx(dx < 0 ? 1 : -1);
+    }, { passive:true });
+  })();
+</script>
 </body>
 </html>

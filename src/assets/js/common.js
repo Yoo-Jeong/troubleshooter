@@ -145,6 +145,8 @@ document.addEventListener('DOMContentLoaded', function(){
           '<div class="cfg-hd"><div class="ti">SYSTEM <b>CONFIG</b> · 시스템 설정</div>' +
             '<button class="x" id="cfgClose" aria-label="닫기">✕</button></div>' +
           '<div class="cfg-bd">' + charEditSec + newCharSec +
+            '<div class="cfg-sec"><div class="sh">ENVIRONMENT · 권장 환경</div>' +
+              '<div class="sd">데스크탑 · 1280×800 이상 권장</div></div>' +
             '<div class="cfg-sec"><div class="sh">DISPLAY MODE · 디스플레이 모드</div>' +
               '<div class="sd">홈 화면 레이아웃을 선택합니다. 콘텐츠는 그대로, 표시 형식만 바뀝니다. 선택은 다음 방문에도 유지됩니다.</div>' +
               '<div id="modeList"></div>' +

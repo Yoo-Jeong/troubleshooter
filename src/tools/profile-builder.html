@@ -562,7 +562,7 @@
 </div>
 
 <!-- 무대 효과 컨트롤러: 부모창에서도 TSFX.effects()/presets() 를 읽어 효과 목록을 구성(단일 출처). ?v= 는 캐시 무력화(stage-fx 갱신 시 character.html 과 함께 bump). -->
-<script src="/assets/js/stage-fx.js?v=126"></script>
+<script src="/assets/js/stage-fx.js?v=129"></script>
 <script>
 "use strict";
 var $ = function(s){ return document.querySelector(s); };
@@ -1806,7 +1806,7 @@ function buildSrcdoc(st){
     '<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Chakra+Petch:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Share+Tech+Mono&family=Gothic+A1:wght@300;400;500;700;800&display=swap" rel="stylesheet">'+
     '<link rel="stylesheet" href="/assets/css/common.css">'+
     '<link rel="stylesheet" href="/assets/css/transitions.css">'+
-    '<link rel="stylesheet" href="/assets/css/profile.css?v=44">'+
+    '<link rel="stylesheet" href="/assets/css/profile.css?v=46">'+
     '<style>:root,:root[data-theme="dark"]{--accent:'+accent+';--accent2:'+accent2+';'+(st.statPlus?'--stat-plus:'+st.statPlus+';':'')+'}:root[data-theme="light"]{--accent:'+accentL+';'+(accent2L?'--accent2:'+accent2L+';':'')+'}'+
     '.stage .ghost{display:block}'+   /* 미리보기(폭 좁음)에서 고스트 확실히 표시 — profile.css 캐시와 무관하게. !important 안 씀=이미지 없을 때 profile.js 인라인 숨김은 존중 */
     '[data-edit]{cursor:text;border-radius:3px}[data-edit]:hover{box-shadow:0 0 0 1px var(--accent-line,#7aa)}[data-edit]:focus{outline:none;box-shadow:0 0 0 2px var(--accent);background:rgba(120,180,210,.07)}'+
@@ -1835,7 +1835,9 @@ function buildSrcdoc(st){
       '<span id="clock">--:--</span><button class="tg" id="themeBtn" title="테마">◐</button></div></div>'+
       '<div class="topbar"><div class="brand"><div class="bt">TROUBLE<span>SHOOTER</span> <span class="tag" data-meta="sector"></span></div>'+
       '<div class="crumb"><a href="/characters.html">◂ CHARACTERS</a> · <b data-meta="crumb"></b></div></div></div>'+
-      '<div class="sheet"><div class="left-fixed"><aside class="wardrobe"><div class="track"></div></aside>'+
+      '<div class="sheet"><div class="left-fixed">'+
+      '<button class="stage-fold-tab mono" id="stageViewToggle" type="button" title="옷장·무대 접기/펼치기">‹</button>'+
+      '<aside class="wardrobe"><div class="track"></div></aside>'+
       '<div class="stage-col"><section class="stage">'+
       '<span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>'+
       '<div class="bg-type" data-meta="code" aria-hidden="true"></div>'+
@@ -1848,9 +1850,9 @@ function buildSrcdoc(st){
       '<div class="fmt-bar" id="fmtBar" hidden><button type="button" data-fmt="bold"><b>B</b></button><button type="button" data-fmt="italic"><i>I</i></button><button type="button" data-fmt="quote" title="인용문으로">&ldquo;</button><button type="button" data-fmt="faint" title="회색 글자로(연하게)" style="opacity:.6">A</button><button type="button" data-fmt="code" title="코드블럭으로(고른 문단 전체)" style="font-family:monospace">&lt;/&gt;</button></div>'+   // 글자 선택 시 뜨는 서식 툴바
     '<script>window.CHAR_META='+CH(st.meta)+';window.CHAR_STATS='+CH(st.stats)+';'+
       'window.CHAR_WARDROBE='+CH(ward)+';window.CHAR_GENERATIONS='+CH(gens)+';<\/script>'+
-    '<script src="/assets/js/common.js"><\/script>'+
-    '<script src="/assets/js/profile.js"><\/script>'+
-    '<script src="/assets/js/stage-fx.js?v=126"><\/script>'+
+    '<script src="/assets/js/common.js?v=6"><\/script>'+
+    '<script src="/assets/js/profile.js?v=31"><\/script>'+
+    '<script src="/assets/js/stage-fx.js?v=129"><\/script>'+
     // 서술/확장 카드 안 코드블럭 문법강조(실제 페이지 _layouts/character.html과 같은 CDN 라이브러리 — 모양 바꾸면 거기도 같이).
     //   미리보기는 폼을 고칠 때마다 liveText()가 이 패널만 다시 그리는데, 그때는 페이지 재로드가 아니라서 이 스크립트가 다시
     //   안 돌아감 → liveText() 쪽에서 win.hljs.highlightAll()을 직접 한 번 더 불러줌(중복 호출은 hljs가 알아서 건너뜀, 안전).
@@ -1864,21 +1866,46 @@ function buildSrcdoc(st){
     '<script>function tsBold(el){var d=el.ownerDocument,s=d.getSelection();if(!s.rangeCount||!s.isCollapsed)return;var r0=s.getRangeAt(0);'+
       'function flatText(n){var o="";(function w(x){var c=x.firstChild;while(c){if(c.nodeType===3)o+=c.nodeValue;else if(c.nodeType===1){if(c.tagName==="BR")o+="\\n";else w(c);}c=c.nextSibling;}})(n);return o;}'+
       'function flatList(x){var l=[];(function w(n){var c=n.firstChild;while(c){if(c.nodeType===3){var t=c.nodeValue;for(var i=0;i<t.length;i++)l.push({node:c,off:i});}else if(c.nodeType===1){if(c.tagName==="BR")l.push({node:c,off:null});else w(c);}c=c.nextSibling;}})(x);return l;}'+
-      'var pre=d.createRange();pre.setStart(el,0);pre.setEnd(r0.endContainer,r0.endOffset);var bf=flatText(pre.cloneContents());'+
+      // ★최적화(2026-07-31): 마커 탐색 시작점을 카드 전체(el)가 아니라 "지금 커서가 있는 문단(P)"으로 한정.
+      //   마커(**~**·_~_·++~++·~~~~·==~==)는 문단 경계를 못 넘으므로 결과는 그대로면서, 카드가 길어질수록
+      //   매 키 입력마다 그 카드에 지금까지 쓴 글자 전체를 다시 훑던 비용이 문단 길이만큼으로 줄어듦.
+      'var scope=r0.endContainer.nodeType===1?r0.endContainer:r0.endContainer.parentNode;'+
+      'while(scope&&scope!==el&&scope.tagName!=="P")scope=scope.parentNode;if(!scope)scope=el;'+
+      'var pre=d.createRange();pre.setStart(scope,0);pre.setEnd(r0.endContainer,r0.endOffset);var bf=flatText(pre.cloneContents());'+
       'var mb=bf.match(/\\*\\*([^*]+)\\*\\*$/),mi=!mb&&bf.match(/_([^_]+)_$/),mB=!mb&&!mi&&bf.match(/\\+\\+([^+]+)\\+\\+$/),mS=!mb&&!mi&&!mB&&bf.match(/~~([^~]+)~~$/),mF=!mb&&!mi&&!mB&&!mS&&bf.match(/==([^=]+)==$/),m=mb||mi||mB||mS||mF,tag=mb?"b":mi?"i":mB?"big":mS?"small":"span";'+
-      'if(!m)return;var len=m[0].length,list=flatList(el),startEntry=list[bf.length-len];if(!startEntry)return;'+
+      'if(!m)return;var len=m[0].length,list=flatList(scope),startEntry=list[bf.length-len];if(!startEntry)return;'+
       'var rr=d.createRange();if(startEntry.off===null){var p=startEntry.node.parentNode,idx=Array.prototype.indexOf.call(p.childNodes,startEntry.node);rr.setStart(p,idx);}else rr.setStart(startEntry.node,startEntry.off);'+
       'rr.setEnd(r0.endContainer,r0.endOffset);rr.deleteContents();'+
       'var tagEl=d.createElement(tag);if(mF)tagEl.className="faint";var parts=m[1].split("\\n");parts.forEach(function(pt,i){if(i>0)tagEl.appendChild(d.createElement("br"));tagEl.appendChild(d.createTextNode(pt));});'+
       'rr.insertNode(tagEl);rr.setStartAfter(tagEl);rr.collapse(true);'+
       'var zw=d.createTextNode("\\u200b");rr.insertNode(zw);rr.setStartAfter(zw);rr.collapse(true);'+
       's.removeAllRanges();s.addRange(rr);}'+
+    // ★버그수정(2026-07-31): 굵게 등 서식이 걸린 문단 끝에서 Enter로 새 문단을 만들면, 브라우저가 그 서식을 그대로 이어받아
+    //   아직 아무 글자도 안 쓴 새 문단 전체가 굵게로 나와버렸음(직접 재현·확인). 새 문단이 "서식 태그로만 감싸인 빈 상태"일
+    //   때만 그 빈 서식을 풀어 평문으로 되돌린다 — 이미 글자가 있는 서식(의도적으로 이어쓴 경우)은 안 건드림.
+    'function tsUnwrapEmptyMark(el){var d=el.ownerDocument,s=d.getSelection();if(!s.rangeCount)return;'+
+      'var node=s.getRangeAt(0).startContainer,p=node.nodeType===1?node:node.parentNode;'+
+      'while(p&&p!==el&&p.tagName!=="P")p=p.parentNode;if(!p||p===el||p.tagName!=="P")return;'+
+      'while(p.childNodes.length===1&&p.firstChild.nodeType===1){var only=p.firstChild,tag=only.tagName;'+
+        'var isMark=tag==="B"||tag==="I"||tag==="BIG"||tag==="SMALL"||(tag==="SPAN"&&only.classList.contains("faint"));'+
+        'if(!isMark)break;if(only.textContent.replace(/\\u200b/g,"").length>0)break;'+
+        'while(only.firstChild)p.insertBefore(only.firstChild,only);p.removeChild(only);}'+
+      'if(!p.firstChild)p.appendChild(d.createElement("br"));'+
+      'var r=d.createRange();r.selectNodeContents(p);r.collapse(true);s.removeAllRanges();s.addRange(r);}'+
     'document.addEventListener("input",function(e){var el=e.target.closest&&e.target.closest("[data-edit]");if(!el)return;var k=el.getAttribute("data-edit"),isBody=/(:body|:text:\\d+)$/.test(k);if(isBody)tsBold(el);var v=isBody?el.innerHTML:el.textContent;try{parent.pvEdit(k,v);}catch(_){}}, true);'+
     // ★엔터=새 문단 / Shift+엔터=줄바꿈(노션·티스토리와 동일한 규칙, 2026-07-25 변경).
     //   ↳ 예전엔 엔터를 항상 줄바꿈(<br>)으로 강제했었는데, 그러면 새 문단을 만들 방법이 아예 없었음(사용자 피드백).
     //   문단 구분자를 <p>로 고정(안 하면 크롬이 기본으로 <div>를 씀) → htmlToProse가 <p>를 "빈 줄로 구분된 문단"으로 되읽음(대칭).
     'try{document.execCommand("defaultParagraphSeparator",false,"p");}catch(_){}'+
-    'document.addEventListener("keydown",function(e){if(e.key!=="Enter")return;var el=e.target.closest&&e.target.closest("[data-edit]");if(!el)return;var k=el.getAttribute("data-edit");if(!/(:body|:text:\\d+)$/.test(k))return;if(e.shiftKey){e.preventDefault();document.execCommand("insertLineBreak");}}, true);'+
+    // ★버그수정(2026-07-31): 이름·부제·나이·인용구 같은 "한 줄" 칸은 Enter를 따로 안 막아서, 실수로 Enter를 누르면
+    //   화면엔 두 줄로 보이지만(브라우저 기본 줄바꿈 삽입) 실제 값은 textContent라 줄바꿈 없이 그대로 이어붙어
+    //   (예: "마이티"+Enter+"테스트" → "마이티테스트") 조용히 저장돼버렸음(직접 재현·확인) — 한 줄 칸은 Enter 자체를
+    //   막는다(보통 <input>처럼 아무 일도 안 일어남). 여러 줄(본문) 칸은 기존 그대로.
+    'document.addEventListener("keydown",function(e){if(e.key!=="Enter")return;var el=e.target.closest&&e.target.closest("[data-edit]");if(!el)return;var k=el.getAttribute("data-edit"),isBody=/(:body|:text:\\d+)$/.test(k);'+
+      'if(!isBody){e.preventDefault();return;}'+
+      'if(e.shiftKey){e.preventDefault();document.execCommand("insertLineBreak");return;}'+
+      'setTimeout(function(){tsUnwrapEmptyMark(el);},0);'+
+    '}, true);'+
     // ★붙여넣기는 항상 순수 텍스트만 — 워드/한글 문서 등에서 복사해오면 mso-* 같은 서식 찌꺼기가 그대로 들어와
     //   저장 후 화면에 깨진 글자로 그대로 노출되던 문제(2026-07-26). 굵게 등은 붙여넣은 뒤 **글자**나 B버튼으로 다시 적용.
     // ★버그수정(2026-07-26): 워드/한글(HWP)·파워포인트 등 일부 앱은 클립보드에 "text/plain"을 아예 안 담고 "text/html"만 준다.
@@ -1886,10 +1913,17 @@ function buildSrcdoc(st){
     //   선택된 글자를 지우기만 하고 아무것도 안 채워서 "간헐적으로 내용이 사라지는" 것처럼 보였음(붙여넣은 서식은 버려도,
     //   원래 있던 글자까지 지우면 안 됨) → text/plain이 없으면 text/html에서 글자만 추려 대신 쓰고, 그것도 없으면
     //   아무 것도 안 하고 빠져나가 원래 선택 글자를 보존한다.
+    // ★버그수정(2026-07-31): 붙여넣은 텍스트에 줄바꿈이 있으면 두 가지 문제가 있었음 — ①한 줄 칸에 여러 줄을 붙이면
+    //   Enter 때와 똑같이 줄바꿈 없이 그대로 이어붙었고(직접 재현), ②여러 줄(본문) 칸엔 홑줄바꿈까지 전부 새 문단으로
+    //   쪼개져(빈 줄 하나만 있어도 문단이 한 번 더 갈라짐) 원래 한 문단이던 글이 문장마다 뚝뚝 끊어져 보였음(직접 재현).
+    //   → 한 줄 칸은 줄바꿈을 공백으로, 여러 줄 칸은 이 화면의 규칙(빈 줄=새 문단·홑줄바꿈=문단 안 줄바꿈)을 그대로 적용.
     'document.addEventListener("paste",function(e){var el=e.target.closest&&e.target.closest("[data-edit]");if(!el)return;e.preventDefault();'+
       'var cd=(e.clipboardData||window.clipboardData),t=cd.getData("text/plain");'+
       'if(!t){var h=cd.getData("text/html");if(h){var tmp=document.createElement("div");tmp.innerHTML=h;t=tmp.textContent||tmp.innerText||"";}}'+
       'if(!t)return;'+   // 아무 텍스트도 못 뽑으면(이미지만 복사 등) 아무것도 안 함 — 선택돼 있던 글자를 실수로 지우지 않음
+      'var isBody=/(:body|:text:\\d+)$/.test(el.getAttribute("data-edit"));t=t.replace(/\\r\\n?/g,"\\n");'+
+      'if(!isBody){t=t.replace(/\\n+/g," ");}'+
+      'else{t=t.replace(/\\n{2,}/g,"\\uE000").replace(/\\n/g," ").replace(/\\uE000/g,"\\n");}'+
       'document.execCommand("insertText",false,t);}, true);'+
     // ★글자 선택 시 뜨는 서식 툴바 — 굵게(**글자**)가 타이핑 즉시 적용된 뒤 "다시 고치기 어렵다"는 피드백으로 추가(2026-07-25).
     //   선택한 글자 위에 B/I/인용문 버튼이 뜨고, 눌러서 굵게·기울임·인용문(문단 통째로 .prose .lead 스타일)을 토글. 자동 ** 변환과는 별개 경로.

@@ -18,6 +18,9 @@
    ===================================================================== */
 window.TSFX = (function () {
   var reduced = window.matchMedia && matchMedia('(prefers-reduced-motion:reduce)').matches;
+  // ★캔버스 해상도 배율 상한(2026-08-01) — 3배율 이상 고해상도 화면에서 화면 전체 효과가
+  //   불필요하게 9배 픽셀로 그려지는 걸 막는다. 2배면 육안으로 차이가 거의 없다(단일 출처).
+  var MAX_DPR = 2;
 
   // #rgb / #rrggbb → 'rgba(r,g,b,a)'
   function rgba(hex, a) {
@@ -467,61 +470,6 @@ window.TSFX = (function () {
       if (snap > 0.01){                                                  // ★확 끄는 순간 : 아주 옅은 순간 발광(하드컷)
         ctx.fillStyle = rgba(acc, 0.12*snap); ctx.fillRect(0,0,W,H);
       }
-    },
-
-    /* ── 격자 발광 (레퍼런스: CodePen YusukeNakaya 'PKpeVJ') ──
-       원본 구조 = ①빛 덩어리(고리)들이 중앙을 돌며 왔다갔다 → ②흐림+대비로 뭉개져 덩어리로 보임
-       → ③그 위를 '검은 셀 판'이 덮어, 셀 사이 얇은 틈으로만 빛이 새어나온다.
-       그래서 화면엔 기울어진 격자의 '틈'과 '모서리 점'만 반짝이며 흘러간다.
-       캔버스로 옮길 때 ③은 '틈 모양 마스크'로 처리 : 빛을 그린 뒤 틈 자리만 남긴다
-       (검은 판을 실제로 덮으면 무대 배경까지 가리므로).
-       색은 캐릭터 테마색(--accent)과 무채색(--ink) 두 가지만 쓴다. */
-    cellGrid: function (ctx, W, H, f, s, acc) {
-      var ink = cssVar('--ink', '#eef4ff');
-      // 0↔1 을 부드럽게 왕복(원본 CSS 의 animation-direction: alternate 와 같은 움직임)
-      function pingpong(per){ return 0.5 - 0.5 * Math.cos(6.2832 * f / per); }
-
-      // ── ① 빛 덩어리(고리) : 중앙을 축으로 돌면서(rotate) 축 방향으로 왔다갔다(translate) ──
-      var o = s.oc.getContext('2d');
-      o.clearRect(0, 0, W, H);
-      for (var i = 0; i < s.balls.length; i++) {
-        var b = s.balls[i];
-        var ang = pingpong(b.rotPer) * 12.5664;             // 0 → 720도
-        var off = (pingpong(b.movPer) * 4 - 2) * b.size;     // 제 크기의 -200% → +200%
-        o.strokeStyle = b.hot ? acc : ink;                   // 테마색 / 무채색 두 가지만
-        o.lineWidth = b.lw;
-        o.beginPath();
-        o.arc(W/2 + Math.cos(ang)*off, H/2 + Math.sin(ang)*off, b.size/2, 0, 6.2832);
-        o.stroke();
-      }
-
-      // ── ② 흐리게 번져 덩어리로 뭉치기 ──
-      var gx = s.gc.getContext('2d');
-      gx.clearRect(0, 0, W, H);
-      gx.filter = 'blur(' + s.blurPx.toFixed(1) + 'px)';
-      gx.drawImage(s.oc, 0, 0, W, H);
-      gx.filter = 'none';
-
-      // ── ③ 문턱 : 옅은 빛은 없애고 남은 빛은 확 밝게 = 덩어리 경계가 또렷해진다 ──
-      //   원본 CSS 의 contrast(30) 역할을 두 단계로 흉내낸다.
-      //   ⓐ 잘라내기 : 같은 그림을 destination-in 으로 겹치면 옅은 곳이 거듭제곱으로 사라진다
-      //   ⓑ 밝히기   : 남은 그림을 자기 자신 위에 겹쳐(lighter) 밝기를 되살린다
-      var t, hx = s.hc.getContext('2d');
-      hx.globalCompositeOperation = 'source-over';
-      hx.clearRect(0, 0, W, H);
-      hx.drawImage(s.gc, 0, 0, W, H);
-      hx.globalCompositeOperation = 'destination-in';
-      for (t = 1; t < s.cut; t++) hx.drawImage(s.gc, 0, 0, W, H);      // ⓐ
-      hx.globalCompositeOperation = 'lighter';
-      for (t = 0; t < s.boost; t++) hx.drawImage(s.hc, 0, 0, W, H);    // ⓑ
-      hx.globalCompositeOperation = 'source-over';
-
-      // ── ④ 격자 '틈' 자리만 남김 ──
-      ctx.save();
-      ctx.drawImage(s.hc, 0, 0, W, H);
-      ctx.globalCompositeOperation = 'destination-in';
-      ctx.drawImage(s.mask, 0, 0, W, H);
-      ctx.restore();
     },
 
     /* ── 별하늘 (레퍼런스: CodePen hitphy 'Starfield') ─────
@@ -1682,59 +1630,6 @@ window.TSFX = (function () {
       s.sweepAlpha = 0.9;                // 줄 진하기(1이면 배경색으로 완전히 덮음)
       s.sweepPer   = 180;                // ★한 번 훑고 올라가는 데 걸리는 프레임(약 3초)
     },
-    // 격자 발광 : 빛 덩어리와 격자 틈. ★느낌을 바꾸려면 여기 숫자만 고치면 된다.
-    cellGrid: function (s, W, H) {
-      s.ballN   = 20;                    // 빛 덩어리 개수(원본과 동일)
-      s.blurPx  = 10;                    // 번지는 정도(원본 blur 10px)
-      s.cut     = 3;                     // ★문턱 세기 — 클수록 옅은 빛이 잘려 성기게(원본 contrast 30 역할)
-      s.boost   = 2;                     // ★잘라낸 뒤 다시 밝히는 횟수 — 클수록 쨍하게
-      s.cellPx  = 51;                    // ★격자 한 칸 크기(px) — 원본과 동일(50px + 틈 1px)
-      s.seamPx  = 1;                     // ★틈 두께(px) — 원본의 margin 0.5px 양쪽 = 1px
-      s.jointPx = 1.1;                   // 칸 모서리에서 넓어지는 틈(원본의 둥근 모서리) = 작은 점
-      s.tilt    = -80;                   // 격자 기울기(도) — 원본과 동일
-
-      // ── 빛 덩어리 : 크기·속도·색을 시드 난수로 고정(창 크기가 바뀌어도 같은 배치) ──
-      var g = rng(37);
-      s.balls = [];
-      for (var i = 0; i < s.ballN; i++) {
-        s.balls.push({
-          size:   W * (0.09 + g() * 0.22),        // 고리 지름
-          lw:     W * 0.026,                      // 고리 굵기(원본 border 12px에 해당)
-          rotPer: (3000 + g() * 4000) / 1000 * 60, // 한 바퀴 왕복 프레임(원본 3~7초)
-          movPer: (1000 + g() * 3000) / 1000 * 60, // 앞뒤로 왔다갔다 프레임(원본 1~4초)
-          hot:    g() < 0.6                       // 60% 테마색 / 40% 무채색
-        });
-      }
-      // 오프스크린 두 장(매 프레임 재사용) : oc = 고리 원본 · gc = 흐리게 번진 것
-      s.oc = document.createElement('canvas');
-      s.oc.width = Math.max(1, Math.round(W)); s.oc.height = Math.max(1, Math.round(H));
-      s.gc = document.createElement('canvas');
-      s.gc.width = s.oc.width; s.gc.height = s.oc.height;
-      s.hc = document.createElement('canvas');           // hc = 문턱까지 끝난 결과
-      s.hc.width = s.oc.width; s.hc.height = s.oc.height;
-
-      // ── 격자 '틈' 마스크 : 한 번만 만들어 두고 매 프레임 재사용(격자는 안 움직임) ──
-      //   흰색 = 빛이 새어나오는 자리(틈·모서리 점), 투명 = 검은 셀에 가려지는 자리
-      //   ※마스크만은 화면 실제 해상도로 만든다 — 틈이 1px 짜리 가는 선이라 확대되면 뭉개진다.
-      var m = document.createElement('canvas');
-      var dpr = window.devicePixelRatio || 1;
-      m.width = Math.round(W * dpr); m.height = Math.round(H * dpr);
-      var mc = m.getContext('2d');
-      mc.scale(dpr, dpr);
-      mc.translate(W/2, H/2);
-      mc.rotate(s.tilt * Math.PI / 180);
-      var R = Math.max(W, H) * 1.2, x, y;
-      mc.strokeStyle = '#fff'; mc.lineWidth = s.seamPx;
-      mc.beginPath();
-      for (x = -R; x <= R; x += s.cellPx) { mc.moveTo(x, -R); mc.lineTo(x, R); }   // 세로 틈
-      for (y = -R; y <= R; y += s.cellPx) { mc.moveTo(-R, y); mc.lineTo(R, y); }   // 가로 틈
-      mc.stroke();
-      mc.fillStyle = '#fff'; mc.beginPath();
-      for (x = -R; x <= R; x += s.cellPx)
-        for (y = -R; y <= R; y += s.cellPx) { mc.moveTo(x + s.jointPx, y); mc.arc(x, y, s.jointPx, 0, 6.2832); }
-      mc.fill();
-      s.mask = m;
-    },
     // 별하늘 : 별 개수·속도와 별똥별 주기. ★느낌을 바꾸려면 여기 숫자만 고치면 된다.
     starfield: function (s, W, H) {
       s.starN       = 350;               // 별 개수(원본과 동일)
@@ -2372,7 +2267,6 @@ window.TSFX = (function () {
     scanline:  { label:'주사선',      draw:FX.scanline,  init:INIT.scanline,  full:true,  place:'back'  },
     sweepLine: { label:'훑는 줄',     draw:FX.sweepLine, init:INIT.sweepLine, full:true,  place:'front' },
     starfield: { label:'별하늘',      draw:FX.starfield, init:INIT.starfield, full:true,  place:'back'  },
-    cellGrid:  { label:'격자 발광',   draw:FX.cellGrid,  init:INIT.cellGrid,  full:true,  place:'back'  },
     recall:    { label:'기억 글자',   draw:FX.recall,    init:INIT.recall,    full:true,  place:'back'  },
     dust:      { label:'먼지',        draw:FX.dust,      init:INIT.dust,      full:true,  place:'back'  },
     index:     { label:'색인 정리',   draw:FX.index,     init:INIT.index,     full:true,  place:'back'  },
@@ -2452,8 +2346,18 @@ window.TSFX = (function () {
     return out;
   }
   // 현재 테마의 CSS 변수값 읽기(라이트/다크 자동). rgba() 는 #rrggbb 를 받음.
+  //   ★프레임당 캐시(2026-08-01) : 레이어(효과)마다 같은 변수(--ink·--accent 등)를 매 프레임 따로
+  //     읽던 걸, '같은 애니메이션 프레임 안에서는 한 번만 읽고 재사용'하도록 줄였다. 캐시는 매 rAF
+  //     tick마다(아래 loop의 varCacheTs 갱신) 통째로 비우므로, 테마 토글·세대 전환으로 색이 바뀌어도
+  //     늦어도 다음 프레임(≈16ms, 체감 불가)엔 항상 최신값 — 오래 남는 캐시가 아니라 '이번 틱 한정' 재사용.
+  var varCache = {}, varCacheTs = -1;
   function cssVar(name, fb) {
-    return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fb;
+    var v = varCache[name];
+    if (v === undefined) {
+      v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      varCache[name] = v;
+    }
+    return v || fb;
   }
   function accentColor() { return cssVar('--accent', '#4bbad6'); }
 
@@ -2469,6 +2373,7 @@ window.TSFX = (function () {
       if (raf) { cancelAnimationFrame(raf); raf = null; }
       for (var i = 0; i < insts.length; i++) {
         window.removeEventListener('resize', insts[i].resize);
+        insts[i].cancelResize();
         var cv = insts[i].canvas;
         if (cv.parentNode) cv.parentNode.removeChild(cv);
       }
@@ -2510,7 +2415,7 @@ window.TSFX = (function () {
       var ctx = cv.getContext('2d'), st = {}, W = 0, H = 0, dpr = 1;
       function acc() { return (isLight() ? L.colorLight : L.colorDark) || accentColor(); }   // 다크/라이트 각자 지정 색 → 없으면 테마색
       function resize() {
-        dpr = window.devicePixelRatio || 1;
+        dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
         // 레이아웃 크기(offsetWidth/Height) 사용 : 부모가 CSS transform(scale)으로 축소돼 있어도 '실제 무대 크기'로 그린다(편집툴 갤러리 미리보기 = 460×874로 그린 뒤 타일에 맞춰 축소).
         W = cv.offsetWidth  || cv.getBoundingClientRect().width;
         H = cv.offsetHeight || cv.getBoundingClientRect().height;
@@ -2520,9 +2425,15 @@ window.TSFX = (function () {
         if (def.init) def.init(st, W, H, cv);
       }
       resize();
-      window.addEventListener('resize', resize);
+      // ★리사이즈 디바운스(2026-08-01) — 창을 드래그로 계속 늘였다 줄였다 하면 resize 이벤트가
+      //   연달아 여러 번 발생하는데, 그때마다 def.init()이 파티클 배열 등을 통째로 다시 만들면
+      //   낭비가 크다. 마지막 이벤트 후 150ms 동안 잠잠하면 그때 한 번만 실제로 다시 계산한다.
+      var resizeTimer = null;
+      function debouncedResize() { clearTimeout(resizeTimer); resizeTimer = setTimeout(resize, 150); }
+      window.addEventListener('resize', debouncedResize);
       insts.push({
-        canvas: cv, resize: resize,
+        canvas: cv, resize: debouncedResize,
+        cancelResize: function () { clearTimeout(resizeTimer); },
         draw: function (f) {
           var e = L.momentary ? kit.env(L.momentary) : 1;
           if (L.momentary && e <= 0.003) { ctx.clearRect(0, 0, W, H); return; }   // 순간효과 비활성 구간
@@ -2538,8 +2449,14 @@ window.TSFX = (function () {
       var layers = normalize(effect);
       for (var i = 0; i < layers.length; i++) if (!layers[i].off) addLayer(layers[i]);   // 꺼진 레이어는 렌더 제외
       if (!insts.length) return;
-      if (reduced) { frame = 120; for (var j = 0; j < insts.length; j++) insts[j].draw(frame); return; }
-      (function loop() { frame++; for (var k = 0; k < insts.length; k++) insts[k].draw(frame); raf = requestAnimationFrame(loop); })();
+      if (reduced) { frame = 120; varCache = {}; for (var j = 0; j < insts.length; j++) insts[j].draw(frame); return; }
+      // ★rAF가 넘겨주는 타임스탬프(ts)로 '새 프레임'을 판별해 varCache를 딱 한 번씩만 비운다.
+      //   전체 모듈에서 varCache/varCacheTs를 공유하므로, 같은 화면에 mount()가 여러 개 떠 있어도(예:
+      //   프로필 툴의 효과 갤러리 미리보기 여러 장) 같은 vsync 안이면 캐시를 같이 재사용한다.
+      (function loop(ts) {
+        if (ts !== varCacheTs) { varCache = {}; varCacheTs = ts; }
+        frame++; for (var k = 0; k < insts.length; k++) insts[k].draw(frame); raf = requestAnimationFrame(loop);
+      })();
     }
 
     return { set: set, stop: stop, el: stageEl };

@@ -12,9 +12,11 @@
 <!-- 공통 디자인·동작 + 공통 트랜지션 모듈 -->
 <link rel="stylesheet" href="assets/css/common.css?v=2">
 <link rel="stylesheet" href="assets/css/transitions.css?v=1">
-<script src="assets/js/common.js?v=4"></script>
+<script src="assets/js/common.js?v=6"></script>
 <script src="assets/js/transitions.js?v=3"></script>
 <script src="assets/js/cusdis-config.js?v=1"></script>
+<!-- 갤러리 그림 목록(단일 출처) — GALLERY 노드의 "N RECORDS" 표시가 이 데이터 개수를 그대로 씀 -->
+<script src="assets/js/gallery-data.js?v=1"></script>
 
 <style>
   /* ============================================================
@@ -147,7 +149,8 @@
       buildCodeStream();
       startParallax();
     }
-    loadLogsCount();   // LOGS 카드의 "-- RECORDS" → 실제 달린 댓글 수. 그 자리 없는 모드(minimal/orbit)에선 조용히 아무 일도 안 함
+    loadLogsCount();     // LOGS 카드의 "-- RECORDS" → 실제 달린 댓글 수. 그 자리 없는 모드(minimal/orbit)에선 조용히 아무 일도 안 함
+    loadGalleryCount();  // GALLERY 카드의 "-- RECORDS" → 실제 등록된 그림 수
   }
 
   /* LOGS(교신기록)에 실제로 달린 댓글 수를 Cusdis 공개 API로 받아와 "-- RECORDS" 자리에 채운다.
@@ -166,6 +169,15 @@
         });
       })
       .catch(function(){});
+  }
+
+  /* GALLERY(갤러리)에 실제로 등록된 그림 수를 "-- RECORDS" 자리에 채운다. 데이터는 assets/js/gallery-data.js
+     (단일 출처, gallery/index.html과 공유) — 이 파일이 이미 <head>에서 로드돼 있어 fetch 없이 바로 읽을 수 있음. */
+  function loadGalleryCount(){
+    var items = window.GALLERY_ITEMS; if(!items) return;
+    document.querySelectorAll('a[href="gallery/"] .st2, a[href="gallery/"] .note').forEach(function(el){
+      el.textContent = items.length + ' RECORDS';
+    });
   }
 
   /* 오빗 : 좌상단 데이터 코드 스트림 생성 */

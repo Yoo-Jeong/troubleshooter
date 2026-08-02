@@ -16,7 +16,7 @@
 <!-- 공통 디자인·동작 + 공통 트랜지션 모듈 -->
 <link rel="stylesheet" href="assets/css/common.css?v=2">
 <link rel="stylesheet" href="assets/css/transitions.css?v=1">
-<script src="assets/js/common.js?v=4"></script>
+<script src="assets/js/common.js?v=6"></script>
 <script src="assets/js/transitions.js?v=3"></script>
 <script src="assets/js/motion.js?v=3"></script>
 
@@ -208,6 +208,11 @@
     r.style.setProperty('--l-y', pick('y',0)+'%');
   }
   var list=document.getElementById('list'), firstH=list.querySelector('.sec-h');
+  // ★버그수정(2026-07-31): 이 폭 밑에서는 위 CSS(@media max-width:820px)가 상세 패널(.detail)을 통째로 숨기는데,
+  //   캐릭터 페이지로 들어가는 유일한 버튼(ENTER RECORD →)이 그 안에 있어서 좁은 화면(모바일 등)에선 목록만 보이고
+  //   들어갈 방법이 아예 없었음(직접 재현·확인). 이 폭에선 목록 항목을 누르면 미리보기 없이 바로 그 캐릭터로 이동.
+  //   ↳ 두 값(CSS·JS)은 반드시 같이 맞출 것(단일 출처는 아니지만 짝 값, index.html의 MOBILE_MQ와 같은 패턴).
+  var NARROW_MQ = window.matchMedia('(max-width:820px)');
 
   /* ===== 섹터 접기/펼치기 + 마지막 선택 기억 (이 브라우저에 저장) ===== */
   function selKey(){ return 'tsListSel:'+location.pathname; }   // 마지막으로 본 캐릭터
@@ -229,7 +234,11 @@
       '<span class="thumb" style="--chip:'+a.col+'"></span>'+
       '<span class="rn"><span class="en">'+a.en+'</span><span class="ko">'+a.ko+'</span></span>'+
       '<span class="rs mono">'+(a.lock?'LOCKED':'ACCESS')+'</span>';
-    b.addEventListener('click',function(){select(a.k);});
+    b.addEventListener('click',function(){
+      select(a.k);
+      // 좁은 화면 = 상세 패널이 안 보이므로, 잠기지 않은 캐릭터는 미리보기 없이 바로 입장(위 NARROW_MQ 주석 참고)
+      if(NARROW_MQ.matches && !a.lock && window.TS && TS.go) TS.go(a.href, 'grant');
+    });
     var head=list.querySelector('.sec-h[data-sec="'+(a.sec||1)+'"]')||firstH;   // 그 섹터 헤더
     var ref=head.nextSibling;                                                    // 다음 섹터 헤더 바로 앞에 삽입
     while(ref && !(ref.classList&&ref.classList.contains('sec-h'))) ref=ref.nextSibling;
