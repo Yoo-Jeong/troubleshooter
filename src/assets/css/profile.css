@@ -88,13 +88,21 @@ body{font-family:'Chakra Petch','Pretendard','Gothic A1',sans-serif}
    맨 위에서 스크롤을 앞뒤로 오갈 때 그 차이만큼(예: 4px) 옷장·무대가 뚝뚝 튀는(들썩거리는) 게 없어짐 —
    .sheet padding-top 값이 바뀌면 이 +4px 도 같이 맞출 것. */
 .left-fixed{position:relative;position:sticky;top:calc(var(--osbar-h) + var(--topbar-h) + 4px);display:grid;grid-template-columns:88px auto;gap:20px;align-items:start}
+  /* ★overflow:hidden을 여기 두면 안 됨(2026-08-03 버그) — .stage-fold-tab이 이 박스 오른쪽 경계에
+     절반 걸쳐 있는데(right:-14px), overflow:hidden이면 탭 절반이 잘려 보임. 어차피 opacity:0인 동안엔
+     보이지도 않으니(아래) 클리핑 없이도 안 튀어 보임 — 굳이 필요 없어서 뺌. */
 /* 읽기 모드(2026-08-01) : 옷장·무대(.left-fixed)를 접고 .file이 그 폭까지 넓게 채운다.
    첫 칸을 0이 아니라 28px로 남겨두는 건 아래 .stage-fold-tab(접기 탭)이 계속 앉을 자리를 주기 위함 —
    탭은 .left-fixed 오른쪽 끝에 붙여두므로(right:-14px) 이 칸이 좁아지면 탭도 따라 왼쪽으로 붙는다.
    좁은 화면(아래 미디어쿼리)은 그 자체로 1열 스택이라 따로 오버라이드함. */
 .sheet.read-mode{grid-template-columns:28px 1fr}
-.sheet.read-mode .left-fixed .wardrobe,
-.sheet.read-mode .left-fixed .stage-col{display:none}
+/* ★부드러운 접기/펼치기(2026-08-03) — grid-template-columns 자체는 auto/minmax↔고정값 조합이라
+   브라우저가 트랜지션을 못 태워 순간 스냅되므로, 열 폭이 바뀌기 '전에' 내용만 먼저 페이드로 지웠다가
+   (.folding) 빈 상태로 열 폭을 스냅 전환하고, 펼칠 땐 열 폭을 먼저 스냅으로 늘린 뒤 내용을 페이드인한다
+   (profile.js 가 두 클래스를 시간차로 여닫음) — 결과적으로 뚝 끊기지 않고 부드럽게 보임. */
+.left-fixed .wardrobe,.left-fixed .stage-col{transition:opacity .2s ease}
+.sheet.folding .left-fixed .wardrobe,
+.sheet.folding .left-fixed .stage-col{opacity:0;pointer-events:none}
 /* 접기/펼치기 탭 : 옷장·무대와 서술카드 사이 경계에 걸쳐 놓는 작은 원형 화살표.
    FX ON/SCAN ON 같은 사각 상태칩과는 확실히 다른 모양(원형+화살표 아이콘)이라 "이걸 누르면 옆이 접힌다"가 바로 보임.
    위치는 .left-fixed 오른쪽 끝 고정(right:-14px, 절반은 카드 쪽으로 걸침) — 접힌 뒤 .left-fixed 폭이 28px로
@@ -130,7 +138,8 @@ body{font-family:'Chakra Petch','Pretendard','Gothic A1',sans-serif}
   border-radius:6px;overflow:hidden;
   background:radial-gradient(90% 70% at 50% 18%,var(--elev),transparent 62%),linear-gradient(180deg,var(--elev2) 0%,var(--bg-tint) 100%);
   border:1px solid var(--line-soft);box-shadow:0 10px 40px -20px rgba(40,60,90,.35);
-  display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+  transition:opacity .35s ease}   /* ★옷장 의상 전환 페이드(2026-08-03) — 무대 전체를 페이드해서 안의 진짜 이미지든 효과 캔버스든 다 같이 가려짐 */
 .stage .corner{position:absolute;width:20px;height:20px;border:1.5px solid var(--accent-line);z-index:6}
 .stage .corner.tl{top:12px;left:12px;border-right:none;border-bottom:none}
 .stage .corner.tr{top:12px;right:12px;border-left:none;border-bottom:none}

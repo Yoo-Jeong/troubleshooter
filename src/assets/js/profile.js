@@ -119,16 +119,20 @@
         s.classList.add('on');               // 슬롯 선택 표시(즉시)
         if(!art){ applyAll(s); return; }
         // ★의상 전환을 부드럽게 : 새 의상 미리 로드 → 페이드아웃 → 교체 → 페이드인 (뚝 바뀌지 않게)
-        //   페이드는 .art/.ghost 의 CSS transition:opacity 가 담당(별도 애니메이션 불필요).
+        //   ★.art/.ghost 각각이 아니라 .stage 전체를 페이드한다(2026-08-03, 이전엔 .art만 페이드했더니
+        //   S·민트처럼 '화면 장악' 효과가 진짜 일러 대신 캔버스에 매 프레임 그림을 새로 그려서 보여주는
+        //   경우엔 안 보였음 — 캔버스는 opacity 트랜지션과 무관하게 매 프레임 그대로 다시 그려지기 때문.
+        //   부모인 .stage 자체를 페이드하면 안에 뭐가 있든(진짜 이미지든 캔버스든) 다 같이 가려진다).
+        var stageEl = document.querySelector('.stage');
         var pre = new Image();               // 교체 순간 깜빡임 방지용 사전 로드
         var swap = function(){
           art.src = img; if(ghost) ghost.src = img;   // (이미 로드된) 새 의상으로 교체
           applyAll(s);                                 // 크기·위치도 새 의상 기준으로
-          art.style.opacity = ''; if(ghost) ghost.style.opacity = '';   // 페이드인
+          if(stageEl) stageEl.style.opacity = '';       // 페이드인
         };
         pre.onload = pre.onerror = function(){
-          art.style.opacity = '0'; if(ghost) ghost.style.opacity = '0'; // 페이드아웃
-          setTimeout(swap, 300);             // .art transition(.35s)에 맞춰 거의 사라진 뒤 교체→페이드인
+          if(stageEl) stageEl.style.opacity = '0';      // 페이드아웃
+          setTimeout(swap, 300);             // .stage transition(.35s)에 맞춰 거의 사라진 뒤 교체→페이드인
         };
         pre.src = img;
       });
@@ -447,15 +451,26 @@
 (function(){
   var btn = document.getElementById('stageViewToggle'), sheet = document.querySelector('.sheet');
   if(!btn || !sheet) return;
-  var expanded = true;
-  function paint(){
-    sheet.classList.toggle('read-mode', !expanded);
+  var expanded = true, busy = false;
+  function paintBtn(){
     btn.textContent = expanded ? '‹' : '›';
     btn.title = expanded ? '옷장·무대 접기' : '옷장·무대 펼치기';
   }
-  paint();
+  paintBtn();
   btn.addEventListener('click', function(){
-    expanded = !expanded;
-    paint();
+    if(busy) return;                 // 애니메이션 도중 연타 방지
+    expanded = !expanded; paintBtn(); busy = true;
+    if(!expanded){
+      // 접기 : 내용부터 페이드아웃(.2s) → 다 지워진 뒤에야 열 폭을 스냅으로 줄인다(빈 상태라 안 튐).
+      sheet.classList.add('folding');
+      setTimeout(function(){ sheet.classList.add('read-mode'); busy = false; }, 200);
+    } else {
+      // 펼치기 : 열 폭부터 스냅으로 늘리고(아직 내용은 숨김 상태) → 다음 프레임에 페이드인.
+      sheet.classList.remove('read-mode');
+      requestAnimationFrame(function(){
+        sheet.classList.remove('folding');
+        setTimeout(function(){ busy = false; }, 200);
+      });
+    }
   });
 })();
