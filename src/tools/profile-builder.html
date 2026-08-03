@@ -2626,7 +2626,7 @@ async function submitToDiscord(){
   // 암호 확인 — 한 번 맞히면 이 브라우저엔 기억(매번 다시 안 물어봄)
   var savedPass=null; try{ savedPass=localStorage.getItem('tsPB-pass'); }catch(e){}
   if(savedPass!==SUBMIT_PASSPHRASE){
-    var entered=prompt('제출 암호를 입력하세요 (관리자에게 문의)');
+    var entered=prompt('제출 암호를 입력하세요 (힌트:한국문제사격수재단 설립 년월일(yyyymmdd))');
     if(entered===null) return;   // 취소
     if(entered.trim()!==SUBMIT_PASSPHRASE){ saveMsg('암호가 달라요 — 관리자에게 확인하세요', false); return; }
     try{ localStorage.setItem('tsPB-pass', SUBMIT_PASSPHRASE); }catch(e){}
