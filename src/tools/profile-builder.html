@@ -336,7 +336,7 @@
         <button class="sm" id="themeBtn" title="툴·미리보기 테마 전환" style="margin-left:auto">◐ 테마</button>
       </div>
       <span class="note" id="saveMsg" style="display:block"></span>
-      <div class="note"><b>💾 저장</b> — 이 컴퓨터에 사이트 폴더가 있을 때 (관리자용)<br><b>📤 제출</b> — GitHub 계정 없이 디스코드로 보내기 (동맹원용, 관리자가 확인 후 반영)</div>
+      <div class="note"><b>💾 저장</b> — 이 컴퓨터에 사이트 폴더가 있을 때 (관리자용)<br><b>📤 제출</b> — GitHub 계정 없이 디스코드로 보내기 (멤버용, 관리자가 확인 후 반영)</div>
     </div>
 
     <div class="sec">
@@ -2586,7 +2586,7 @@ async function ensureSrcDir(repick){
   return srcDir;
 }
 // 이 캐릭터가 쓰는 이미지 파일명 모음 — 모든 세대의 프레임·사원증·옷장 그림 + 서술카드 그림 블록.
-// 사이트 저장(saveToSite)과 동맹원 제출(submitToDiscord) 둘 다 이 함수 하나로 계산(단일 출처).
+// 사이트 저장(saveToSite)과 멤버 제출(submitToDiscord) 둘 다 이 함수 하나로 계산(단일 출처).
 function collectUsedImages(){
   var used={};
   GENS.forEach(function(g){ var gd=GEN_FORMS[g.id]; if(!gd) return;
@@ -2598,13 +2598,13 @@ function collectUsedImages(){
 }
 
 /* ============================================================
-   동맹원 제출 — 디스코드 웹훅으로 전송 (GitHub 계정·git 불필요)
+   멤버 제출 — 디스코드 웹훅으로 전송 (GitHub 계정·git 불필요)
    ------------------------------------------------------------
    저장소에 직접 쓰지 않고, 지금 작성한 코드+이미지를 디스코드 채널로 보낸다.
    관리자가 그 채널에서 확인한 뒤 실제 사이트에 반영(💾 저장 또는 커밋)한다.
    ★단일 출처: 채널을 옮기게 되면 이 URL 한 줄만 새 웹훅 URL로 바꾸면 됨.
 
-   ★SUBMIT_PASSPHRASE = 동맹원 5인에게만 알려주는 암호(스팸 방지용 — 진짜 보안은 아니고,
+   ★SUBMIT_PASSPHRASE = 멤버 5인에게만 알려주는 암호(스팸 방지용 — 진짜 보안은 아니고,
    저장소가 public이 됐을 때 소스만 보고 아무나 누르는 걸 막는 정도). 값을 바꾸면 예전에
    맞혀서 기억된 브라우저도 다시 물어봄. 여기 이 줄만 고치면 됨(단일 출처).
    ============================================================ */
