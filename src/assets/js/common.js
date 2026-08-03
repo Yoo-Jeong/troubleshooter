@@ -182,11 +182,14 @@ document.addEventListener('DOMContentLoaded', function(){
     var HOME_MODES = window.TS_HOME_MODES;
     // 빌드 로그 — 실제 개발 이력을 세계관 톤으로 (최신이 위, neu=true 면 시안 강조)
     var BUILD_LOG = [
-      { dt:'2026.07', tx:'SYSTEM CONFIG 전 페이지 공통화 · 톱니 / 패널 모듈', neu:true },
-      { dt:'2026.07', tx:'홈 복귀 링크(로고 · ROOT) 활성화' },
-      { dt:'2026.07', tx:'홈 디스플레이 모드(PCB / 터미널) 전환 추가' },
-      { dt:'2026.07', tx:'화면 전환 모듈 확장 · scan / slide 계열' },
+      { dt:'2026.08', tx:'인물 기록 착장 데이터 확장 · 무대 연출 개선', neu:true },
+      { dt:'2026.08', tx:'아카이브 전역 정밀 점검 완료 · 기록 구조 정비' },
+      { dt:'2026.08', tx:'외부 열람 회선 개통 · 공개 접속 경로 확보' },
+      { dt:'2026.08', tx:'GALLERY · 기록 보관소 개설' },
       { dt:'2026.07', tx:'SECTOR 01 · 인물 기록 6건 등록' },
+      { dt:'2026.07', tx:'SYSTEM CONFIG 전 페이지 공통화 · 톱니 / 패널 모듈' },
+      { dt:'2026.07', tx:'홈 디스플레이 모드(PCB / 터미널) 전환 추가' },
+      { dt:'2026.07', tx:'화면 전환 모듈 확장 · scan / slide 계열' },
       { dt:'2026.07', tx:'통합 데이터베이스 단말기(TS·OS) 초기화' }
     ];
 
@@ -217,7 +220,7 @@ document.addEventListener('DOMContentLoaded', function(){
     function renderLog(){
       var ul = document.getElementById('buildLog'); if(!ul) return;
       ul.innerHTML = BUILD_LOG.map(function(e){
-        return '<li'+(e.neu?' class="new"':'')+'><span class="dt">['+e.dt+']</span> '+e.tx+'</li>';
+        return '<li'+(e.neu?' class="new"':'')+'><span class="dt">['+e.dt+']</span><span class="tx">'+e.tx+'</span></li>';
       }).join('');
     }
 

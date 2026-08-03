@@ -149,10 +149,11 @@ a{text-decoration:none;color:inherit}
 .cfg-link .ar{margin-left:auto;color:var(--tx3);transition:.18s}
 .cfg-link:hover .ar{color:var(--acc);transform:translateX(3px)}
 .cfg-log{list-style:none;font-family:'Share Tech Mono';border-left:1px solid var(--line);padding-left:16px;display:flex;flex-direction:column;gap:11px}
-.cfg-log li{position:relative;font-size:var(--fs-xs);line-height:1.65;color:var(--tx2);text-wrap:pretty}
+.cfg-log li{position:relative;display:flex;gap:8px;font-size:var(--fs-xs);line-height:1.65;color:var(--tx2)}
 .cfg-log li::before{content:"";position:absolute;left:-18.5px;top:5px;width:5px;height:5px;border-radius:50%;background:var(--line2)}
 .cfg-log li.new::before{background:var(--acc);box-shadow:0 0 6px var(--acc)}
-.cfg-log li .dt{color:var(--acc);letter-spacing:.5px}
+.cfg-log li .dt{flex:0 0 auto;color:var(--acc);letter-spacing:.5px;white-space:nowrap}
+.cfg-log li .tx{flex:1 1 auto;min-width:0;text-wrap:pretty}
 
 /* ============================================================
    공통 스크롤바 — TS·OS 단말기 톤 (전 페이지 동일, webkit-only)
