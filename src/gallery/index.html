@@ -61,7 +61,7 @@
   .lbx-stage{position:relative;display:flex;align-items:center;justify-content:center;max-width:min(1100px,92vw);max-height:66vh}
   .lbx-stage img{max-width:100%;max-height:66vh;border-radius:6px;box-shadow:0 20px 60px rgba(0,0,0,.5);display:block}
   .lbx-meta{margin-top:20px;max-width:min(680px,92vw);text-align:center}
-  /* ★Orbitron은 영문 전용 폰트라 한글이 섞이면 폴백 폰트로 따로 렌더돼 폰트가 뒤섞여 보임(2026-07-31 지적으로 수정)
+  /* Orbitron은 영문 전용 폰트라 한글이 섞이면 폴백 폰트로 따로 렌더돼 폰트가 뒤섞여 보임
      — 그리드 카드 제목(.g-t)과 같은 한글 지원 폰트(Chakra Petch)로 통일 */
   .lbx-title{font-family:'Chakra Petch';font-weight:600;font-size:var(--fs-xl);letter-spacing:.3px;color:#eaeff4}
   .lbx-sub{font-family:'Share Tech Mono';font-size:var(--fs-xs);letter-spacing:1px;color:#9aa5b0;margin-top:7px}
@@ -146,7 +146,7 @@
   var grid = document.getElementById('grid');
   document.getElementById('gcount').textContent = ITEMS.length + ' ITEMS';
   if(!ITEMS.length){
-    grid.outerHTML = '<div class="g-empty">· 등록된 그림이 없습니다 ·</div>';
+    grid.innerHTML = '<div class="g-empty">· 등록된 그림이 없습니다 ·</div>';   // outerHTML을 쓰면 #grid 자체가 통째로 바뀌어 아래 클릭 리스너가 못 붙음
   } else {
     grid.innerHTML = ITEMS.map(function(it, i){
       // 글(연성 등, type:'fic')도 그림과 똑같이 카드를 누르면 일단 라이트박스로 먼저 보여줌(썸네일+정보) —

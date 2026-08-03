@@ -155,18 +155,26 @@
 
   /* LOGS(교신기록)에 실제로 달린 댓글 수를 Cusdis 공개 API로 받아와 "-- RECORDS" 자리에 채운다.
      CHARACTERS의 "6 RECORDS"처럼 정적으로 손으로 못 박을 수 없는 값(누구나 언제든 댓글을 남길 수 있어서)이라
-     매번 조각을 새로 그릴 때마다 새로 받아온다. 실패해도(오프라인 등) 원래 문구(-- RECORDS)가 그대로 남을 뿐이라 안전. */
+     API로 받아오지만, 같은 세션(페이지를 새로고침하기 전까지) 안에서 모드를 여러 번 바꿔도 값이 그새 바뀔 일은
+     거의 없으므로 최초 1회만 요청하고 이후에는 캐시해둔 값을 재사용한다(모드 전환마다 불필요한 요청 방지).
+     실패해도(오프라인 등) 원래 문구(-- RECORDS)가 그대로 남을 뿐이라 안전. */
+  var logsCountCache = null;
+  function applyLogsCount(n){
+    // href="logs/" 링크 안의 레코드 표시 자리 — PCB(.st2)·터미널(.note) 둘 다 이 하나의 셀렉터로 커버(모드별 분기 없음)
+    document.querySelectorAll('a[href="logs/"] .st2, a[href="logs/"] .note').forEach(function(el){
+      el.textContent = n + ' RECORDS';
+    });
+  }
   function loadLogsCount(){
+    if(logsCountCache !== null){ applyLogsCount(logsCountCache); return; }
     if(!window.CUSDIS_APP_ID) return;
     fetch('https://cusdis.com/api/open/comments?appId=' + window.CUSDIS_APP_ID + '&pageId=logs&page=1')
       .then(function(r){ return r.json(); })
       .then(function(j){
         var n = j && j.data && typeof j.data.commentCount === 'number' ? j.data.commentCount : null;
         if(n === null) return;
-        // href="logs/" 링크 안의 레코드 표시 자리 — PCB(.st2)·터미널(.note) 둘 다 이 하나의 셀렉터로 커버(모드별 분기 없음)
-        document.querySelectorAll('a[href="logs/"] .st2, a[href="logs/"] .note').forEach(function(el){
-          el.textContent = n + ' RECORDS';
-        });
+        logsCountCache = n;
+        applyLogsCount(n);
       })
       .catch(function(){});
   }
@@ -189,14 +197,23 @@
     var lines=''; for(var i=0;i<32;i++) lines += '<div class="ln">'+tpl[i%tpl.length]+'</div>';
     col.innerHTML = lines + lines;
   }
-  /* 오빗 : 마우스 패럴랙스(틸트 무대 + 데코). 모드가 바뀌어 무대가 사라지면 루프 종료 */
+  /* 오빗 : 마우스 패럴랙스(틸트 무대 + 데코). 모드가 바뀌어 무대가 사라지면 루프 종료.
+     마우스 위치 추적 리스너는 window에 딱 한 번만 붙인다 — 오빗 모드를 여러 번 들락거려도(설정 패널에서
+     모드 전환) startParallax()가 매번 호출되므로, 여기서 매번 addEventListener 하면 리스너가 계속 쌓인다. */
+  var parallaxTx=0, parallaxTy=0, parallaxWired=false;
+  function wireParallaxPointer(){
+    if(parallaxWired) return; parallaxWired=true;
+    window.addEventListener('mousemove', function(e){
+      parallaxTx=(e.clientX/window.innerWidth-.5)*2; parallaxTy=(e.clientY/window.innerHeight-.5)*2;
+    });
+  }
   function startParallax(){
-    var S = document.getElementById('stage'), decos = document.querySelectorAll('.deco'), tx=0,ty=0,cx=0,cy=0;
+    var S = document.getElementById('stage'), decos = document.querySelectorAll('.deco'), cx=0,cy=0;
     if(!S || window.matchMedia('(max-width:1080px)').matches) return;
-    window.addEventListener('mousemove', function(e){ tx=(e.clientX/window.innerWidth-.5)*2; ty=(e.clientY/window.innerHeight-.5)*2; });
+    wireParallaxPointer();
     (function anim(){
       if(!document.body.contains(S)) return;              // 조각 교체로 무대 제거 → 정지
-      cx+=(tx-cx)*.06; cy+=(ty-cy)*.06;
+      cx+=(parallaxTx-cx)*.06; cy+=(parallaxTy-cy)*.06;
       S.style.transform = 'rotateX('+(16-cy*6)+'deg) rotateY('+(cx*7)+'deg)';
       var f=[40,26,32,20]; decos.forEach(function(d,i){ d.style.transform='translate('+(cx*f[i%4])+'px,'+(cy*f[i%4]*.6)+'px)'; });
       requestAnimationFrame(anim);
@@ -253,7 +270,7 @@
         initMode(renderId);
         setFoot(renderId);
         if(window.TS && TS.wire) TS.wire(mount);           // 조각 안 data-ts 링크 전환 배선
-        if(!booted && !bare){
+        if(!booted && !bare && window.TS && TS.boot){
           booted = true;
           TS.boot({ el: document.getElementById('connect'), onDone: function(){ afterReady(renderId); } });
         }else{
@@ -264,10 +281,11 @@
       .catch(function(err){ showError(mount, renderId, err); });
   };
 
-  // 화면 폭이 700px 경계를 넘나들 때(창 크기 조절·회전 등) pcb↔terminal 화면을 다시 그림.
+  // 화면 폭이 980px 경계를 넘나들 때(창 크기 조절·회전 등) pcb↔terminal 화면을 다시 그림.
   // 이미 불러온 뒤라 booted=true → 부팅 연출 없이 조각만 조용히 교체됨.
+  // ↳ 이 경계는 pcb 모드에만 영향을 준다(effectiveId 참고) — 다른 모드는 화면이 그대로라 재로드가 불필요함.
   MOBILE_MQ.addEventListener('change', function(){
-    if(curId) window.TS_loadHome(curId);
+    if(curId === 'pcb') window.TS_loadHome(curId);
   });
 
   // 첫 진입 — 저장된(또는 ?home= 로 강제된) 모드를 불러온다

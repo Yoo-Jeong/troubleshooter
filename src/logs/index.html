@@ -9,9 +9,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&family=Chakra+Petch:wght@300;400;500;600&family=Share+Tech+Mono&family=Gothic+A1:wght@300;400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
 
-<!-- ★다른 실제 페이지(characters.html 등)와 같은 공통 골격 — 상단바(osbar)·기기 베젤(.device/.fx)·테마 토글·시계·
-     시스템 설정 톱니까지 전부 common.js/common.css가 처리(단일 출처). 전엔 이 페이지만 common.js를 안 써서
-     상단바가 없었는데, 그러다 보니 데코 요소(.device/.fx)가 못 들어와 화면이 겉돌았음(2026-07-26 갱신). -->
+<!-- 다른 실제 페이지(characters.html 등)와 같은 공통 골격 — 상단바(osbar)·기기 베젤(.device/.fx)·테마 토글·시계·
+     시스템 설정 톱니까지 전부 common.js/common.css가 처리(단일 출처). 이 스크립트가 빠지면 데코 요소(.device/.fx)가
+     안 들어와 화면이 겉돌게 됨. -->
 <link rel="stylesheet" href="../assets/css/common.css?v=2">
 <script src="../assets/js/common.js?v=7"></script>
 <script src="../assets/js/cusdis-config.js?v=1"></script>
@@ -27,9 +27,8 @@
 
   /* 본문 = .screen(고정 높이) 안에서 이 영역만 스크롤(다른 목록 페이지의 .list와 같은 방식) */
   .logbody{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:30px 10px 40px;gap:8px}
-  /* ★2026-07-25(공용 폰트 크기 지적으로 수정): 11px를 직접 적지 않고 사이트 공통 타이포 스케일(common.css의
-     --fs-*)에서 가져다 씀 — 나중에 전체 크기 체계가 바뀌면(글자 크기 조정은 common.css 한 곳만 고치면 됨)
-     여기도 자동으로 같이 바뀌게. --fs-2xs가 마침 11px이라 보이는 크기는 그대로. */
+  /* 11px를 직접 적지 않고 사이트 공통 타이포 스케일(common.css의 --fs-*)에서 가져다 씀
+     — 전체 크기 체계가 바뀌면 common.css 한 곳만 고치면 여기도 자동으로 같이 바뀜(--fs-2xs=11px). */
   .note-line{font-family:'Share Tech Mono';font-size:var(--fs-2xs);letter-spacing:1.5px;color:var(--tx3);text-align:center}
 
   /* 게시판(cusdis) 카드 — 안쪽(iframe)은 다른 문서라 이 CSS가 안 닿음 → 내부 꾸미기는 아래 스크립트가 iframe 안에 직접 넣음.
@@ -84,7 +83,7 @@
           cusdisEl.setAttribute('data-page-url', location.href);
         </script>
         <script>
-          // ★Cusdis 위젯 다듬기(2026-07-26) — Cusdis는 이메일칸을 숨기거나 색·폰트를 사이트에 맞추는 옵션을 따로 안 줘서
+          // Cusdis 위젯 다듬기 — Cusdis는 이메일칸을 숨기거나 색·폰트를 사이트에 맞추는 옵션을 따로 안 줘서
           //   (공식 설정값 없음), 위젯이 자기 안에 그려넣는 화면(같은 출처 iframe이라 안이 들여다보임)을 직접 찾아 손본다.
           //   ①이메일 입력칸 숨김 ②닉네임 칸이 그 자리를 꽉 채우게 ③높이를 내용에 맞춰 계속 맞춰서 안쪽 스크롤바 방지
           //   ④이 페이지 톤(글꼴·테두리·글자색)에 맞는 스타일 주입.
@@ -96,29 +95,27 @@
             var wrap = document.getElementById('cusdis_thread'), tries = 0;
             // 이 페이지(부모 문서)가 지금 쓰고 있는 실제 색을 읽어다 iframe 쪽에 문자 그대로 넘김
             //   — CSS 변수(--tx 등)는 문서마다 따로라 iframe 안에서는 안 읽히므로, 여기서 계산된 값을 박아넣는다.
-            //   (색을 읽는 로직은 readColors() 하나뿐 — 예전엔 여기 또 하나 있었는데 안 쓰이는 중복이라 지움)
-            // ★이 페이지가 실제로 불러오는 건 common.css라 그 변수 이름(--tx/--bg/--acc 등)을 읽어야 함
-            //   (profile.css의 --ink/--paper/--accent 계열은 여기 없음 — 착각해서 한 번 라이트 테마 버그 냈었음).
+            // ⚠주의: 이 페이지가 불러오는 CSS는 common.css이므로 그 변수 이름(--tx/--bg/--acc 등)을 읽어야 함
+            //   — profile.css의 --ink/--paper/--accent 계열은 여기 없음(혼동 주의).
             function readColors(){
               var cs = getComputedStyle(document.documentElement);
               function v(name, fallback){ var x = cs.getPropertyValue(name).trim(); return x || fallback; }
               return {
                 ink: v('--tx', '#eaeff4'), inkSoft: v('--tx2', '#aab4c0'), inkFaint: v('--tx3', '#828d9a'),
-                line: v('--line', 'rgba(255,255,255,.1)'), accent: v('--acc', '#5ec8dd'), accentDeep: v('--acc', '#5ec8dd'),
+                line: v('--line', 'rgba(255,255,255,.1)'), accent: v('--acc', '#5ec8dd'),
                 paper: v('--bg', '#12161f'),
-                // ★글자 크기도 색과 똑같이(공용 스케일 지적 반영, 2026-07-25) — 여기 11px/13px를 직접 적지 않고
-                //   common.css의 --fs-* 를 읽어다 씀. iframe은 다른 문서라 var(--fs-xs)를 직접 못 쓰니 색처럼 계산된 값을 박아넣는다.
+                // 글자 크기도 색과 같은 방식 — 여기 11px/13px를 직접 적지 않고 common.css의 --fs-*를 읽어다 씀.
+                //   iframe은 다른 문서라 var(--fs-xs)를 직접 못 쓰니 계산된 값을 박아넣는다.
                 fsLabel: v('--fs-2xs', '11px'), fsInput: v('--fs-sm', '13.5px')
               };
             }
             function styleText(C){
               // ★특이도 참고: Cusdis 태그들은 전부 tailwind 낱글자 클래스(.border 등, 특이도 낮음)라
               //   앞에 #root 를 붙이는 것만으로(아이디+태그) 별도 !important 없이 대부분 이긴다.
-              // ★"입력창·댓글 배경이 까만 네모로 보임" 진짜 원인(2026-07-26 발견): html/body에 background-color는
-              //   아무도 안 정했지만 Cusdis가 html에 color-scheme:dark를 걸어놔서, 브라우저가 "다크 문서"로 보고
-              //   기본 캔버스 색을 자동으로 검게 채워버린다(우리 CSS와 무관하게 브라우저가 알아서 하는 동작이라
-              //   #root를 아무리 투명하게 해도 그 밑의 html/body 캔버스 자체가 이미 검다 — 진단: .board 배경을
-              //   빨간색으로 강제 바꿔봐도 안쪽은 그대로 검게 남는 것으로 확인). color-scheme을 꺼서 해결.
+              // "입력창·댓글 배경이 까만 네모로 보임" 원인: html/body에 background-color는 아무도 안 정했지만
+              //   Cusdis가 html에 color-scheme:dark를 걸어놔서, 브라우저가 "다크 문서"로 보고 기본 캔버스 색을
+              //   자동으로 검게 채워버린다(우리 CSS와 무관하게 브라우저가 알아서 하는 동작이라 #root를 아무리
+              //   투명하게 해도 그 밑의 html/body 캔버스 자체가 이미 검다). color-scheme을 꺼서 해결.
               return 'html,body{background:transparent!important;color-scheme:normal!important}'+
                 '#root{background:transparent!important;font-family:"Share Tech Mono",monospace}'+
                 '#root label{font-family:"Share Tech Mono",monospace;font-size:'+C.fsLabel+';letter-spacing:.07em;text-transform:uppercase;color:'+C.inkFaint+'}'+
@@ -126,28 +123,28 @@
                   'font-family:"Share Tech Mono",monospace;font-size:'+C.fsInput+';border-radius:3px;transition:border-color .18s ease,box-shadow .18s ease}'+
                 '#root input:focus,#root textarea:focus{outline:none;border-color:'+C.accent+';box-shadow:0 0 0 2px '+C.accent+'33}'+
                 '#root button{font-family:"Share Tech Mono",monospace;letter-spacing:.08em;text-transform:uppercase;border-radius:3px;cursor:pointer;transition:background .18s ease,color .18s ease,border-color .18s ease}'+
-                // ★버튼 두 종류를 구분해서 다르게(2026-07-26, "REPLY·Comments powered by가 너무 튄다" 피드백) —
-                //   Cusdis 마크업엔 이름이 따로 없지만, 맨 위 글쓰기 제출버튼만 dark:border 클래스가 붙어있고
-                //   댓글마다 붙는 작은 답글버튼엔 그게 없다(대신 font-medium) → 그 차이로 "주(글쓰기)"/"부(답글)"를 구분.
+                // 버튼 두 종류를 구분해서 다르게 — Cusdis 마크업엔 이름이 따로 없지만, 맨 위 글쓰기 제출버튼만
+                //   dark:border 클래스가 붙어있고 댓글마다 붙는 작은 답글버튼엔 그게 없다(대신 font-medium)
+                //   → 그 차이로 "주(글쓰기)"/"부(답글)"를 구분.
                 //   주 버튼 = 또렷한 상징색 테두리. 부 버튼(답글) = 흐린(무채색) 테두리+글자, 마우스 올리면만 상징색으로
-                //   (2026-07-26 재수정: 테두리를 아예 없앴더니 "버튼처럼 안 보인다"는 피드백 → 흐린 테두리로 되돌림).
-                '#root button.dark\\:border{font-size:'+C.fsLabel+';background:transparent!important;border:1px solid '+C.accent+'!important;color:'+C.accentDeep+'!important;padding:6px 12px!important}'+
+                //   (테두리를 완전히 없애면 버튼처럼 안 보여서 흐린 테두리를 유지).
+                '#root button.dark\\:border{font-size:'+C.fsLabel+';background:transparent!important;border:1px solid '+C.accent+'!important;color:'+C.accent+'!important;padding:6px 12px!important}'+
                 '#root button.dark\\:border:hover{background:'+C.accent+'!important;color:'+C.paper+'!important}'+
                 '#root button.font-medium{font-size:'+C.fsLabel+';background:transparent!important;border:1px solid '+C.line+'!important;color:'+C.inkFaint+'!important;padding:4px 10px!important}'+
-                '#root button.font-medium:hover{color:'+C.accentDeep+'!important;border-color:'+C.accent+'!important}'+
-                // ★맨 아래 "Comments powered by Cusdis" 저작자 표시도 눈에 띄는 상징색 링크였던 걸 옅게(2026-07-26) —
-                //   이 위젯 안 유일한 <a>라 그냥 태그 전체를 낮춰도 안전.
+                '#root button.font-medium:hover{color:'+C.accent+'!important;border-color:'+C.accent+'!important}'+
+                // 맨 아래 "Comments powered by Cusdis" 저작자 표시가 눈에 띄는 상징색 링크라 옅게 —
+                //   이 위젯 안 유일한 <a>라 태그 전체를 낮춰도 안전.
                 '#root a{color:'+C.inkFaint+'}'+
                 '#root a:hover{color:'+C.accent+'}'+
                 '#root ::placeholder{color:'+C.inkFaint+';opacity:.6}'+
                 // 남긴 글 내용(문단)만 모노가 아닌 일반 글꼴로 — 긴 한글 문장은 고정폭이면 오히려 읽기 불편해서
                 // (라벨·닉네임·시간처럼 짧은 것만 모노로 두고, 실제 사연 본문은 사이트 본문과 같은 계열로).
                 '#root p{font-family:"Pretendard","Malgun Gothic",sans-serif;color:'+C.inkSoft+';line-height:1.6}'+
-                // ★닉네임(작성자 이름) 색을 명시적으로 고정 — Tailwind의 dark:text-gray-100 하나에만 기대면
-                //   Cusdis 쪽 dark 클래스 적용 타이밍에 따라 순간적으로 거의 안 보이는 색으로 뜬 적이 있어서(2026-07-26 제보),
-                //   본문(--tx)과 같은 확실한 색으로 우리가 직접 못박아둔다.
-                //   ⚠div로 한정(2026-07-26 버그수정) — 원래 .font-medium 전체를 잡았더니 위 답글버튼(마찬가지로
-                //   font-medium 클래스가 있음)의 글자색까지 덮어써서 답글버튼이 의도한 색으로 안 나오던 버그가 있었음.
+                // 닉네임(작성자 이름) 색을 명시적으로 고정 — Tailwind의 dark:text-gray-100 하나에만 기대면
+                //   Cusdis 쪽 dark 클래스 적용 타이밍에 따라 순간적으로 거의 안 보이는 색으로 뜰 수 있어서,
+                //   본문(--tx)과 같은 확실한 색으로 직접 못박아둔다.
+                //   ⚠div로 한정 — .font-medium 전체를 잡으면 답글버튼(마찬가지로 font-medium 클래스)의
+                //   글자색까지 덮어써 버림.
                 '#root div.font-medium{color:'+C.ink+'!important}';
             }
             var curDoc = null;   // ★테마를 라이브로 바꿀 때(새로고침 없이 ◐ 버튼) 다시 칠할 수 있게 마지막 iframe 문서를 기억
@@ -172,7 +169,7 @@
               if(st) st.textContent = styleText(readColors());
               if(cusdisEl) cusdisEl.setAttribute('data-theme', document.documentElement.getAttribute('data-theme') || 'dark');
             }).observe(document.documentElement, { attributes:true, attributeFilter:['data-theme'] });
-            // ★글쓰기 폼과 기존 댓글 목록이 안 나뉘어 보인다는 피드백(2026-07-26) — Cusdis가 그 사이에 미리 비워둔
+            // 글쓰기 폼과 기존 댓글 목록을 나눠 보이게 — Cusdis가 그 사이에 미리 비워둔
             //   여백 칸(class="my-8", 안이 원래 빈 div)에 구분선+작은 라벨만 얹는다. 구조를 새로 만들지 않고
             //   "이미 있는 빈 자리"만 쓰므로 안전하지만, 혹시 그 칸이 없거나 모양이 다르면 조용히 건너뜀(공식 API가 아님).
             function addDivider(d, C){
@@ -181,7 +178,7 @@
               var spacer = dark && dark.children[1];
               if(!spacer || spacer.className !== 'my-8' || spacer.children.length) return;
               spacer.id = 'ts-log-divider';
-              // ★COMMENT 버튼과 구분선이 너무 붙어 보인다는 피드백(2026-07-26) — margin-top을 넉넉하게.
+              // COMMENT 버튼과 구분선이 붙어 보이지 않게 margin-top을 넉넉하게.
               spacer.style.cssText = 'border-top:1px solid '+C.line+';margin-top:26px;padding-top:14px';
               var label = d.createElement('div');
               label.textContent = '댓글 목록';
@@ -192,8 +189,8 @@
               var d = ifr.contentDocument;
               injectStyle(d);
               addDivider(d, readColors());
-              // ★답글(Reply) 버튼을 누르면 그 댓글 밑에 새 이메일칸이 또 생긴다(맨 위 글쓰기칸과 별개의 폼) →
-              //   하나만 찾던 querySelector 대신 전부(querySelectorAll) 찾아 매번 다 숨김(2026-07-26 수정).
+              // 답글(Reply) 버튼을 누르면 그 댓글 밑에 새 이메일칸이 또 생긴다(맨 위 글쓰기칸과 별개의 폼) →
+              //   querySelectorAll로 전부 찾아 매번 다 숨김.
               d.querySelectorAll('label[for="email"]').forEach(function(emailLabel){
                 var emailBox = emailLabel.parentElement;
                 if(emailBox.style.display === 'none') return;   // 이미 처리한 건 다시 안 건드림

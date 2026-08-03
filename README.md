@@ -34,6 +34,33 @@
 
 ---
 
+## 🌿 브랜치 운영
+
+`main`은 [🚀 배포](#-배포-github-pages)에서 보듯 **push되는 순간 실제 사이트에 반영되는 브랜치**입니다.
+그래서 평소 작업은 `main`에 바로 하지 않고 **`dev`(개발) 브랜치**에서 하다가, 방문자에게 보여줘도 될 만큼 정리됐을 때만 `main`으로 옮기는 방식을 권장합니다.
+
+**평소 작업 흐름**
+1. `dev` 브랜치에서 작업하고 그대로 `git commit` (필요하면 `git push origin dev`로 원격에도 백업 — `dev`에 push해도 배포 워크플로는 `main`만 보므로 사이트에는 아무 영향 없음).
+2. 미완성·실험적인 내용이 섞여 있어도 상관없음 — 방문자는 `main`만 보게 되는 배포된 사이트만 보니까요.
+
+**공개(배포)하고 싶을 때**
+1. `dev`가 정리된 상태인지 확인(로컬에서 `jekyll serve`로 미리보기 확인).
+2. `main`으로 옮기는 방법은 둘 중 편한 쪽으로:
+   - **간단하게(로컬에서 병합)**: `git checkout main` → `git merge dev` → `git push` (이 push가 배포를 트리거함)
+   - **기록을 남기며(GitHub PR)**: GitHub에서 `dev` → `main` Pull Request를 만들고 병합 — 무엇을 언제 공개했는지 이력이 GitHub에 남아, 나중에 "그때 뭘 올렸었지" 되짚기 편함. `main` merge 자체가 곧 배포이므로 CI 통과를 기다리는 절차는 따로 없음.
+
+**처음 한 번만 — `dev` 브랜치 만들기** (지금 저장소엔 아직 `main` 하나뿐)
+```powershell
+git checkout -b dev
+git push -u origin dev
+```
+이후로는 `git checkout dev`로 돌아와 평소처럼 작업하면 됩니다.
+
+> 💡 (선택) GitHub 저장소 **Settings → Branches**에서 `main`에 **Pull Request 필수** 규칙(branch protection)을 걸어두면, `main`에 실수로 직접 push하는 상황 자체를 막을 수 있습니다. 지금처럼 혼자 작업할 땐 없어도 무방하지만, 나중에 다른 사람과 같이 작업하게 되면 유용합니다.
+> 💡 Claude는 이 규칙대로 **`dev`에서 로컬 커밋까지는 돕더라도, `main`으로의 병합·push나 원격 브랜치 생성 같은 GitHub에 흔적이 남는 작업은 항상 사용자가 직접** 하는 걸 원칙으로 합니다.
+
+---
+
 ## 📁 폴더 구조
 
 > **핵심: 내가 쓰는 "원본"은 전부 `src/` 안. 루트엔 설정·결과물만.**
@@ -58,9 +85,10 @@ troubleshooter/
 │   │   └── myt · meant · merely · seluka · s   (총 6명)
 │   │
 │   ├── _data/
-│   │   └── gallery.yml        #   ★갤러리 색인(태그 목록). 그림마다 캐릭터·유형·출처·매체·작가 태그
+│   │   └── gallery.yml        #   (레거시·미사용) 갤러리 초기 설계 시 만든 태그 색인. 실제 갤러리는 gallery-data.js를 씀
 │   │
-│   ├── world/  gallery/   #   미래 섹션(현재 "준비중"). gallery/는 _data/gallery.yml을 읽어 표시(태그 색인만 있고 화면은 아직)
+│   ├── world/               #   미래 섹션(현재 "준비중" 안내 화면만)
+│   ├── gallery/             #   그림/글 모아보기 — 그리드 + 라이트박스(완성). 데이터는 assets/js/gallery-data.js
 │   ├── logs/               #   익명 게시판(LOGS·교신기록) — Cusdis 위젯 임베드
 │   │
 │   ├── modes/                 #   ★홈 화면 "조각"(단일 출처). index.html이 골라 끼움
@@ -75,10 +103,12 @@ troubleshooter/
 │   └── assets/                #   공용 자산(CSS·JS·이미지)
 │       ├── css/  common.css · profile.css · transitions.css
 │       ├── js/   common.js · profile.js · stage-fx.js · transitions.js · motion.js(모션 감소 옵션)
-│       │         cusdis-config.js(LOGS 위젯 설정) · list-editor.js
+│       │         gallery-data.js(★갤러리 그림 목록 단일 출처) · cusdis-config.js(LOGS 위젯 설정) · list-editor.js
 │       │         edit-core.js · editor.js  (?edit 조정 도구, 필요할 때만 로드)
-│       └── img/  ui/(로고·워드마크) · deco/(배경 데코) · lineup/(도감 라인업·생성물) · lineup_raw/(라인업 원본)
+│       └── img/  ui/(로고·워드마크) · deco/(배경 데코) · gallery/(갤러리 원본 이미지)
+│                 lineup/(도감 라인업·생성물) · lineup_raw/(라인업 원본)
 │
+├── .github/workflows/pages.yml # GitHub Actions 배포 워크플로 (main에 push되면 자동 빌드·배포)
 ├── _config.yml                # Jekyll 설정 (source: src → destination: _site)
 ├── _site/                     # 빌드 결과물(자동 생성 · .gitignore) — 지워도 됨, 다시 빌드하면 생김
 ├── _local/                    # 개인 자료(레퍼런스·백업 · .gitignore) — 사이트 아님
@@ -250,15 +280,19 @@ lineup_raw/<이름>.png   →   [build-lineup.py]   →   lineup/<이름>.png
 
 ---
 
-## 🖼 갤러리 (준비 중)
+## 🖼 갤러리
 
-캐릭터 그림/영상/글은 **파일은 캐릭터별 폴더, 정보는 태그**로 분리합니다.
+`gallery/index.html` — 그림/글을 **그리드로 모아보고 클릭하면 라이트박스(전체화면 확대)** 로 보는 화면입니다.
 
-- **그림 파일** → `characters/<이름>/gallery/` (여러 캐릭터·무소속은 `gallery/etc/`)
-- **태그 색인** → `src/_data/gallery.yml` — 그림마다 `chars`(캐릭터)·`type`(유형)·`source`(공식/커미션/팬아트)·`kind`(이미지/영상/글)·`artist`·`date` 태그
-- **보는 페이지** → `gallery/index.html` (색인을 읽어 태그 필터 — 구현 예정)
+- **데이터 단일 출처** → `assets/js/gallery-data.js` 의 `window.GALLERY_ITEMS` 배열 하나. 이 갤러리 화면과 홈 화면(GALLERY 노드의 "N RECORDS" 표시)이 같이 봅니다 — 항목을 추가/삭제하면 두 화면 모두 자동으로 반영됩니다.
+- **그림 원본 파일** → `assets/img/gallery/`
+- **두 가지 종류**:
+  - **그림**(`type` 없음 또는 `'art'`) — 클릭하면 라이트박스로 원본 확대.
+  - **글/연성**(`type:'fic'` + `url`) — 표지 그림은 여전히 필수. 클릭하면 그림과 똑같이 먼저 라이트박스(표지+정보)가 뜨고, 그 안의 "원문 보러가기 ↗" 버튼을 눌러야 `url`이 새 탭으로 열립니다(바로 이동 안 함).
 
-새 그림 추가 = 파일을 캐릭터 폴더에 넣고 `_data/gallery.yml` 에 항목 한 덩어리 추가. (페이지 코드는 안 건드림)
+새 항목 추가 = 이미지를 `assets/img/gallery/`에 넣고 `gallery-data.js`의 배열에 `{ }` 항목 하나 복사해 값만 채우면 끝(파일 상단 한글 주석에 필드 설명 있음). 날짜순 자동 정렬이라 순서를 직접 맞출 필요 없습니다.
+
+> `_data/gallery.yml`은 갤러리 초기 설계 때 만든 파일로 지금은 어디서도 읽지 않는 레거시입니다(정리 예정).
 
 ---
 
@@ -275,8 +309,8 @@ lineup_raw/<이름>.png   →   [build-lineup.py]   →   lineup/<이름>.png
 
 브라우저가 CSS/JS를 캐시하므로, `assets/` 파일을 고치면 뒤의 **버전 번호**(`common.css?v=1` 등)를 올려야
 방문자가 새 파일을 받습니다. 정확한 현재 번호는 `src/_layouts/character.html`의 `?v=`를 보는 게 가장 확실합니다
-(이 README는 사람이 손으로 갱신하는 문서라 버전 숫자가 늦게 반영될 수 있음). 참고로 이 문서를 마지막으로 손본 시점 기준: `common.css v2` · `profile.css v44` · `transitions.css v1` ·
-`common.js v4` · `profile.js v29` · `stage-fx.js v126` · `transitions.js v3` · `motion.js v3`.
+(이 README는 사람이 손으로 갱신하는 문서라 버전 숫자가 늦게 반영될 수 있음). 참고로 이 문서를 마지막으로 손본 시점 기준: `common.css v2` · `profile.css v47` · `transitions.css v1` ·
+`common.js v7` · `profile.js v32` · `stage-fx.js v130` · `transitions.js v3` · `motion.js v3` · `gallery-data.js v1`.
 
 - **개발 중** → 번호 안 올려도 `jekyll serve` 재빌드 + 브라우저 **`Ctrl`+`Shift`+`R`**.
 - **배포 전** → 고친 파일의 `?v=` 를 올려주세요. 참조하는 곳이 **여러 군데**일 수 있습니다 — 예를 들어 `profile.css`·`stage-fx.js`는 실제 캐릭터 레이아웃(`_layouts/character.html`) 말고도 **프로필 작성 툴의 미리보기(`buildSrcdoc()` 등)** 에서도 따로 불러오므로 그곳도 같이 올려야 툴 미리보기에서도 최신 버전이 반영됩니다.
@@ -286,8 +320,14 @@ lineup_raw/<이름>.png   →   [build-lineup.py]   →   lineup/<이름>.png
 
 ## 🚀 배포 (GitHub Pages)
 
-- GitHub Pages는 **Jekyll을 자동 빌드**합니다 — 저장소를 올리고 **Settings → Pages**에서 브랜치를 지정하면 게시됩니다(로컬에서 별도 빌드 불필요).
-- **private 저장소**를 GitHub Pages로 **공개 호스팅**하려면 보통 **유료 플랜**이 필요합니다(또는 public으로 전환). *로컬 미리보기(`jekyll serve`)는 이와 무관하게 항상 가능*합니다.
+이 저장소는 **public**이고, `main` 브랜치에 push되면 **GitHub Actions**가 자동으로 빌드·배포합니다.
+실제 사이트 주소: **https://yoo-jeong.github.io/troubleshooter/**
+
+- 워크플로 파일 → `.github/workflows/pages.yml`. GitHub이 기본 제공하는 Jekyll 빌드 대신, 로컬과 똑같이 `jekyll build`를 그대로 실행해 `_site`를 배포합니다.
+  > 이유: GitHub 기본 빌드는 `_config.yml`의 `source: src` 설정을 무시하는 알려진 문제가 있어(저장소 루트를 그대로 빌드), `README.md`가 홈페이지로 뜨는 등 오작동합니다.
+- 저장소 **Settings → Pages → Source**가 반드시 **`GitHub Actions`**로 설정돼 있어야 이 워크플로가 배포를 담당합니다(`Deploy from a branch`로 두면 GitHub이 자체 레거시 빌드를 돌려 위 문제가 재발합니다).
+- 사이트가 `username.github.io/저장소이름/`처럼 **하위경로에 배포**되므로, 코드에서 링크는 항상 **상대경로**(`../`, `characters/slug/`)만 씁니다. 절대경로(`/assets/...`)를 쓰면 하위경로 배포에서 깨집니다 — `common.js`의 `TSROOT()`(로고 클릭·설정 패널 링크가 쓰는 사이트 루트 계산 함수)도 이 원칙으로 만들어져 있습니다.
+- 배포는 `main` push에만 반응합니다(`workflow_dispatch`로 Actions 탭에서 수동 실행도 가능) — 개발 중인 다른 브랜치에 push해도 사이트에는 영향 없습니다. 위 [🌿 브랜치 운영](#-브랜치-운영) 참고.
 
 ---
 

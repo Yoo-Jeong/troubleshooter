@@ -52,9 +52,9 @@
   /* 기본 = 회색 펄스가 계속 흐름(움직임으로 더미와 구분). hover = 시안+글로우 */
   .traces .flow{fill:none;stroke-width:2.4;stroke-linecap:round;filter:grayscale(1) blur(.45px);opacity:.5;transition:opacity .22s,filter .22s}
   .traces .flow.rev{opacity:0}  /* 기본은 코어→노드 정방향만: 중앙에서 노드로 향하는 시선 흐름 */
-  .orbit:has(.p-world:hover) .w.t,.orbit:has(.p-char:hover) .c.t,.orbit:has(.p-rel:hover) .r.t,.orbit:has(.p-gal:hover) .g.t{stroke:var(--acc);stroke-width:1.7;opacity:.6}
-  .orbit:has(.p-world:hover) .w.via,.orbit:has(.p-char:hover) .c.via,.orbit:has(.p-rel:hover) .r.via,.orbit:has(.p-gal:hover) .g.via{stroke:var(--acc);fill:var(--bg2)}
-  .orbit:has(.p-world:hover) .w.flow:not(.rev),.orbit:has(.p-char:hover) .c.flow:not(.rev),.orbit:has(.p-rel:hover) .r.flow:not(.rev),.orbit:has(.p-gal:hover) .g.flow:not(.rev){opacity:.95;filter:blur(.5px) drop-shadow(0 0 4px var(--acc))}
+  .orbit:has(.p-tl:hover) .tl.t,.orbit:has(.p-tr:hover) .tr.t,.orbit:has(.p-br:hover) .br.t,.orbit:has(.p-bl:hover) .bl.t{stroke:var(--acc);stroke-width:1.7;opacity:.6}
+  .orbit:has(.p-tl:hover) .tl.via,.orbit:has(.p-tr:hover) .tr.via,.orbit:has(.p-br:hover) .br.via,.orbit:has(.p-bl:hover) .bl.via{stroke:var(--acc);fill:var(--bg2)}
+  .orbit:has(.p-tl:hover) .tl.flow:not(.rev),.orbit:has(.p-tr:hover) .tr.flow:not(.rev),.orbit:has(.p-br:hover) .br.flow:not(.rev),.orbit:has(.p-bl:hover) .bl.flow:not(.rev){opacity:.95;filter:blur(.5px) drop-shadow(0 0 4px var(--acc))}
 
   /* 노드 (px 배치, 비대칭) */
   .node{position:absolute;box-sizing:border-box;background:var(--panel);border:1px solid var(--line);
@@ -64,11 +64,12 @@
   .node .en{font-family:'Chakra Petch';font-weight:500;font-size:var(--fs-md);letter-spacing:.5px;margin-top:2px;color:var(--tx)}
   .node .ko{font-size:var(--fs-base);color:var(--tx2)}
   .node .st2{font-family:'Share Tech Mono';font-size:var(--fs-xs);letter-spacing:.5px;color:var(--tx3)}
-  /* 비대칭 배치 + 거리 위계 : 근/중/원 다르게 */
-  .p-world{left:92px;top:96px;width:240px;min-height:118px}      /* 가로 1.6배 · 4노드 균일 */
-  .p-char {left:613px;top:65px;width:240px;min-height:118px}     /* 우-상 · 가로 1.6배 */
-  .p-rel  {left:623px;top:366px;width:240px;min-height:118px}    /* 우-하 */
-  .p-gal  {left:94px;top:351px;width:240px;min-height:118px}     /* 좌-하 */
+  /* 비대칭 배치 + 거리 위계 : 근/중/원 다르게. 클래스 이름 = 화면상 위치(top-left 등) — 안의 내용(WORLD/GALLERY 등)은
+     아래 <a class="node on p-tl">처럼 자유롭게 바꿔치기하는 자리라, 이름을 내용이 아니라 위치로 고정해둠 */
+  .p-tl{left:92px;top:96px;width:240px;min-height:118px}      /* 왼쪽 위 · 가로 1.6배 · 4노드 균일 */
+  .p-tr{left:613px;top:65px;width:240px;min-height:118px}     /* 오른쪽 위 · 가로 1.6배 */
+  .p-br{left:623px;top:366px;width:240px;min-height:118px}    /* 오른쪽 아래 */
+  .p-bl{left:94px;top:351px;width:240px;min-height:118px}     /* 왼쪽 아래 */
 
   /* LOCKED */
   .node.lock{opacity:.72}
@@ -91,9 +92,9 @@
   .node.on:hover{border-color:color-mix(in srgb,var(--acc) 55%,var(--line));
     background:color-mix(in srgb,var(--acc) 8%,var(--panel));
     box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 22%,transparent),0 0 30px -5px var(--acc)}
-  /* ★라이트 테마만 호버 배경을 원래 --panel 그대로(민트색 안 섞음, 2026-07-27 지적으로 수정) — 다크에선 은은한
-     색 번짐이 잘 어울렸지만, 밝은 카드 안쪽까지 민트가 "침범"한 것처럼 튀어 보였음. 테두리·바깥 발광(box-shadow)은
-     그대로 accent라 호버했다는 신호는 충분해서, 안쪽 채움만 라이트에서 빼도 세련된 느낌은 그대로 유지됨. */
+  /* 라이트 테마만 호버 배경을 원래 --panel 그대로(민트색 안 섞음) — 다크에선 은은한 색 번짐이 잘 어울리지만,
+     밝은 카드 안쪽까지 민트가 "침범"한 것처럼 튀어 보임. 테두리·바깥 발광(box-shadow)은 그대로 accent라
+     호버했다는 신호는 충분해서, 안쪽 채움만 라이트에서 빼도 세련된 느낌은 그대로 유지됨. */
   :root[data-theme="light"] .node.on:hover{background:var(--panel)}
   .node.on:hover .n,.node.on:hover .en{color:var(--acc)}
   .node.on:hover .ko{color:var(--tx2)}
@@ -155,23 +156,25 @@
       <path class="dt" d="M368,368 V460"/><circle class="dvia" cx="368" cy="368" r="4"/>
       <path class="dt" d="M552,322 L598,368 V414"/><circle class="dvia" cx="552" cy="322" r="4"/>
 
-      <!-- 배선: 기본 회색, 마우스 올린 노드만 활성(밝은선+펄스). 코어(460,253)→각 노드, 선 길이·모양 다름 -->
-      <!-- WORLD (복원 위치, 가로 1.6배) : 정+역 펄스 -->
-      <path class="t w" d="M332,146 H346 L388,188"/>
-      <path class="flow w" stroke="url(#fgW)" d="M332,146 H346 L388,188"/><path class="flow w rev" stroke="url(#rgW)" d="M332,146 H346 L388,188"/>
-      <circle class="via w" cx="388" cy="188" r="5"/><circle class="via w" cx="332" cy="146" r="4.5"/>
-      <!-- RELATIONS (우-하) -->
-      <path class="t r" d="M623,416 H577 L502,341"/>
-      <path class="flow r" stroke="url(#fgR)" d="M623,416 H577 L502,341"/><path class="flow r rev" stroke="url(#rgR)" d="M623,416 H577 L502,341"/>
-      <circle class="via r" cx="502" cy="341" r="5"/><circle class="via r" cx="623" cy="416" r="4.5"/>
-      <!-- GALLERY (좌-하) -->
-      <path class="t g" d="M334,401 H370 L427,344"/>
-      <path class="flow g" stroke="url(#fgG)" d="M334,401 H370 L427,344"/><path class="flow g rev" stroke="url(#rgG)" d="M334,401 H370 L427,344"/>
-      <circle class="via g" cx="427" cy="344" r="5"/><circle class="via g" cx="334" cy="401" r="4.5"/>
-      <!-- CHARACTERS (우-상) -->
-      <path class="t c" d="M613,124 H570 L518,176"/>
-      <path class="flow c" stroke="url(#fgC)" d="M613,124 H570 L518,176"/><path class="flow c rev" stroke="url(#rgC)" d="M613,124 H570 L518,176"/>
-      <circle class="via c" cx="518" cy="176" r="5.5"/><circle class="via c" cx="613" cy="124" r="4.5"/>
+      <!-- 배선: 기본 회색, 마우스 올린 노드만 활성(밝은선+펄스). 코어(460,253)→각 노드, 선 길이·모양 다름.
+           클래스 tl/tr/br/bl = 화면 위치(위 .p-tl 등과 짝) — 지금 담긴 내용(WORLD/GALLERY/LOGS/CHARACTERS)은
+           아래 <a> 태그 안 글자만 보면 됨(배선 클래스와는 무관, 위치가 바뀌지 않는 한 안 건드려도 됨). -->
+      <!-- 왼쪽 위 (지금 WORLD) : 정+역 펄스 -->
+      <path class="t tl" d="M332,146 H346 L388,188"/>
+      <path class="flow tl" stroke="url(#fgW)" d="M332,146 H346 L388,188"/><path class="flow tl rev" stroke="url(#rgW)" d="M332,146 H346 L388,188"/>
+      <circle class="via tl" cx="388" cy="188" r="5"/><circle class="via tl" cx="332" cy="146" r="4.5"/>
+      <!-- 오른쪽 아래 (지금 LOGS) -->
+      <path class="t br" d="M623,416 H577 L502,341"/>
+      <path class="flow br" stroke="url(#fgR)" d="M623,416 H577 L502,341"/><path class="flow br rev" stroke="url(#rgR)" d="M623,416 H577 L502,341"/>
+      <circle class="via br" cx="502" cy="341" r="5"/><circle class="via br" cx="623" cy="416" r="4.5"/>
+      <!-- 왼쪽 아래 (지금 CHARACTERS) -->
+      <path class="t bl" d="M334,401 H370 L427,344"/>
+      <path class="flow bl" stroke="url(#fgG)" d="M334,401 H370 L427,344"/><path class="flow bl rev" stroke="url(#rgG)" d="M334,401 H370 L427,344"/>
+      <circle class="via bl" cx="427" cy="344" r="5"/><circle class="via bl" cx="334" cy="401" r="4.5"/>
+      <!-- 오른쪽 위 (지금 GALLERY) -->
+      <path class="t tr" d="M613,124 H570 L518,176"/>
+      <path class="flow tr" stroke="url(#fgC)" d="M613,124 H570 L518,176"/><path class="flow tr rev" stroke="url(#rgC)" d="M613,124 H570 L518,176"/>
+      <circle class="via tr" cx="518" cy="176" r="5.5"/><circle class="via tr" cx="613" cy="124" r="4.5"/>
     </svg>
 
     <!-- 코어 -->
@@ -191,13 +194,13 @@
     <div class="dummy d-bar"><span class="dn mono">SECTOR 05 · BARREN</span><span class="ds mono">◇ NO CLEARANCE</span><span class="deny mono">ACCESS DENIED</span></div>
     <div class="dummy d-ori"><span class="dhatch"></span><span class="ds mono">◇ ORIGIN DATABASE · ██</span><span class="deny mono">ACCESS DENIED</span></div>
 
-    <!-- 진짜 4섹션 노드 — ★위치(왼위/오위/오아래/왼아래)는 클래스(p-world 등)가 정하고, 배선(SVG)도 그 클래스에 물려 있어서
-         내용을 재배치할 땐 클래스는 그대로 두고 안의 링크/글자만 바꿔치기한다(배선을 다시 그릴 필요 없음).
-         2026-07-26 배치: 왼위=세계관 · 왼아래=인물 · 오위=갤러리 · 오아래=교신기록. -->
-    <a class="node on p-world" href="world/" data-ts="accesslog"><span class="n mono">01</span><span class="en">WORLD</span><span class="ko">세계관</span><span class="botrow"><span class="st2 mono">-- RECORDS</span><span class="go mono">→ ENTER</span></span></a>
-    <a class="node on p-char" href="gallery/" data-ts="accesslog"><span class="n mono">03</span><span class="en">GALLERY</span><span class="ko">갤러리</span><span class="botrow"><span class="st2 mono">-- RECORDS</span><span class="go mono">→ ACCESS</span></span></a>
-    <a class="node on p-rel" href="logs/" data-ts="accesslog"><span class="n mono">04</span><span class="en">LOGS</span><span class="ko">교신기록</span><span class="botrow"><span class="st2 mono">-- RECORDS</span><span class="go mono">→ ACCESS</span></span></a>
-    <a class="node on p-gal" href="characters.html" data-ts="accesslog"><span class="n mono">02</span><span class="en">CHARACTERS</span><span class="ko">인물</span><span class="botrow"><span class="st2 mono">6 RECORDS</span><span class="go mono">→ ACCESS</span></span></a>
+    <!-- 진짜 4섹션 노드 — 위치(왼위/오위/오아래/왼아래)는 클래스(p-tl 등, 이름이 곧 화면 위치)가 정하고,
+         배선(SVG)도 그 클래스에 물려 있어서 내용을 재배치할 땐 클래스는 그대로 두고 안의 링크/글자만
+         바꿔치기한다(배선을 다시 그릴 필요 없음). 지금 배치: 왼위=세계관 · 왼아래=인물 · 오위=갤러리 · 오아래=교신기록. -->
+    <a class="node on p-tl" href="world/" data-ts="accesslog"><span class="n mono">01</span><span class="en">WORLD</span><span class="ko">세계관</span><span class="botrow"><span class="st2 mono">-- RECORDS</span><span class="go mono">→ ENTER</span></span></a>
+    <a class="node on p-tr" href="gallery/" data-ts="accesslog"><span class="n mono">03</span><span class="en">GALLERY</span><span class="ko">갤러리</span><span class="botrow"><span class="st2 mono">-- RECORDS</span><span class="go mono">→ ACCESS</span></span></a>
+    <a class="node on p-br" href="logs/" data-ts="accesslog"><span class="n mono">04</span><span class="en">LOGS</span><span class="ko">교신기록</span><span class="botrow"><span class="st2 mono">-- RECORDS</span><span class="go mono">→ ACCESS</span></span></a>
+    <a class="node on p-bl" href="characters.html" data-ts="accesslog"><span class="n mono">02</span><span class="en">CHARACTERS</span><span class="ko">인물</span><span class="botrow"><span class="st2 mono">6 RECORDS</span><span class="go mono">→ ACCESS</span></span></a>
   </nav>
 
   <!-- 홈 공통 하단 캡션 -->

@@ -144,7 +144,7 @@
     <div class="sub">
       <a class="back mono" href="index.html" data-ts="fade">◂ DATABASE</a>
       <div class="ttl"><span class="en">CHARACTERS</span><span class="ko">인물</span></div>
-      <span class="r mono">ONLINE <b>01 / 05</b> · 6 ACCESSIBLE</span>
+      <span class="r mono">ONLINE <b>01 / 05</b> · <span id="accessCount">0</span> ACCESSIBLE</span>
     </div>
 
     <div class="db">
@@ -185,12 +185,17 @@
   {%- assign chars = site.pages | where: "layout", "character" -%}
   {%- for c in chars -%}
     {%- assign slug = c.url | split: "/characters/" | last | split: "/" | first -%}
-    { k:{{ slug | jsonify }}, id:{{ c.meta.record | jsonify }}, en:{{ c.meta.title | jsonify }}, ko:{{ c.roster.ko | jsonify }}, role:{{ c.roster.role | jsonify }}, age:{{ c.roster.age | jsonify }}, ht:{{ c.roster.height | default: 0 }}, col:{{ c.accent | jsonify }}, lock:{{ c.roster.lock | default: 0 }}, sec:{{ c.roster.sec | default: 1 | jsonify }}, art:{{ c.art | jsonify }}, href:{{ slug | prepend: "characters/" | append: "/index.html" | jsonify }} }{%- unless forloop.last %},{% endunless -%}
+    { k:{{ slug | jsonify }}, id:{{ c.meta.record | jsonify }}, en:{{ c.meta.title | jsonify }}, ko:{{ c.roster.ko | default: "" | jsonify }}, role:{{ c.roster.role | default: "" | jsonify }}, age:{{ c.roster.age | default: "" | jsonify }}, ht:{{ c.roster.height | default: 0 }}, col:{{ c.accent | default: "#888" | jsonify }}, lock:{{ c.roster.lock | default: 0 }}, sec:{{ c.roster.sec | default: 1 | jsonify }}, art:{{ c.art | jsonify }}, href:{{ slug | prepend: "characters/" | append: "/index.html" | jsonify }} }{%- unless forloop.last %},{% endunless -%}
   {%- endfor -%}
   ].sort(function(a,b){ return a.id<b.id?-1:(a.id>b.id?1:0); });   // 레코드번호(id) 순 (위 목록은 새 캐릭터 추가 시 자동 포함)
   // 섹터 표시 이름(디테일 패널용). etc = 무소속.
   var SEC={ '1':'01 · HEADQUARTER','2':'02 · SUBQUARTER','3':'03 · MEGALOPOLIS','4':'04 · OUTERCYCLE','5':'05 · BARREN','etc':'ETC · UNAFFILIATED' };
+  var SEC_NUM={ '1':'01','2':'02','3':'03','4':'04','5':'05' };   // SEC 표시문구("01 · HEADQUARTER")에서 번호만 다시 잘라 쓰지 않도록 별도 보관
   function secTxt(s){ return SEC[s]||SEC['1']; }
+
+  // localStorage 읽기/쓰기 공용 헬퍼 — 시크릿모드 등에서 localStorage 접근이 막혀도 에러로 스크립트가 멈추지 않게 함
+  function lsGet(key){ try{ return localStorage.getItem(key); }catch(e){ return null; } }
+  function lsSet(key, val){ try{ localStorage.setItem(key, val); }catch(e){} }
   // 라인업 이미지 없을 때(새 캐릭터 등) 대체 점선 실루엣 — build-lineup.py 로 생성 전까지
   var LINEUP_PH="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='420'%3E%3Crect x='2' y='2' width='196' height='416' rx='10' fill='none' stroke='%23808080' stroke-opacity='0.3' stroke-width='2' stroke-dasharray='7 7'/%3E%3Cg fill='%23808080' fill-opacity='0.35'%3E%3Ccircle cx='100' cy='150' r='34'/%3E%3Cpath d='M46 330 q0-96 54-96 t54 96 z'/%3E%3C/g%3E%3C/svg%3E";
 
@@ -201,24 +206,28 @@
   function lineupKey(k){ return 'tsList:'+location.pathname+'::'+k; }
   function applyLineupPos(k){
     var r=document.documentElement, base=LINEUP_POS[k]||{}, ov={};
-    try{ ov=JSON.parse(localStorage.getItem(lineupKey(k))||'{}'); }catch(e){}
+    try{ ov=JSON.parse(lsGet(lineupKey(k))||'{}'); }catch(e){}
     function pick(p,d){ return ov[p]!=null?ov[p]:(base[p]!=null?base[p]:d); }
     r.style.setProperty('--l-h', pick('h',100)+'%');
     r.style.setProperty('--l-x', pick('x',0)+'%');
     r.style.setProperty('--l-y', pick('y',0)+'%');
   }
   var list=document.getElementById('list'), firstH=list.querySelector('.sec-h');
-  // ★버그수정(2026-07-31): 이 폭 밑에서는 위 CSS(@media max-width:820px)가 상세 패널(.detail)을 통째로 숨기는데,
+  // 이 폭 밑에서는 위 CSS(@media max-width:820px)가 상세 패널(.detail)을 통째로 숨기는데,
   //   캐릭터 페이지로 들어가는 유일한 버튼(ENTER RECORD →)이 그 안에 있어서 좁은 화면(모바일 등)에선 목록만 보이고
-  //   들어갈 방법이 아예 없었음(직접 재현·확인). 이 폭에선 목록 항목을 누르면 미리보기 없이 바로 그 캐릭터로 이동.
+  //   들어갈 방법이 아예 없다. 이 폭에선 목록 항목을 누르면 미리보기 없이 바로 그 캐릭터로 이동.
   //   ↳ 두 값(CSS·JS)은 반드시 같이 맞출 것(단일 출처는 아니지만 짝 값, index.html의 MOBILE_MQ와 같은 패턴).
   var NARROW_MQ = window.matchMedia('(max-width:820px)');
+  // 상세 패널의 DOM 참조는 select()가 클릭마다 다시 찾지 않도록 한 번만 캐싱
+  var elDetail=document.querySelector('.detail'), elDpic=document.getElementById('dpic'), elDimg=document.getElementById('dimg'),
+      elDid=document.getElementById('did'), elDname=document.getElementById('dname'), elDko=document.getElementById('dko'),
+      elDrole=document.getElementById('drole'), elDfields=document.getElementById('dfields'), elDenter=document.getElementById('denter');
 
   /* ===== 섹터 접기/펼치기 + 마지막 선택 기억 (이 브라우저에 저장) ===== */
   function selKey(){ return 'tsListSel:'+location.pathname; }   // 마지막으로 본 캐릭터
   function colKey(){ return 'tsListCol:'+location.pathname; }   // 접어둔 섹터 목록
-  function readCol(){ try{ return JSON.parse(localStorage.getItem(colKey())||'[]'); }catch(e){ return []; } }
-  function writeCol(a){ try{ localStorage.setItem(colKey(), JSON.stringify(a)); }catch(e){} }
+  function readCol(){ try{ return JSON.parse(lsGet(colKey())||'[]'); }catch(e){ return []; } }
+  function writeCol(a){ lsSet(colKey(), JSON.stringify(a)); }
   // 한 섹터 헤더에 딸린 카드(.rec) = 다음 섹터 헤더 전까지의 형제들(목록은 평면 구조)
   function secRecs(h){ var out=[], x=h.nextSibling;
     while(x && !(x.classList&&x.classList.contains('sec-h'))){ if(x.classList&&x.classList.contains('rec')) out.push(x); x=x.nextSibling; }
@@ -251,6 +260,8 @@
     h.classList.toggle('off', n===0);
     h.classList.toggle('can', n>0);   // 레코드가 있는 섹터만 접기/펼치기 가능
   });
+  // 상단 "N ACCESSIBLE" 배지 = 잠기지 않은 캐릭터 수(캐릭터가 늘어나도 자동 갱신, 손으로 숫자 맞출 필요 없음)
+  document.getElementById('accessCount').textContent = CHARACTERS.filter(function(a){ return !a.lock; }).length;
   // 지난번에 접어둔 섹터 복원
   readCol().forEach(function(id){ var h=list.querySelector('.sec-h.can[data-sec="'+id+'"]'); if(h) setSecCollapsed(h, true); });
   // 섹터 헤더 클릭 = 접기/펼치기 (그 상태를 기억)
@@ -267,37 +278,36 @@
     var a=byk(k);
     document.querySelectorAll('.rec').forEach(function(r){r.classList.toggle('sel',r.dataset.k===k);});
     // 레코드 열람 트랜지션 재생 (클릭할 때마다 다시)
-    var dt=document.querySelector('.detail');
-    dt.classList.remove('rev'); void dt.offsetWidth; dt.classList.add('rev');
-    var dpic=document.getElementById('dpic'), dimgEl=document.getElementById('dimg');
-    dimgEl.classList.remove('portrait');                 // 기본 = 키 비교 라인업(바닥정렬)
-    dpic.onerror=function(){                              // 키 비교 라인업 없음 → 옷장 main 그림 그대로(가운데) → 그것도 없으면 점선
+    elDetail.classList.remove('rev');
+    void elDetail.offsetWidth;   // 강제로 리플로우를 일으켜, 방금 뗀 rev 클래스를 바로 다시 붙여도 애니메이션이 처음부터 다시 재생되게 함
+    elDetail.classList.add('rev');
+    elDimg.classList.remove('portrait');                 // 기본 = 키 비교 라인업(바닥정렬)
+    elDpic.onerror=function(){                              // 키 비교 라인업 없음 → 옷장 main 그림 그대로(가운데) → 그것도 없으면 점선
       this.onerror=null;
-      if(a.art){ dimgEl.classList.add('portrait');
-        this.onerror=function(){ this.onerror=null; dimgEl.classList.remove('portrait'); this.src=LINEUP_PH; };
+      if(a.art){ elDimg.classList.add('portrait');
+        this.onerror=function(){ this.onerror=null; elDimg.classList.remove('portrait'); this.src=LINEUP_PH; };
         this.src='characters/'+a.k+'/'+a.art;
       } else this.src=LINEUP_PH;
     };
-    dpic.src='assets/img/lineup/'+a.k+'.png';
+    elDpic.src='assets/img/lineup/'+a.k+'.png';
     selK=k; applyLineupPos(k); if(window._listEd) window._listEd();   // 캐릭터별 위치 적용 + 편집기 동기화
-    document.getElementById('dimg').classList.toggle('lock',!!a.lock);
-    document.getElementById('did').textContent='RECORD '+a.id+' · '+(a.sec==='etc'?'UNAFFILIATED':'SECTOR '+secTxt(a.sec).split(' · ')[0]);
-    document.getElementById('dname').textContent=a.en;
-    document.getElementById('dko').textContent=a.ko;
-    var drEl=document.getElementById('drole'); drEl.textContent=a.role||''; drEl.style.display=a.role?'':'none';   // 역할 없으면 숨김
-    document.getElementById('dfields').innerHTML=
-      '<div class="f"><span class="k">AGE</span><span class="v">'+a.age+'</span></div>'+
+    elDimg.classList.toggle('lock',!!a.lock);
+    elDid.textContent='RECORD '+a.id+' · '+(a.sec==='etc'?'UNAFFILIATED':'SECTOR '+(SEC_NUM[a.sec]||SEC_NUM['1']));
+    elDname.textContent=a.en;
+    elDko.textContent=a.ko;
+    elDrole.textContent=a.role||''; elDrole.style.display=a.role?'':'none';   // 역할 없으면 숨김
+    elDfields.innerHTML=
+      '<div class="f"><span class="k">AGE</span><span class="v">'+(a.age||'—')+'</span></div>'+
       '<div class="f"><span class="k">HEIGHT</span><span class="v">'+(a.ht?a.ht+' cm':'—')+'</span></div>'+
       '<div class="f"><span class="k">SECTOR</span><span class="v">'+secTxt(a.sec)+'</span></div>'+
       '<div class="f"><span class="k">STATUS</span><span class="v '+(a.lock?'':'ok')+'">'+(a.lock?'LOCKED · 열람 불가':'● ACCESSIBLE')+'</span></div>';
-    var en=document.getElementById('denter');
-    if(a.lock){en.className='denter mono dis';en.textContent='LOCKED';en.removeAttribute('href');}
-    else{en.className='denter mono';en.textContent='ENTER RECORD →';en.setAttribute('href',a.href);}
-    try{ localStorage.setItem(selKey(), k); }catch(e){}   // 마지막 선택 기억 → 상세 갔다 돌아와도 유지
+    if(a.lock){elDenter.className='denter mono dis';elDenter.textContent='LOCKED';elDenter.removeAttribute('href');}
+    else{elDenter.className='denter mono';elDenter.textContent='ENTER RECORD →';elDenter.setAttribute('href',a.href);}
+    lsSet(selKey(), k);   // 마지막 선택 기억 → 상세 갔다 돌아와도 유지
   }
   // 처음 표시 = 지난번에 보던 캐릭터(있으면), 없으면 목록 맨 위(M-01)
   (function initSelect(){
-    var want=null; try{ want=localStorage.getItem(selKey()); }catch(e){}
+    var want=lsGet(selKey());
     var k = (want && byk(want)) ? want : CHARACTERS[0].k;
     var btn=document.querySelector('.rec[data-k="'+k+'"]');
     if(btn){ var sh=secOf(btn);   // 기억된 캐릭터가 접힌 섹터에 있으면 펼쳐서 보이게
