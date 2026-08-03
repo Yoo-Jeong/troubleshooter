@@ -1,5 +1,5 @@
 /* ============================================================
-   TS·OS — 캐릭터 상세 프로필 공통 스타일 (12명 공유 · 단일 출처)
+   TS·OS — 캐릭터 상세 프로필 공통 스타일 (6명 공유 · 단일 출처)
    ------------------------------------------------------------
    · 이 파일 = 프로필 페이지의 "생김새" 전부. 캐릭터마다 다른 건 색뿐.
    · 각 캐릭터 페이지(characters/myt/index.html 등)는 front matter accent 로 --accent 계열
@@ -87,16 +87,16 @@ body{font-family:'Chakra Petch','Pretendard','Gothic A1',sans-serif}
    맨 끝의 + 4px = 바로 위 .sheet 의 padding-top(4px). 스크롤 전 원래 자리와 딱 맞춰야
    맨 위에서 스크롤을 앞뒤로 오갈 때 그 차이만큼(예: 4px) 옷장·무대가 뚝뚝 튀는(들썩거리는) 게 없어짐 —
    .sheet padding-top 값이 바뀌면 이 +4px 도 같이 맞출 것. */
-.left-fixed{position:relative;position:sticky;top:calc(var(--osbar-h) + var(--topbar-h) + 4px);display:grid;grid-template-columns:88px auto;gap:20px;align-items:start}
-  /* ★overflow:hidden을 여기 두면 안 됨(2026-08-03 버그) — .stage-fold-tab이 이 박스 오른쪽 경계에
+.left-fixed{position:sticky;top:calc(var(--osbar-h) + var(--topbar-h) + 4px);display:grid;grid-template-columns:88px auto;gap:20px;align-items:start}
+  /* ★overflow:hidden을 여기 두면 안 됨 — .stage-fold-tab이 이 박스 오른쪽 경계에
      절반 걸쳐 있는데(right:-14px), overflow:hidden이면 탭 절반이 잘려 보임. 어차피 opacity:0인 동안엔
      보이지도 않으니(아래) 클리핑 없이도 안 튀어 보임 — 굳이 필요 없어서 뺌. */
-/* 읽기 모드(2026-08-01) : 옷장·무대(.left-fixed)를 접고 .file이 그 폭까지 넓게 채운다.
+/* 읽기 모드 : 옷장·무대(.left-fixed)를 접고 .file이 그 폭까지 넓게 채운다.
    첫 칸을 0이 아니라 28px로 남겨두는 건 아래 .stage-fold-tab(접기 탭)이 계속 앉을 자리를 주기 위함 —
    탭은 .left-fixed 오른쪽 끝에 붙여두므로(right:-14px) 이 칸이 좁아지면 탭도 따라 왼쪽으로 붙는다.
    좁은 화면(아래 미디어쿼리)은 그 자체로 1열 스택이라 따로 오버라이드함. */
 .sheet.read-mode{grid-template-columns:28px 1fr}
-/* ★부드러운 접기/펼치기(2026-08-03) — grid-template-columns 자체는 auto/minmax↔고정값 조합이라
+/* ★부드러운 접기/펼치기 — grid-template-columns 자체는 auto/minmax↔고정값 조합이라
    브라우저가 트랜지션을 못 태워 순간 스냅되므로, 열 폭이 바뀌기 '전에' 내용만 먼저 페이드로 지웠다가
    (.folding) 빈 상태로 열 폭을 스냅 전환하고, 펼칠 땐 열 폭을 먼저 스냅으로 늘린 뒤 내용을 페이드인한다
    (profile.js 가 두 클래스를 시간차로 여닫음) — 결과적으로 뚝 끊기지 않고 부드럽게 보임. */
@@ -139,7 +139,7 @@ body{font-family:'Chakra Petch','Pretendard','Gothic A1',sans-serif}
   background:radial-gradient(90% 70% at 50% 18%,var(--elev),transparent 62%),linear-gradient(180deg,var(--elev2) 0%,var(--bg-tint) 100%);
   border:1px solid var(--line-soft);box-shadow:0 10px 40px -20px rgba(40,60,90,.35);
   display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
-  transition:opacity .35s ease}   /* ★옷장 의상 전환 페이드(2026-08-03) — 무대 전체를 페이드해서 안의 진짜 이미지든 효과 캔버스든 다 같이 가려짐 */
+  transition:opacity .35s ease}   /* ★옷장 의상 전환 페이드 — 무대 전체를 페이드해서 안의 진짜 이미지든 효과 캔버스든 다 같이 가려짐 */
 .stage .corner{position:absolute;width:20px;height:20px;border:1.5px solid var(--accent-line);z-index:6}
 .stage .corner.tl{top:12px;left:12px;border-right:none;border-bottom:none}
 .stage .corner.tr{top:12px;right:12px;border-left:none;border-bottom:none}
@@ -156,12 +156,6 @@ body{font-family:'Chakra Petch','Pretendard','Gothic A1',sans-serif}
   color:transparent;-webkit-text-stroke:1.5px rgba(42,51,64,.14);
   writing-mode:vertical-rl;letter-spacing:-2.6cqw;user-select:none;pointer-events:none}
 :root[data-theme="dark"] .bg-type{-webkit-text-stroke-color:rgba(255,255,255,.07)}
-
-/* 좌측 미니 프레임 데코 */
-.mini-frames{position:absolute;z-index:4;left:16px;top:130px;display:flex;flex-direction:column;gap:8px}
-.mini-frames .mf{width:36px;height:26px;border:1px solid var(--line);position:relative;background:var(--elev)}
-.mini-frames .mf::before,.mini-frames .mf::after{content:"";position:absolute;top:3px;bottom:3px;width:2px;background:var(--line)}
-.mini-frames .mf::before{left:6px}.mini-frames .mf::after{right:6px}
 
 .stage .ghost{position:absolute;z-index:1;bottom:-8%;left:50%;transform:translate(calc(-42% + var(--ghost-x,0%)),var(--ghost-y,0%));height:var(--ghost-h,128%);
   opacity:var(--ghost-op,9%);-webkit-mask-image:linear-gradient(180deg,#000 60%,transparent 94%);mask-image:linear-gradient(180deg,#000 60%,transparent 94%);
@@ -234,23 +228,6 @@ body{font-family:'Chakra Petch','Pretendard','Gothic A1',sans-serif}
 .idmeta{margin-top:12px;font-family:'Share Tech Mono';font-size:var(--fs-sm);letter-spacing:.6px;color:var(--ink-soft);line-height:1.6}
 .namehead .quote{margin-top:16px;font-family:'Chakra Petch';font-style:italic;font-size:var(--fs-md);color:var(--ink-soft);padding-left:13px;border-left:2px solid var(--accent-line);line-height:1.55}
 
-/* 요원 평가 (지휘부 한줄평) — 이름 헤더 아래, 기록에 찍힌 공식 소견 느낌 */
-.assess{position:relative;border:1px solid var(--line-soft);border-left:2px solid var(--accent);border-radius:6px;
-  background:radial-gradient(130% 100% at 100% 0,var(--accent-tint),transparent 52%),var(--paper);
-  padding:14px 18px 12px;box-shadow:0 4px 20px -14px rgba(40,60,90,.4)}
-.assess .ah{font-family:'Share Tech Mono';font-size:var(--fs-xs);letter-spacing:1.5px;color:var(--accent-deep);display:flex;align-items:center;gap:9px;margin-bottom:8px}
-.assess .ah::before{content:"▣";font-size:var(--fs-sm)}
-.assess .ah .kr{color:var(--ink-faint);letter-spacing:1px}
-/* 본문 = 깔끔한 Pretendard(가독 우선) · 서명은 모노. 박스(라벨·좌측라인·틴트)로 '공식 소견' 톤 유지 */
-.assess .ab{font-family:'Pretendard','Gothic A1',sans-serif;font-size:var(--fs-md);line-height:1.4;
-  color:color-mix(in srgb,var(--ink) 84%,var(--ink-soft))}
-/* 종합 소견 = 인사고과 판정 한 줄 (구분선 + 배치 판정 태그) */
-.assess .averdict{display:flex;flex-wrap:wrap;align-items:baseline;gap:7px 9px;margin-top:13px;padding-top:11px;
-  border-top:1px dashed var(--line2);font-family:'Share Tech Mono';font-size:var(--fs-xs);letter-spacing:.4px;color:var(--ink-soft)}
-.assess .averdict .k{color:var(--accent-deep);letter-spacing:1px}
-.assess .averdict b{color:var(--accent-deep);font-weight:400;border:1px solid var(--accent-line);border-radius:3px;padding:1px 8px}
-.assess .asign{font-family:'Share Tech Mono';font-size:var(--fs-2xs);letter-spacing:1px;color:var(--ink-faint);text-align:right;margin-top:9px}
-
 /* 카드 (능력치 · 서술 공통) */
 .card{background:var(--paper);border:1px solid var(--line-soft);border-radius:6px;position:relative;overflow:hidden;box-shadow:0 4px 20px -14px rgba(40,60,90,.4)}
 .card-h{display:flex;align-items:center;gap:10px;padding:12px 17px;border-bottom:1px solid var(--line-soft)}
@@ -290,7 +267,7 @@ body{font-family:'Chakra Petch','Pretendard','Gothic A1',sans-serif}
 .sb .n b{color:var(--accent-deep);font-weight:400}   /* +증가분 숫자 */
 
 /* [서술] 본문 · #키워드 소제목 · 능력 도입 인용 */
-/* 문단 사이 간격 — 긴 글일수록 스캔하기 쉽게 좀 더 넉넉히(9px→14px, 2026-07-26). 확장카드(.acc-b)도 같은 리듬. */
+/* 문단 사이 간격 — 긴 글일수록 스캔하기 쉽게 좀 더 넉넉히(9px→14px). 확장카드(.acc-b)도 같은 리듬. */
 .prose p{margin:0}
 .prose p+p{margin-top:14px}
 .prose b{color:var(--accent-deep);font-weight:700}
@@ -299,26 +276,26 @@ body{font-family:'Chakra Petch','Pretendard','Gothic A1',sans-serif}
 .prose h4{font-family:'Pretendard','Gothic A1';font-weight:700;font-size:var(--fs-md);color:var(--accent-deep);letter-spacing:-.2px;margin:18px 0 6px}
 .prose h4:first-child{margin-top:0}
 /* 능력 도입 인용 = 억지 이탤릭 대신 또렷한 에피그래프(좌측 라인으로 구분, 글자 크기는 본문과 동일)
-   ★확장카드(.acc-b)에서도 인용문 서식이 눈에 보이게 같이 대상에 넣음(2026-07-26 — 예전엔 .prose 안에서만 스타일이 있어서
-   확장카드에서 인용문 버튼을 눌러도 class="lead"만 붙고 겉보기엔 아무 효과가 없었음). */
+   ★확장카드(.acc-b)에서도 인용문 서식이 눈에 보이게 같이 대상에 넣음 — .prose 안에서만 스타일이 있으면
+   확장카드에서 인용문 버튼을 눌러도 class="lead"만 붙고 겉보기엔 아무 효과가 없어 보임. */
 .prose .lead,.acc-b .lead{font-family:'Pretendard','Gothic A1',sans-serif;font-weight:500;font-size:var(--fs-md);color:var(--ink);
   padding:1px 0 1px 16px;border-left:2px solid var(--accent);margin-bottom:16px;line-height:1.6;letter-spacing:-.3px}
 /* 굵게(b)는 색을 따로 못박지 않고 inherit — 인용문 안에 회색(==글자==·.faint)이 섞여도 그 색을 그대로 물려받아
-   굵기만 강조로 쓰인다. 예전엔 --ink(최대 대비)로 고정해서, 회색으로 낮춘 인용문 일부를 굵게 하면 그 부분만
-   뜬금없이 새하얗게 튀는 문제가 있었음(2026-07-27 지적으로 수정). */
+   굵기만 강조로 쓰인다. --ink(최대 대비)로 고정하면, 회색으로 낮춘 인용문 일부를 굵게 했을 때 그 부분만
+   뜬금없이 새하얗게 튀어 보인다. */
 .prose .lead b,.acc-b .lead b{color:inherit}
 /* ★라이트 테마에서 인용구(.lead) 글자색만 살짝 옅게 — --ink(거의 검정)를 그대로 쓰면 흰 배경 위에서
-   너무 새까맣게 튀어 부담스럽다(2026-07-25 발견). 다크 테마는 --ink(밝은 흰빛)가 배경 위에서 자연스럽게
+   너무 새까맣게 튀어 부담스럽다. 다크 테마는 --ink(밝은 흰빛)가 배경 위에서 자연스럽게
    튀는 색이라 그대로 두고, 라이트만 --ink-soft(중간 회색)로 낮춘다. (b는 위 규칙대로 inherit로 따라옴)*/
 :root[data-theme="light"] .prose .lead,
 :root[data-theme="light"] .acc-b .lead{color:var(--ink-soft)}
 /* 빈 블록엔 옅은 안내(오너가 채우기 전) */
 .prose:empty::before,.acc-b:empty::before{content:"내용을 입력하세요";color:var(--ink-faint);font-style:italic;opacity:.45;font-size:var(--fs-sm)}
 /* 서술카드 안 독립 그림(문단 사이 삽입) — 카드 폭 꽉 채운 사진 한 장. .p-blk는 그림 사이 문단 묶음(스타일 없이 그냥 그룹)
-   ★확장카드(.acc-b)도 같은 그림 블록을 쓸 수 있어서(2026-07-26) .lead와 같은 방식으로 같이 대상에 넣음. */
+   ★확장카드(.acc-b)도 같은 그림 블록을 쓸 수 있어서 .lead와 같은 방식으로 같이 대상에 넣음. */
 .prose .p-fig,.acc-b .p-fig{margin:26px 0}   /* 그림 위/아래 여백 — 카드 안 텍스트/그림 블록 사이 유일한 간격 조절점(단일 출처) */
 .prose .p-fig:first-child,.acc-b .p-fig:first-child{margin-top:0}
-/* ★width:100%였을 땐 원본이 카드보다 작아도 억지로 늘려 채웠음(2026-07-27 지적으로 수정) — max-width:100%로 바꿔서
+/* ★width:100%면 원본이 카드보다 작아도 억지로 늘려 채운다 — max-width:100%로 바꿔서
    "카드보다 크면 줄이고, 작으면 원본 크기 그대로"(작은 그림이 확대되어 뭉개지지 않음). 가운데 정렬은 원본이 작을 때를 위한 것. */
 .prose .p-fig img,.acc-b .p-fig img{display:block;max-width:100%;margin:0 auto;border-radius:7px;border:1px solid var(--line-soft);cursor:zoom-in}
 /* 그림 작가 크레딧(선택) — 이름만 담고 "@" 접두어는 여기서만 붙임(위 .art-credit과 같은 방식) */
@@ -326,7 +303,7 @@ body{font-family:'Chakra Petch','Pretendard','Gothic A1',sans-serif}
   letter-spacing:.06em;color:var(--ink-faint);opacity:.8}
 .prose .p-fig figcaption:not(:empty)::before,.acc-b .p-fig figcaption:not(:empty)::before{content:"@"}
 .prose .p-fig figcaption:empty::before,.acc-b .p-fig figcaption:empty::before{content:"그림 작가 · 선택 사항";opacity:.55;font-style:italic}
-/* [서술/확장] 코드블럭(```로 감싼 부분, 2026-07-26) — 문법강조 자체는 highlight.js(CDN, character.html·profile-builder.html이 로드)가
+/* [서술/확장] 코드블럭(```로 감싼 부분) — 문법강조 자체는 highlight.js(CDN, character.html·profile-builder.html이 로드)가
    해주고 여기선 그 결과물(hljs-* 클래스)에 사이트 팔레트만 입힌다. 새 프로그래밍 언어를 추가로 지원해야 할 일은 없음
    (흔한 언어는 highlight.js가 이미 다 앎) — 색이 안 어울리면 이 블록만 고치면 됨(단일 출처). */
 pre.p-code{margin:20px 0;padding:14px 16px;background:var(--elev2);border:1px solid var(--line);border-radius:7px;overflow-x:auto;position:relative}
@@ -392,7 +369,7 @@ pre.p-code[data-lang]::before{content:attr(data-lang);position:absolute;top:8px;
 .acc summary:hover{background:var(--accent-tint)}
 .acc summary .kr-sub{font-size:var(--fs-xs);color:var(--ink-faint);margin-left:auto;letter-spacing:1px;font-family:'Share Tech Mono';font-weight:400;text-transform:none}
 .acc .acc-b{padding:5px 18px 17px;font-size:var(--fs-base);line-height:1.8;color:var(--ink-soft);border-top:1px solid var(--line-soft);
-  overflow:hidden;transition:max-height .28s ease,padding-top .28s ease,padding-bottom .28s ease}   /* ★서술카드보다 작은 크기 유지(2026-07-26) — 확장·기밀 카드 특유의 '비밀스러운' 느낌이라 사용자가 선호, 통일하지 않기로 함 */
+  overflow:hidden;transition:max-height .28s ease,padding-top .28s ease,padding-bottom .28s ease}   /* ★서술카드보다 작은 크기 유지 — 확장·기밀 카드 특유의 '비밀스러운' 느낌이라 사용자가 선호, 통일하지 않기로 함 */
 .acc .acc-b p{margin:0}   /* 서술카드(.prose)와 같은 문단 리듬 — 원래 브라우저 기본 <p> 여백이 그대로 남아있어 카드 위아래에 불필요한 틈이 있었음 */
 .acc .acc-b p+p{margin-top:14px}
 /* 확장카드 '기밀(CLASSIFIED)' 표시 — 닫혀 있을 땐 진짜 제목 대신 가려진 라벨만 보이다가, 열면 드러남 */
@@ -427,4 +404,8 @@ pre.p-code[data-lang]::before{content:attr(data-lang);position:absolute;top:8px;
   .brand .crumb{display:none}
   /* 스택(모바일)에선 원래도 1열이라 접어도 28px 레일이 필요 없음 — 그대로 1열 유지(위 기본 규칙보다 나중에 나와서 이김) */
   .sheet.read-mode{grid-template-columns:1fr}
+  /* 무대 접기 탭도 이 폭에선 숨김 — "옆으로 접어 넓힌다"는 개념 자체가 안 맞음(옷장·무대·카드가 이미 1열로
+     쌓여있어 접어도 넓어질 옆 칸이 없음). .stage-fold-tab의 기준점(.left-fixed)도 이 폭에서 position:static이라
+     탭 위치 자체가 어긋나 있었음 — 아예 숨겨서 둘 다 해결(모바일 사용성 재점검, 2026-08-03). */
+  .stage-fold-tab{display:none}
 }

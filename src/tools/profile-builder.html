@@ -7,7 +7,7 @@
 <!--
   캐릭터 프로필 작성 툴 (개발용 · 사이트 방문자용 아님)
   · 왼쪽 폼에 데이터를 채우면 오른쪽 iframe이 실제 캐릭터 페이지 그대로 미리보기.
-  · 미리보기 = 진짜 뼈대 + /assets/의 profile.css·profile.js·stage-fx.js 를 그대로 사용.
+  · 미리보기 = 진짜 뼈대 + /assets/의 profile.css·profile.js·profile-generations.js·profile-ui.js·stage-fx.js 를 그대로 사용.
   · 다 채우면 [코드 생성]으로 characters/<슬러그>/index.html 전문을 복사/다운로드.
   · jekyll serve 로 열어야 /assets/ 경로가 잡힘 → http://localhost:4000/tools/profile-builder.html
 -->
@@ -810,7 +810,7 @@ function statRow(name, val, plus){
   d.querySelector('.del').onclick = function(){ d.remove(); render(); };
   return d;
 }
-// 옷장 위치/크기 미세조정 키 — 무대 배치 편집기(=페이지 ?edit)·profile.js SZ·editor.js 와 같은 단일 출처.
+// 옷장 위치/크기 미세조정 키 — 무대 배치 편집기(=페이지 ?edit)·profile.js WARDROBE_FIELDS·editor.js 와 같은 단일 출처.
 var WARD_SZ = ['arth','artw','shiftx','shift','ghosth','ghostx','ghosty','ghostop'];   // 순서 = editor.js 필드 순서(기존 파일과 diff 최소화)
 function wardRow(cap, img, on, sz){
   var d = document.createElement('div'); d.className = 'list-row ward-row';
@@ -1855,7 +1855,9 @@ function buildSrcdoc(st){
     '<script>window.CHAR_META='+CH(st.meta)+';window.CHAR_STATS='+CH(st.stats)+';'+
       'window.CHAR_WARDROBE='+CH(ward)+';window.CHAR_GENERATIONS='+CH(gens)+';<\/script>'+
     '<script src="../../assets/js/common.js?v=7"><\/script>'+
-    '<script src="../../assets/js/profile.js?v=32"><\/script>'+
+    '<script src="../../assets/js/profile.js?v=33"><\/script>'+
+    '<script src="../../assets/js/profile-generations.js?v=1"><\/script>'+
+    '<script src="../../assets/js/profile-ui.js?v=1"><\/script>'+
     '<script src="../../assets/js/stage-fx.js?v=130"><\/script>'+
     // 서술/확장 카드 안 코드블럭 문법강조(실제 페이지 _layouts/character.html과 같은 CDN 라이브러리 — 모양 바꾸면 거기도 같이).
     //   미리보기는 폼을 고칠 때마다 liveText()가 이 패널만 다시 그리는데, 그때는 페이지 재로드가 아니라서 이 스크립트가 다시

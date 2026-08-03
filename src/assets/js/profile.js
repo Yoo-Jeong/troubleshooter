@@ -1,9 +1,10 @@
 /* ============================================================
-   TS·OS — 캐릭터 프로필 공통 동작 (12명 공유 · 단일 출처)
+   TS·OS — 캐릭터 프로필 공통 동작 · 핵심(데이터 렌더링) (6명 공유 · 단일 출처)
    ------------------------------------------------------------
-   이 파일이 하는 일은 딱 두 가지:
+   이 파일이 하는 일은 딱 세 가지:
    1) 능력치 스탯 바 그리기  — 각 페이지의 window.CHAR_STATS 배열을 읽어 자동 생성.
    2) 옷장 슬롯 전환         — 슬롯을 누르면 스테이지 일러가 바뀜.
+   3) 상단바·무대 메타 텍스트 채우기 — window.CHAR_META를 data-meta 자리에 반영.
 
    ▷ 스탯 데이터 형식 (각 페이지 <script> 에 정의):
         window.CHAR_STATS = [
@@ -13,25 +14,38 @@
         ];
       · 만점 10칸. 3번째 값(증가분)은 없으면 생략.
       · 증가분 보조색은 CSS 변수 --stat-plus (각 페이지에서 지정, 없으면 기본).
+
+   ▷ 같이 로드되는 형제 파일(같은 폴더, 역할 분담 — 이 파일이 먼저 로드돼야 함):
+      · profile-generations.js — 세대 전환(있는 캐릭터만). 이 파일의 paintWardrobe/paintMeta/
+        paintStats/setArtCredit을 window.__paint*·window.__setArtCredit으로 빌려 씀.
+      · profile-ui.js — 라이트박스·카드 접기·사원증 스캔 토글·무대 접기 토글. 이 파일과는
+        변수를 안 나눠 쓰는 완전히 독립된 화면 상호작용이라 따로 뺌.
    ============================================================ */
 (function(){
   'use strict';
   var MAX = 10;
   var SELF = document.currentScript;   // profile.js 자기 위치(편집기 경로 계산용, 폴더 깊이 무관)
 
+  // front matter 값을 innerHTML 문자열에 꽂기 전에 거치는 방어 헬퍼 — 값에 "나 <가 섞여도
+  // 마크업이 안 깨지게(예: 캡션에 큰따옴표가 들어가면 data-* 속성이 거기서 끊겨버림).
+  function escapeHtml(s){
+    return String(s==null ? '' : s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
   // 0) 옷장 슬롯 렌더 — window.CHAR_WARDROBE(또는 세대별 wardrobe) 배열로. 세대 전환 시 재호출 가능하게 함수화.
   //    각 항목: { cap, img, artist?, on?, arth?, artw?, shift?, shiftx?, ghosth?, ghosty?, ghostx?, ghostop? }
   function paintWardrobe(list){
     var track = document.querySelector('.wardrobe .track');
     if(!track) return;
-    var SZ = ['arth','artw','shift','shiftx','ghosth','ghosty','ghostx','ghostop'];
     track.innerHTML = (list||[]).map(function(w){
-      var a = 'data-img="' + (w.img || '') + '" data-artist="' + (w.artist || '') + '"';
-      SZ.forEach(function(k){ if(w[k]) a += ' data-' + k + '="' + w[k] + '"'; });
-      var thumb = w.img ? '<div class="thumb"><img src="' + w.img + '" alt="' + (w.cap||'') + '"></div>'
+      var a = 'data-img="' + escapeHtml(w.img) + '" data-artist="' + escapeHtml(w.artist) + '"';
+      WARDROBE_FIELDS.forEach(function(f){ if(w[f.key]) a += ' ' + f.attr + '="' + escapeHtml(w[f.key]) + '"'; });
+      var thumb = w.img ? '<div class="thumb"><img src="' + escapeHtml(w.img) + '" alt="' + escapeHtml(w.cap) + '"></div>'
                         : '<div class="thumb empty">＋</div>';
       return '<div class="slot' + (w.on?' on':'') + '" ' + a + '><span class="node"></span>' +
-             thumb + '<span class="cap">' + (w.cap||'') + '</span></div>';
+             thumb + '<span class="cap">' + escapeHtml(w.cap) + '</span></div>';
     }).join('');
     bindWardrobe();   // 슬롯 클릭 재배선(재렌더마다)
   }
@@ -63,7 +77,7 @@
       var el = document.createElement('div');
       el.className = 'sb';
       el.innerHTML =
-        '<span class="k">' + name + '</span>' +
+        '<span class="k">' + escapeHtml(name) + '</span>' +
         '<span class="bar">' +
           '<i class="fill" style="width:' + (v / MAX * 100) + '%"></i>' +
           (plus ? '<i class="plus" style="left:' + (v / MAX * 100) + '%;width:' + (plus / MAX * 100) + '%"></i>' : '') +
@@ -87,14 +101,23 @@
     if(!artCredit) return;
     artCredit.textContent = (name || '').trim();
   }
-  // 슬롯의 data-* → CSS 변수 (일러 art + 고스트 ghost)
-  var SLOT_VARS = [['data-arth','--art-h'],['data-artw','--art-w'],['data-shift','--art-shift'],['data-shiftx','--art-x'],
-                   ['data-ghosth','--ghost-h'],['data-ghosty','--ghost-y'],['data-ghostx','--ghost-x'],
-                   ['data-ghostop','--ghost-op']];
-  var ALL_VARS = ['--art-h','--art-w','--art-x','--art-shift','--ghost-h','--ghost-x','--ghost-y','--ghost-op'];
+  // 옷장 의상 크기·위치 필드 8개(단일 출처) — 이 배열 하나에서 wardrobe 데이터 키(key)·slot의 data-* 속성명
+  //   (attr)·CSS 변수 이름(css)이 전부 파생됨. 필드를 추가/변경할 땐 이 배열 한 줄만 고치면 됨
+  //   (예전엔 SZ/SLOT_VARS/ALL_VARS 세 배열에 같은 내용을 순서까지 다르게 중복 관리했었음).
+  var WARDROBE_FIELDS = [
+    {key:'arth',    attr:'data-arth',    css:'--art-h'},
+    {key:'artw',    attr:'data-artw',    css:'--art-w'},
+    {key:'shift',   attr:'data-shift',   css:'--art-shift'},
+    {key:'shiftx',  attr:'data-shiftx',  css:'--art-x'},
+    {key:'ghosth',  attr:'data-ghosth',  css:'--ghost-h'},
+    {key:'ghosty',  attr:'data-ghosty',  css:'--ghost-y'},
+    {key:'ghostx',  attr:'data-ghostx',  css:'--ghost-x'},
+    {key:'ghostop', attr:'data-ghostop', css:'--ghost-op'}
+  ];
+  var ALL_VARS = WARDROBE_FIELDS.map(function(f){ return f.css; });
   function applySlotSize(s){               // 슬롯의 data-* (HTML에 굳혀둔 값)
-    SLOT_VARS.forEach(function(m){ var v = s.getAttribute(m[0]);
-      if(v) root.style.setProperty(m[1], v); else root.style.removeProperty(m[1]); });
+    WARDROBE_FIELDS.forEach(function(f){ var v = s.getAttribute(f.attr);
+      if(v) root.style.setProperty(f.css, v); else root.style.removeProperty(f.css); });
   }
   // 브라우저 자동저장(localStorage) — ?edit 에서 드래그하면 복붙 없이 여기 저장, 다음에 그대로 적용.
   function saveKey(s){ return 'tsArt:' + location.pathname + '::' + (s.getAttribute('data-img')||'base'); }
@@ -119,10 +142,10 @@
         s.classList.add('on');               // 슬롯 선택 표시(즉시)
         if(!art){ applyAll(s); return; }
         // ★의상 전환을 부드럽게 : 새 의상 미리 로드 → 페이드아웃 → 교체 → 페이드인 (뚝 바뀌지 않게)
-        //   ★.art/.ghost 각각이 아니라 .stage 전체를 페이드한다(2026-08-03, 이전엔 .art만 페이드했더니
-        //   S·민트처럼 '화면 장악' 효과가 진짜 일러 대신 캔버스에 매 프레임 그림을 새로 그려서 보여주는
-        //   경우엔 안 보였음 — 캔버스는 opacity 트랜지션과 무관하게 매 프레임 그대로 다시 그려지기 때문.
-        //   부모인 .stage 자체를 페이드하면 안에 뭐가 있든(진짜 이미지든 캔버스든) 다 같이 가려진다).
+        //   ★.art/.ghost 각각이 아니라 .stage 전체를 페이드한다 — S·민트처럼 '화면 장악' 효과가 진짜 일러
+        //   대신 캔버스에 매 프레임 그림을 새로 그려서 보여주는 경우엔 .art만 페이드해선 안 보임(캔버스는
+        //   opacity 트랜지션과 무관하게 매 프레임 그대로 다시 그려지기 때문). 부모인 .stage 자체를 페이드하면
+        //   안에 뭐가 있든(진짜 이미지든 캔버스든) 다 같이 가려진다.
         var stageEl = document.querySelector('.stage');
         var pre = new Image();               // 교체 순간 깜빡임 방지용 사전 로드
         var swap = function(){
@@ -141,14 +164,16 @@
     if(onSlot) applyAll(onSlot);             // 처음 켜진 의상 반영(저장값 포함)
   }
 
-  // ---- 초기 렌더(현재=대표 세대 데이터). 세대 전환 시 initGens가 세대별로 다시 호출 ----
+  // ---- 초기 렌더(현재=대표 세대 데이터). 세대 전환 시 profile-generations.js가 세대별로 다시 호출 ----
   paintWardrobe(window.CHAR_WARDROBE);
   paintMeta(window.CHAR_META);
   paintStats(window.CHAR_STATS);
 
-  // 외부(프로필 작성 툴 미리보기)에서 iframe 재생성 없이 부분만 다시 그릴 수 있게 노출(번쩍임 방지용).
+  // 외부(프로필 작성 툴 미리보기 · profile-generations.js)에서 iframe 재생성 없이 부분만 다시 그릴 수 있게 노출(번쩍임 방지용).
   window.__paintStats = paintStats;
-  window.__paintMeta = paintMeta;   // 상단바(소속·경로·코드명)·무대 ID 갱신
+  window.__paintMeta = paintMeta;      // 상단바(소속·경로·코드명)·무대 ID 갱신
+  window.__paintWardrobe = paintWardrobe;
+  window.__setArtCredit = setArtCredit;
 
   /* 3) (개발용) 편집 도구는 별도 파일 editor.js 로 분리 — ?edit 일 때만 로드.
         editor.js 가 필요로 하는 것들을 window.TSProfile 로 노출.
@@ -165,312 +190,4 @@
       var es = document.createElement('script'); es.src = src; es.async = false; document.body.appendChild(es);   // 코어 먼저, 순서 보장
     });
   }
-
-  /* ============================================================
-     4) 세대 전환 (선택 기능 · 데이터로 켜짐) — window.CHAR_GENERATIONS
-     ------------------------------------------------------------
-     "세대 = 다른 캐릭터" : 세대를 바꾸면 그림·효과·색·우측패널이 통째로 교체.
-     세대가 있는 캐릭터만 이 데이터를 정의하면, 타임라인 UI가 자동으로 뜬다.
-        window.CHAR_GENERATIONS = {
-          current: '3',                 // 시작 세대 id
-          items: [
-            { id:'1', label:'1세대', sub:'ORIGIN', img:'',           phIcon:'✧', phName:'기록되지 않은 형상' },
-            { id:'3', label:'3세대', sub:'HEIR',   img:'x_full.png', artist:'작가명', effect:['film',{fx:'decode'}], main:true }
-          ]
-        };
-      · main:true = "실제 프로필"이 쓰인 세대(현재 페이지 본문). 나머지는 플레이스홀더.
-      · artist = 이 세대 무대 그림의 작가(선택). 무대 우하단 크레딧에 표시.
-      · img 없으면 무대 플레이스홀더 + 효과 숨김. effect 는 무대효과 컨트롤러(__stageFX)로 교체.
-     ============================================================ */
-  function initGens(){
-    var G = window.CHAR_GENERATIONS;
-    var stage = document.querySelector('.stage');
-    // 무대효과 컨트롤러를 공통으로 장착(stage-fx.js 로드된 페이지)
-    var fx = (window.TSFX && TSFX.mount && stage) ? TSFX.mount(stage) : null;
-    window.__stageFX = fx;
-
-    // ---- 무대 효과 끄기/켜기(방문자 취향 · 이 브라우저에 기억됨) ----
-    //   실제로 어떤 효과를 켤지는 그대로(세대 전환 등) 결정되고, 이 스위치는 "켤지 말지"만 관여.
-    //   applyFx()를 그 결정 지점(아래·applyStage) 딱 한 곳에서만 부르게 해서 로직이 두 곳으로 안 갈라지게 함.
-    var fxOn = true;
-    try{ fxOn = localStorage.getItem('ts-fx') !== 'off'; }catch(e){}
-    var curEffect = [];
-    function applyFx(effect){
-      curEffect = effect || [];
-      if(!fx) return;
-      if(fxOn) fx.set(curEffect); else fx.stop();
-    }
-    var fxBtn = document.getElementById('fxToggle');
-    if(fxBtn){
-      var paintFxBtn = function(){ fxBtn.classList.toggle('off', !fxOn); fxBtn.textContent = fxOn ? 'FX ON' : 'FX OFF'; };
-      paintFxBtn();
-      fxBtn.addEventListener('click', function(){
-        fxOn = !fxOn;
-        try{ localStorage.setItem('ts-fx', fxOn ? 'on' : 'off'); }catch(e){}
-        paintFxBtn();
-        // ★일러(.art)엔 세대전환용 opacity 트랜지션(.35s)이 걸려있어서, 이 스위치로 바뀌는 투명도에도
-        //   그게 그대로 타 서서히 나타나다 보니 그 사이로 뒤의 고스트(잔상)가 비쳐 두 장이 겹친 것처럼
-        //   보였음(2026-07-27 지적으로 수정) — 이 토글만은 트랜지션을 잠깐 끄고 즉시 바뀌게 한다.
-        var artEl = document.getElementById('stageArt');
-        if(artEl) artEl.style.transition = 'none';
-        if(fx){ if(fxOn) fx.set(curEffect); else fx.stop(); }
-        if(artEl) requestAnimationFrame(function(){ requestAnimationFrame(function(){ artEl.style.transition = ''; }); });
-      });
-    }
-
-    if(!G || !G.items || G.items.length < 2){           // 세대 없음/1개 → 현재 효과만 설정
-      if(G && G.items && G.items[0] && G.items[0].effect) applyFx(G.items[0].effect);
-      return;
-    }
-    var items = G.items,
-        fileArea = document.querySelector('.file'),
-        topbar = document.querySelector('.topbar'),
-        stageArt = document.getElementById('stageArt'),
-        stageGhost = document.getElementById('stageGhost'),
-        rootEl = document.documentElement,
-        order = items.map(function(i){ return i.id; }),
-        mainItem = items.filter(function(i){ return i.main; })[0] || items[0],
-        mainId = mainItem.id,
-        curId = G.current || mainId,
-        ph = null,
-        genAccentEl = null;   // 비대표 세대의 대표색(라이트/다크)을 덮는 동적 <style>. 대표 세대는 비움(페이지 기본 <style> 사용)
-    function byId(id){ for(var i=0;i<items.length;i++) if(items[i].id===id) return items[i]; return items[0]; }
-
-    // ★세대별 완전 프로필 — 세대 전환 시 그 세대 패널로 교체 + 능력치·상단바·옷장을 그 세대 데이터로 다시 그림.
-    //   (세대 2개 이상인 캐릭터는 본문이 .gen-panel[data-gen] 로 나뉘어 있음. 단일 세대는 위 L168에서 이미 return.)
-    var phBody = null;   // 미작성 세대일 때 임시로 넣는 플레이스홀더 본문
-    function renderGenPanel(it, sel){
-      var panel = fileArea.querySelector('.gen-panel[data-gen="'+sel+'"]');   // 이 세대 프로필이 작성돼 있으면 패널이 있음
-      fileArea.querySelectorAll('.gen-panel[data-gen]').forEach(function(p){ if(p!==phBody) p.style.display='none'; });
-      if(phBody){ phBody.remove(); phBody = null; }
-      if(panel){                                     // 작성됨 → 그 세대 전체 표시
-        panel.style.display = '';
-        // 세대 항목에 값 있으면 그 세대 것, 없으면(=main) top-level CHAR_* 폴백(중복 저장 방지)
-        paintStats(it.stats || window.CHAR_STATS, panel.querySelector('.statbars'));
-        paintMeta(it.meta || window.CHAR_META);
-        paintWardrobe(it.wardrobe || window.CHAR_WARDROBE);
-      } else {                                       // 미작성 → 플레이스홀더("기록 없음")
-        phBody = document.createElement('div'); phBody.className = 'gen-panel'; phBody.innerHTML = phHTML(it);
-        fileArea.appendChild(phBody);
-        var _cm = window.CHAR_META || {};            // 상단바 record·소속은 캐릭터 맥락 유지. 프레임 글자(code)는 영문 이름 전용(단일 출처) → 미작성이면 비움
-        paintMeta(it.meta || { record:_cm.record, crumb:_cm.crumb, sector:_cm.sector, id:_cm.id, code:'' });
-        paintWardrobe(it.wardrobe || []);            // 옷장은 비움(이 세대 의상 없음)
-      }
-    }
-
-    // 타임라인 UI 생성 (topbar 우측)
-    var line = document.createElement('div'); line.className = 'genline'; line.setAttribute('aria-label','세대 전환');
-    items.forEach(function(it, idx){
-      var g = document.createElement('div'); g.className = 'gen'; g.setAttribute('data-gen', it.id);
-      g.innerHTML = '<span class="dot"></span><span class="glab">'+(it.label||it.id)+'</span><span class="gsub">'+(it.sub||'')+'</span>';
-      g.addEventListener('click', function(){ switchTo(it.id); });
-      line.appendChild(g);
-      if(idx < items.length-1){ var sg = document.createElement('div'); sg.className = 'genseg'; line.appendChild(sg); }
-    });
-    if(topbar) topbar.appendChild(line);
-
-    // 세대 종류별 기본 플레이스홀더 문구(전 캐릭터 공통). 항목에 phName/phNote/phIcon 있으면 덮어씀.
-    var PH_DEFAULTS = {   // 미작성 세대 플레이스홀더 기본값(항목에 phName/phNote/phIcon 있으면 덮어씀)
-      ORIGIN: { icon:'✧', name:'원형', note:'미작성' },
-      DUMMY:  { icon:'?', name:'더미',   note:'미작성' }
-    };
-    function phData(it){ var d = PH_DEFAULTS[it.sub] || {};
-      return { icon: it.phIcon || d.icon || '?', name: it.phName || d.name || '기록 없음', note: it.phNote || d.note || '준비중' }; }
-    function hidePh(){ if(ph){ ph.remove(); ph = null; } }
-    function showPh(it){ hidePh(); var p = phData(it); ph = document.createElement('div'); ph.className = 'stage-ph';
-      ph.innerHTML = '<div class="pht">'+p.icon+'</div><div class="phn">'+p.name+'</div>'+
-                     '<div class="phs">'+(it.sub||'')+' · '+p.note+'</div>';
-      stage.appendChild(ph); }
-    function phHTML(it){ var p = phData(it); return ''+
-      '<div class="namehead span2"><div class="eyebrow">'+(it.label||'')+' · '+(it.sub||'')+'</div>'+
-      '<div class="kr">'+p.name+' <span class="en">'+(it.sub||'')+'</span></div></div>'+
-      '<div class="card span2"><div class="card-h"><span class="idx">◇</span><h3>Records</h3><span class="kr-sub">'+p.note+'</span></div>'+
-      '<div class="card-b prose"></div></div>'; }
-    function paintAxis(sel){
-      var si = order.indexOf(sel);
-      line.querySelectorAll('.gen').forEach(function(g){ var n = g.getAttribute('data-gen'), ni = order.indexOf(n);
-        g.classList.remove('on','past'); if(n===sel) g.classList.add('on'); else if(ni<si) g.classList.add('past'); });
-      line.querySelectorAll('.genseg').forEach(function(s,i){ if(i<si) s.classList.add('fill'); else s.classList.remove('fill'); });
-    }
-    function applyStage(it){
-      // 세대별 대표색 : 비대표 세대는 동적 <style>로 라이트/다크 각각 덮어씀(인라인은 두 테마를 다 덮으니 X).
-      //   대표 세대는 이 <style>를 비워 페이지 기본 <style>(accent/accent_light)을 그대로 씀.
-      if(it.main){ if(genAccentEl) genAccentEl.textContent=''; }
-      else {
-        var _d=it.accent, _l=it.accent_light||it.accent;
-        if(_d){ if(!genAccentEl){ genAccentEl=document.createElement('style'); document.head.appendChild(genAccentEl); }
-          genAccentEl.textContent=':root,:root[data-theme="dark"]{--accent:'+_d+'}:root[data-theme="light"]{--accent:'+(_l||_d)+'}'; }
-        else if(genAccentEl){ genAccentEl.textContent=''; }   // 색 없는 비대표(플레이스홀더 등)=기본색
-      }
-      // 무대 뒤 세로 코드명(bg-type)도 세대 따라 바뀜 — 항목 code 우선, 없으면 메인=CHAR_META.code / 그 외=sub
-      var bgt = document.querySelector('.bg-type');
-      if(bgt) bgt.textContent = it.code || (it.main ? ((window.CHAR_META && CHAR_META.code) || '') : (it.sub || ''));
-      var real = !!it.img;
-      stage.classList.toggle('fx-off', !real);         // 플레이스홀더 = 효과 숨김
-      if(real){ if(stageArt){ stageArt.src = it.img; stageArt.style.display=''; }
-                if(stageGhost){ stageGhost.src = it.img; stageGhost.style.display=''; } hidePh(); setArtCredit(it.artist); }
-      else { if(stageArt) stageArt.style.display='none'; if(stageGhost) stageGhost.style.display='none'; showPh(it); setArtCredit(''); }
-      applyFx(real ? (it.effect || []) : []);           // 컨트롤러 효과 교체(켜짐/꺼짐 스위치는 applyFx가 존중)
-    }
-    function switchTo(sel){
-      if(sel === curId) return;
-      var it = byId(sel);
-      stage.classList.add('switching');
-      if(fileArea){ fileArea.style.transition = 'opacity .3s ease'; fileArea.style.opacity = '0'; }
-      setTimeout(function(){
-        applyStage(it);
-        renderGenPanel(it, sel);
-        stage.classList.remove('switching');
-        if(fileArea) fileArea.style.opacity = '1';
-      }, 240);
-      paintAxis(sel); curId = sel;
-    }
-
-    // 초기 상태 적용
-    paintAxis(curId);
-    var c0 = byId(curId); applyStage(c0);
-    renderGenPanel(c0, curId);
-
-    // 외부(작성 툴 미리보기)에서 iframe 재생성 없이 세대 전환(부드러운 내부 전환)하도록 노출 — 번쩍임 방지.
-    window.__genSwitch = switchTo;
-  }
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initGens);
-  else initGens();
-})();
-
-// 서술카드 안 그림 클릭 → 화면 가득 크게 보기(라이트박스). 오버레이 하나를 재사용(그림마다 새로 안 만듦).
-(function(){
-  var box, img;
-  function ensure(){
-    if(box) return;
-    box = document.createElement('div'); box.className = 'lightbox';
-    img = document.createElement('img');
-    box.appendChild(img);
-    box.addEventListener('click', close);
-    document.body.appendChild(box);
-  }
-  function open(src, alt){ ensure(); img.src = src; img.alt = alt || ''; box.classList.add('on'); }
-  function close(){ if(box) box.classList.remove('on'); }
-  document.addEventListener('click', function(e){
-    var t = e.target.closest && e.target.closest('.prose .p-fig img');
-    if(t) open(t.src, t.alt);
-  });
-  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') close(); });
-})();
-
-/* ============================================================
-   카드 접기/펼치기 — 서술카드(.card, 기본 열림)·확장카드(.acc, 기본 닫힘) 공통, max-height 트랜지션으로 부드럽게.
-   ------------------------------------------------------------
-   · 서술카드는 원래 접는 기능이 없었음 → 새로 추가(순수 화면 동작, 새로고침하면 다시 열림 상태로 — 저장 안 됨).
-   · 확장카드는 원래도 <details>로 접혀 있었지만 브라우저 기본 동작이라 애니메이션 없이 뚝 끊겨 열리고 닫혔음.
-     ★[open] 속성은 그대로 상태값으로 계속 씀(기밀 카드가 [open] 유무로 스타일이 갈리므로) — 여닫는 "과정"만 부드럽게 만듦.
-   ============================================================ */
-(function(){
-  function rememberPad(box){   // 원래(열린) 패딩값을 최초 1회 기억 — 닫을 때 0으로 줄였다가 열 때 이 값으로 복원
-    if(box.dataset.padT === undefined){
-      var cs = getComputedStyle(box);
-      box.dataset.padT = cs.paddingTop; box.dataset.padB = cs.paddingBottom;
-    }
-  }
-  function openBox(box){
-    rememberPad(box);
-    box.style.paddingTop = box.dataset.padT; box.style.paddingBottom = box.dataset.padB;
-    box.style.maxHeight = box.scrollHeight + 'px';
-    box.addEventListener('transitionend', function te(e){
-      if(e.propertyName !== 'max-height') return;
-      box.style.maxHeight = 'none';   // 다 열린 뒤엔 고정 높이를 풀어줘야 내용이 늘어나도 안 잘림
-      box.removeEventListener('transitionend', te);
-    });
-  }
-  function closeBox(box, onDone){
-    rememberPad(box);
-    box.style.maxHeight = box.scrollHeight + 'px';   // 'none'이던 높이를 실제 px로 고정(트랜지션 시작점 확보)
-    requestAnimationFrame(function(){
-      box.style.maxHeight = '0px'; box.style.paddingTop = '0px'; box.style.paddingBottom = '0px';
-    });
-    box.addEventListener('transitionend', function te(e){
-      if(e.propertyName !== 'max-height') return;
-      box.removeEventListener('transitionend', te);
-      if(onDone) onDone();
-    });
-  }
-
-  // ---- 서술카드(.card) ----
-  document.querySelectorAll('.card > .card-h').forEach(function(h){
-    var body = h.nextElementSibling;
-    if(!body || !body.classList.contains('card-b')) return;   // 능력치·사원증 카드는 대상 아님
-    h.classList.add('foldable');   // CSS가 이 클래스로만 화살표·포인터 커서를 보여줌(사원증 등엔 안 붙게)
-    h.setAttribute('role', 'button'); h.setAttribute('tabindex', '0'); h.setAttribute('aria-expanded', 'true');
-    function toggle(){
-      var closing = !h.classList.contains('closed');
-      h.classList.toggle('closed', closing);
-      h.setAttribute('aria-expanded', closing ? 'false' : 'true');
-      if(closing) closeBox(body); else openBox(body);
-    }
-    h.addEventListener('click', toggle);
-    h.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggle(); } });
-  });
-
-  // ---- 확장카드(.acc, <details>) ----
-  document.querySelectorAll('details.acc').forEach(function(det){
-    var summary = det.querySelector(':scope > summary'), body = det.querySelector(':scope > .acc-b');
-    if(!summary || !body) return;
-    if(!det.open){ rememberPad(body); body.style.maxHeight = '0px'; body.style.paddingTop = '0px'; body.style.paddingBottom = '0px'; }
-    summary.addEventListener('click', function(e){
-      e.preventDefault();   // 네이티브 즉시 토글을 막고, 우리가 open 속성 타이밍까지 맞춰가며 대신 처리
-      if(det.open){ closeBox(body, function(){ det.removeAttribute('open'); }); }
-      else{ det.setAttribute('open', ''); openBox(body); }
-    });
-  });
-})();
-
-// 사원증 스캔 효과 끄기/켜기 — #idScan(위아래로 훑는 CSS 애니메이션) 하나만 대상, 무대 효과 스위치와는 별개.
-// 브라우저에 기억(localStorage) — 무대 효과 스위치와 같은 방식이되 키는 따로 둬서 서로 안 얽히게 함.
-(function(){
-  var btn = document.getElementById('idScanToggle'), scan = document.getElementById('idScan');
-  if(!btn || !scan) return;
-  var on = true;
-  try{ on = localStorage.getItem('ts-idscan') !== 'off'; }catch(e){}
-  function paint(){
-    scan.classList.toggle('off', !on);
-    btn.classList.toggle('off', !on);
-    btn.textContent = on ? 'SCAN ON' : 'SCAN OFF';
-  }
-  paint();
-  btn.addEventListener('click', function(){
-    on = !on;
-    try{ localStorage.setItem('ts-idscan', on ? 'on' : 'off'); }catch(e){}
-    paint();
-  });
-})();
-
-// 읽기 모드(2026-08-01) — 옷장·무대(.left-fixed) 오른쪽 끝의 작은 탭(.stage-fold-tab)으로 접고,
-//   서술카드(.file)만 넓게 본다. 탭 자체가 패널 경계에 걸쳐 있어 "이걸 누르면 옆이 접힌다"가 모양으로 보이므로
-//   글자 라벨 대신 화살표 방향(‹ 접기 / › 펼치기)만 바꾼다.
-//   ★방문 취향을 기억하지 않음(FX/SCAN 스위치와 다른 점) — 새로고침·다른 캐릭터로 이동하면 항상 기본값(펼침)으로 돌아온다.
-(function(){
-  var btn = document.getElementById('stageViewToggle'), sheet = document.querySelector('.sheet');
-  if(!btn || !sheet) return;
-  var expanded = true, busy = false;
-  function paintBtn(){
-    btn.textContent = expanded ? '‹' : '›';
-    btn.title = expanded ? '옷장·무대 접기' : '옷장·무대 펼치기';
-  }
-  paintBtn();
-  btn.addEventListener('click', function(){
-    if(busy) return;                 // 애니메이션 도중 연타 방지
-    expanded = !expanded; paintBtn(); busy = true;
-    if(!expanded){
-      // 접기 : 내용부터 페이드아웃(.2s) → 다 지워진 뒤에야 열 폭을 스냅으로 줄인다(빈 상태라 안 튐).
-      sheet.classList.add('folding');
-      setTimeout(function(){ sheet.classList.add('read-mode'); busy = false; }, 200);
-    } else {
-      // 펼치기 : 열 폭부터 스냅으로 늘리고(아직 내용은 숨김 상태) → 다음 프레임에 페이드인.
-      sheet.classList.remove('read-mode');
-      requestAnimationFrame(function(){
-        sheet.classList.remove('folding');
-        setTimeout(function(){ busy = false; }, 200);
-      });
-    }
-  });
 })();

@@ -60,15 +60,20 @@
       <!-- 무대 효과는 stage-fx 컨트롤러가 캔버스를 동적 생성 -->
       <div class="stage-head">
         <span data-meta="id"></span>
-        <!-- fx-toggle: 무대 효과 끄기/켜기 — profile.js initGens가 상태·클릭 처리(단일 출처). 그림·능력치는 그대로, 움직이는 효과만 껐다 켬 -->
+        <!-- fx-toggle: 무대 효과 끄기/켜기 — profile-generations.js initGens가 상태·클릭 처리(단일 출처). 그림·능력치는 그대로, 움직이는 효과만 껐다 켬 -->
         <span class="rec"><span class="dot"></span>REC · VISUAL FEED<button class="fx-toggle mono" id="fxToggle" type="button" title="무대 효과 끄기/켜기">FX ON</button></span>
       </div>
 
-      <img class="ghost" id="stageGhost" src="{{ page.art }}" alt="">
-      <img class="art" id="stageArt" src="{{ page.art }}" alt="{{ page.art_alt | default: page.meta.title }}">
+      <!-- 무대 초기 그림 = 옷장에서 on:true로 표시된 의상(단일 출처) — front matter 최상위 art:/art_artist:는
+           옷장이 비어있을 때만 쓰는 폴백으로 남겨둠(옷장에 on:true 항목이 있으면 그쪽이 항상 이김, 손으로
+           둘 다 맞출 필요 없어짐). Liquid(서버)에서 미리 계산하는 이유: 페이지가 뜨자마자(자바스크립트 실행 전)
+           그림이 바로 보여야 해서(첫 페인트에 빈 이미지가 비치는 것 방지) — JS가 나중에 채우면 늦음. -->
+      {%- assign on_wear = page.wardrobe | where: "on", true | first -%}
+      <img class="ghost" id="stageGhost" src="{{ on_wear.img | default: page.art }}" alt="">
+      <img class="art" id="stageArt" src="{{ on_wear.img | default: page.art }}" alt="{{ page.art_alt | default: page.meta.title }}">
       <!-- 일러 작가 크레딧 : 옷장 슬롯·세대 전환에 맞춰 profile.js가 텍스트를 바꿔 넣음(단일 요소 재사용).
            "art. " 접두어는 profile.css가 붙이므로 여기·profile.js는 이름만 넣음. -->
-      <div class="art-credit" id="artCredit">{{ page.art_artist }}</div>
+      <div class="art-credit" id="artCredit">{{ on_wear.artist | default: page.art_artist }}</div>
     </section>
     </div>
     </div>
@@ -114,7 +119,9 @@
   window.CHAR_GENERATIONS = {{ page.generations | jsonify }};
   window.CHAR_ROSTER      = {{ page.roster      | jsonify }};
 </script>
-<script src="../../assets/js/profile.js?v=32"></script>
+<script src="../../assets/js/profile.js?v=33"></script>
+<script src="../../assets/js/profile-generations.js?v=1"></script>
+<script src="../../assets/js/profile-ui.js?v=1"></script>
 <script src="../../assets/js/stage-fx.js?v=130"></script>
 <script src="../../assets/js/motion.js?v=3"></script>
 <!-- 서술/확장 카드 안 코드블럭(```로 감싼 부분) 문법강조. 코드블럭이 없는 캐릭터는 그냥 아무 일도 안 함. -->
