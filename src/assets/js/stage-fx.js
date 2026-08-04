@@ -1,24 +1,17 @@
 /* =====================================================================
    stage-fx.js — 캐릭터별 무대 배경효과 (능력 시각화)
    ---------------------------------------------------------------------
-   사용법: 무대(.stage) 안에 캔버스 하나 두고 data-fx 로 효과 이름 지정.
-     <canvas class="fx-bg fx-full" data-fx="film"></canvas>
-   그리고 페이지 끝에서 이 파일을 include 하면 자동 실행됨.
+   사용법: TSFX.mount(무대 엘리먼트)로 장착한 뒤 .set(효과 데이터)를 부르면
+   캔버스가 자동으로 만들어져 무대에 붙는다(profile-generations.js가 이렇게 씀).
+   효과 목록·색·앞뒤 배치는 전부 아래 EFFECTS(단일 출처)에서 정해진다.
    색은 페이지의 --accent(캐릭터 테마색)를 자동으로 사용.
 
-   효과 목록:
-     film   — 벡스터 : 영화필름(미래를 미리 상영) — 필름스트립이 흐름
-     shock  — 민트   : 충격파/크랙 — 바닥에서 링이 퍼지고 균열이 번쩍
-     frost  — 셀루카 : 서리/냉각 — 모서리부터 성에가 번지고 육각결정
-     signal — S      : 전자기파/글리치 — 각진 디지털 파형 + 노이즈
-     archive— 메릴리 : 서가/기억 — 책 스파인이 늘어서고 인덱스카드가 쌓임
-     heart  — 마이티 : 심박 ECG (마이티 페이지는 인라인 버전 사용 중, 참고용)
-
-   새 캐릭터/효과 추가 = 아래 FX 객체에 함수 하나만 추가.
+   새 효과 추가 = FX에 그림함수 + INIT에 초기화 + EFFECTS에 한 줄, 그게 전부
+   → 편집툴 드롭다운에도 자동으로 등장한다(EFFECTS가 유일한 출처).
    ===================================================================== */
 window.TSFX = (function () {
   var reduced = window.matchMedia && matchMedia('(prefers-reduced-motion:reduce)').matches;
-  // ★캔버스 해상도 배율 상한(2026-08-01) — 3배율 이상 고해상도 화면에서 화면 전체 효과가
+  // ★캔버스 해상도 배율 상한 — 3배율 이상 고해상도 화면에서 화면 전체 효과가
   //   불필요하게 9배 픽셀로 그려지는 걸 막는다. 2배면 육안으로 차이가 거의 없다(단일 출처).
   var MAX_DPR = 2;
 
@@ -93,6 +86,14 @@ window.TSFX = (function () {
         hot: g() < 0.10                                       // ~10% 강조색 바
       });
     }
+  }
+  // 기록 바 하나의 이번 프레임 등장 상태(archive·archiveTear가 공유하는 단일 출처).
+  //   ★같은 시드로 만든 같은 막대를 두 효과가 같이 참조하므로, 등장 타이밍 계산은 반드시 여기 한 곳으로 맞춰야
+  //   막대(archive)와 그 막대 자리를 찢는 효과(archiveTear)가 서로 어긋나지 않는다.
+  //   pi = 몇 번째 '등장'인지(순간이동 단위) · lp = 그 등장에서 0~1 진행(onFrac보다 크면 꺼져 있는 쉼 구간).
+  function barPhase(r, f) {
+    var e = f + r.seed * 0.17, pi = Math.floor(e / r.period);
+    return { pi: pi, lp: (e - pi * r.period) / r.period };
   }
 
   var FX = {
@@ -283,7 +284,7 @@ window.TSFX = (function () {
       // ★냉기 서지 = 서리 '전체'의 진하기. 화면 전체가 싹 사라졌다가(≈0) 다시 차오름 — 캐릭터 피하는 원형 안 남게.
       //   pow↑ = 정점 짧고(다 찬 상태 짧게) 바닥 깊고 넓게(사라질 땐 많이·오래).
       var surge = Math.pow(0.5 + 0.5*Math.sin(f*0.008 - 1.4), 3);
-      var light = document.documentElement.getAttribute('data-theme') === 'light';
+      var light = isLight();
       var A = (light ? 0.6 : 0.92) * surge;                        // surge 0 → 완전히 사라짐(싹) / 정점 → 진하게
       if (A < 0.01) return;                                        // 사라진 구간엔 아무것도 안 그림
       ctx.save(); ctx.globalAlpha = A;
@@ -313,7 +314,7 @@ window.TSFX = (function () {
       ctx.fillStyle = vig; ctx.fillRect(0,0,W,H);
       ctx.restore();
       // ★이름 워터마크(.bg-type)·꺽쇠(.corner)·REC 글씨(.stage-head)는 이 캔버스보다 z-index가 높아
-      //   그림으로는 안 덮인다(2026-07-25 발견) → 냉기가 짙어진 만큼 그 요소들 자신을 옅게 해서 '같이 서린' 느낌을 낸다.
+      //   그림으로는 안 덮이므로, 냉기가 짙어진 만큼 그 요소들 자신을 옅게 해서 '같이 서린' 느낌을 낸다.
       for (var hi=0; hi<s.hud.length; hi++) s.hud[hi].style.opacity = 1 - 0.55*frost;
     },
 
@@ -331,7 +332,7 @@ window.TSFX = (function () {
       //   흰 배경 위에선 더 밝게 갈 수 없으므로, 대신 캐릭터 테마색을 진하게 섞어 '차가운 반짝임'으로.
       var ink = isLight() ? mixCol(cssVar('--ink-faint', '#767676'), acc, 0.75)
                           : cssVar('--ink', '#eef4ff');
-      var light = document.documentElement.getAttribute('data-theme') === 'light';
+      var light = isLight();
       var boost = light ? 1.4 : 1;
       ctx.save();
       if (!light) ctx.globalCompositeOperation = 'lighter';   // 다크 : 빛이 더해져 번짐(원본 검은 배경 위 금가루 톤)
@@ -382,11 +383,10 @@ window.TSFX = (function () {
        느리게 둥실 떠다닌다(부유, x·y 따로 도는 사인 → 원 그리듯). */
     snowglint: function (ctx, W, H, f, s, acc) {
       // ★라이트 테마 : sparkle(결정 반짝임)과 같은 이유로 무채색 그대로면 흰 배경 위에서 '빛'이 아니라
-      //   회색 얼룩으로 보인다(2026-07-25 발견 — sparkle엔 이미 있던 처리가 snowglint엔 안 옮겨져 있었음).
-      //   흰 배경 위에선 더 밝게 갈 수 없으므로, 대신 테마색을 살짝만 태워 대비를 준다.
-      //   ★처음엔 sparkle과 같은 0.75(진하게)로 했더니 fl.hot(테마색/무채색 반반) 중 '무채색' 쪽도
-      //   거의 테마색처럼 보여 반반 섞인 느낌이 없어졌음(2026-07-25) → 0.2로 낮춰 진짜 무채색(회색) 눈이
-      //   테마색 눈과 섞여 보이게(다른 효과의 '살짝만' 배합 — fog·glitchSplit 실루엣과 같은 정도).
+      //   회색 얼룩으로 보인다. 흰 배경 위에선 더 밝게 갈 수 없으므로, 대신 테마색을 살짝만 태워 대비를 준다.
+      //   ★sparkle과 같은 0.75(진하게)를 쓰면 fl.hot(테마색/무채색 반반) 중 '무채색' 쪽도 거의 테마색처럼
+      //   보여 반반 섞인 느낌이 사라진다 → 0.2로 낮춰 진짜 무채색(회색) 눈이 테마색 눈과 섞여 보이게 한다
+      //   (다른 효과의 '살짝만' 배합 — fog·glitchSplit 실루엣과 같은 정도).
       var light = isLight();
       var ink = light ? mixCol(cssVar('--ink-faint', '#767676'), acc, 0.2) : cssVar('--ink', '#eef4ff');
       var boost = light ? 1.4 : 1;
@@ -465,7 +465,7 @@ window.TSFX = (function () {
         fbg.addColorStop(0, rgba(acc,0)); fbg.addColorStop(0.5, rgba(acc, 0.028*live)); fbg.addColorStop(1, rgba(acc,0));
         ctx.fillStyle = fbg; ctx.fillRect(0, rb, W, 42);
       }
-      if (canvasArt) drawArtCyber(ctx, art, s.oc, s.canvasRect(), amt, f);
+      if (canvasArt) drawArtCyber(ctx, art, s.canvasRect(), amt, f);
       if (intercept > 0.01) drawInterception(ctx, W, H, f, intercept, acc);   // S 전자기파 신호 장악(테마색)
       if (snap > 0.01){                                                  // ★확 끄는 순간 : 아주 옅은 순간 발광(하드컷)
         ctx.fillStyle = rgba(acc, 0.12*snap); ctx.fillRect(0,0,W,H);
@@ -570,9 +570,7 @@ window.TSFX = (function () {
       var tearPx = g.dh * s.tearH;
       for (var b = 0; b < s.bars.length; b++) {
         var r = s.bars[b];
-        // ★막대의 등장 타이밍 계산은 FX.archive 와 똑같다(같은 시드로 만든 같은 막대라 자리도 일치).
-        var e = f + r.seed * 0.17, pi = Math.floor(e / r.period);
-        var lp = (e - pi * r.period) / r.period;
+        var ph = barPhase(r, f), pi = ph.pi, lp = ph.lp;   // ★FX.archive와 같은 barPhase를 써서 막대 자리를 반드시 일치시킨다.
         if (lp > r.onFrac) continue;                // 막대가 꺼져 있는 쉼 구간
         if (r.y < g.dy || r.y > g.dy + g.dh - tearPx) continue;   // 일러와 안 겹치는 높이는 건너뜀
         var stepN = Math.floor((lp / r.onFrac) * 3);              // 보이는 동안 3단계로 번쩍임
@@ -602,7 +600,7 @@ window.TSFX = (function () {
              amt = 0.5 * (1 - q); snap = (q < 0.25) ? 1 - q/0.25 : 0; }
 
       if (black) { ctx.fillStyle = rgba(cssVar('--paper','#0a0e14'), 0.92); ctx.fillRect(0,0,W,H); }
-      else       { drawArtCyber(ctx, art, s.oc, s.canvasRect(), amt, f); }
+      else       { drawArtCyber(ctx, art, s.canvasRect(), amt, f); }
       if (snap > 0.01) { ctx.fillStyle = rgba(acc, 0.14 * snap); ctx.fillRect(0,0,W,H); }
     },
 
@@ -615,7 +613,7 @@ window.TSFX = (function () {
       //   유지 = 페이지보다 '더 어두운' 단색 + 실루엣 뒤 후광(백라이트) = 취조실/시네마틱 무드(극적),
       //   복귀 = 흰 플래시가 터지며 원래대로. 무채색만(색감은 페이지 배경 톤에 맞춤).
       // ★주사선 색 = --ink(글자색, 테마별 최대대비) — 다크=밝은 줄 / 라이트=어두운 줄.
-      //   ↳ 한때 --paper(배경 톤)로 바꿔봤는데 배경과 색이 거의 같아져 줄이 안 보이는 부작용이 있어(2026-07-25) --ink로 되돌림.
+      //   ↳ --paper(배경 톤)는 쓰지 말 것 — 배경과 색이 거의 같아져 줄이 안 보인다.
       var lineCol = cssVar('--ink', '#eef4ff'), darkCol = cssVar('--paper', '#0a0e14');
       var art = s.art, st = s.stage, hud = s.hud || [];
       var PER = s.per || 18000, ON = s.on || 2800;
@@ -679,8 +677,8 @@ window.TSFX = (function () {
       ctx.restore();
       // ── 3) 주사선 : 실루엣 자리는 모양대로 도려내서 진짜로 안 보이게 ──
       //   색은 글자색(--ink) — 다크=옅은 밝은 줄 / 라이트=옅은 어두운 줄. 양 테마 모두 잘 보인다.
-      //   ★그냥 실루엣보다 먼저 그리기만 하면(옛 방식) 라이트 테마는 실루엣 자체가 옅게(silMul=0.28) 얹히므로
-      //   그 밑에 깔린 주사선이 비쳐 보였다(2026-07-25 발견) → 실루엣 '모양'으로 주사선 레이어에 실제 구멍을 뚫어서
+      //   ★그냥 실루엣보다 먼저 그리기만 하면(단순한 방식) 라이트 테마는 실루엣 자체가 옅게(silMul=0.28) 얹히므로
+      //   그 밑에 깔린 주사선이 비쳐 보인다 → 실루엣 '모양'으로 주사선 레이어에 실제 구멍을 뚫어서
       //   실루엣이 얼마나 옅게 보이든 그 자리엔 주사선이 아예 없게(오프스크린 s.sc에서 destination-out으로 도려낸 뒤 얹음).
       var scv = s.sc.getContext('2d');
       scv.clearRect(0, 0, W, H);
@@ -854,7 +852,7 @@ window.TSFX = (function () {
       var ink = cssVar('--ink', '#eef4ff');              // 무수한 기록 = 테마 글자색
       // ★라이트 테마 시인성 : 흰 무대에선 '어두운 글자색 점'이 낮은 알파로 옅게 묻힌다(다크에선 밝은 점이 검은 무대에 또렷).
       //   → 라이트일 때만 회색 점(강조색 아닌 점)의 알파·크기를 키워 다크와 존재감을 맞춘다. (색 자체는 profile.css가 단일 출처)
-      var light = document.documentElement.getAttribute('data-theme') === 'light';
+      var light = isLight();
       var inkBoost = light ? 2.0 : 1;                    // 회색 점·색인선 진하게(라이트에서만)
       var inkSz    = light ? 0.8 : 0;                    // 회색 점 살짝 크게(라이트에서만)
       // 중앙(0)에서 바깥으로 커지는 '원반(disc)' 반경 : 레퍼런스=중앙서 클러스터가 커지며 프레임을 채움(~1.4s)
@@ -907,7 +905,7 @@ window.TSFX = (function () {
        연속 효과(순간효과 아님) : 아카이브는 늘 돌아간다. 라이트/다크 자동 대응. */
     archive: function (ctx, W, H, f, s, acc) {
       var light = isLight();
-      // ★막대 색 = 회색과 섞지 않고 acc(테마색 또는 프로필 툴 컬러피커로 직접 고른 색) 그대로 사용(2026-07-25, 사용자 요청).
+      // ★막대 색 = 회색과 섞지 않고 acc(테마색 또는 프로필 툴 컬러피커로 직접 고른 색) 그대로 사용한다.
       //   배경/강조(hot) 구분은 색이 아니라 아래 boost(불투명도)만으로 준다.
       // ★막대 밝기(불투명도) 상한 : 배경 막대만 이 배수로 옅게, 강조(hot) 막대는 항상 또렷이(아래서 분기).
       //   라이트를 1 이상으로 주면 '켜져있는' 구간 내내 완전 불투명한 딱딱한 덩어리로 보인다 → 1 미만으로 낮춰 은은하게.
@@ -922,9 +920,7 @@ window.TSFX = (function () {
 
       // ── ② 기록 바 : 번쩍 등장→유지→소멸. 등장마다 '방향(좌→우/우→좌)'대로 순간이동 행진 ──
       for (var b=0;b<s.bars.length;b++){ var r=s.bars[b];
-        var e  = f + r.seed*0.17;                         // 바마다 다른 위상
-        var pi = Math.floor(e / r.period);                // 이번 '등장' 번호 = 순간이동 단위
-        var lp = (e - pi*r.period) / r.period;            // 0..1 주기 진행
+        var ph = barPhase(r, f), pi = ph.pi, lp = ph.lp;   // pi=몇 번째 등장 · lp=그 등장에서 0..1 진행
         if (lp > r.onFrac) continue;                      // 꺼져있는 쉼 구간
         var t = lp / r.onFrac;                            // 0..1 보이는 동안
         // 번쩍 등장(앞 10%에 확 켜짐) → 유지 → 소멸(뒤 35% 페이드)
@@ -957,18 +953,17 @@ window.TSFX = (function () {
     stream: function (ctx, W, H, f, s, acc) {
       // ★라이트 테마 : 글자색(--ink)은 거의 검정이라 기록 글자가 새까맣게 나온다 → 옅은 회색으로.
       var ink = isLight() ? cssVar('--ink-faint', '#767676') : cssVar('--ink', '#eef4ff');
-      var light = document.documentElement.getAttribute('data-theme') === 'light';
+      var light = isLight();
       var boost = light ? 1.5 : 1;
       // ★순간 재생 : s.sync면 벽시계 창 [syncStart,syncEnd]에서만. 창 안에선 '레인마다 한 번' 스태거 스케줄로 등장→입력→소멸(일제 페이드 아님).
-      var tick = 0, gA = 1, sp = 0;
+      //   tick은 커서 깜빡임 기준이라 sync 여부와 무관하게 항상 진행시킨다(안 그러면 순간 재생 중 커서가 안 깜빡임).
+      var tick = Math.floor(f / 5), gA = 1, sp = 0;
       if (s.sync){
         var stms = Date.now() % s.syncPer;
         var a = s.syncStart || 0, b = (s.syncEnd != null ? s.syncEnd : s.syncOn);
         if (stms < a || stms > b) return;                 // 창 밖 → 안 그림
         sp = (stms - a) / (b - a);
         gA = sp < 0.08 ? sp/0.08 : 1;                     // 들머리 페이드인만(글자는 각자 여운 남기며 소멸)
-      } else {
-        tick = Math.floor(f / 5);                         // 상시(비동기) : ~12fps
       }
       ctx.save(); ctx.globalAlpha = gA;
 
@@ -1473,6 +1468,16 @@ window.TSFX = (function () {
     }
   };
 
+  // ── '장악' 계열 INIT이 공통으로 쓰는 준비 코드(단일 출처) ──
+  //   canvasRectFn = 캔버스의 getBoundingClientRect를 즉석에서 다시 계산하는 함수(리사이즈돼도 항상 최신값).
+  //   hudEls       = 무대 HUD(꺽쇠·REC·이름 워터마크)를 흐리게 할 때 참조하는 요소 목록.
+  //     withBgType = true면 이름 워터마크(.bg-type)도 포함(fog 전용 — 나머지는 꺽쇠·REC만 흐림).
+  function canvasRectFn(cv) { return function(){ return cv.getBoundingClientRect(); }; }
+  function hudEls(cv, withBgType) {
+    var st = cv && cv.closest('.stage');
+    return st ? [].slice.call(st.querySelectorAll('.stage-head, .corner' + (withBgType ? ', .bg-type' : ''))) : [];
+  }
+
   /* 효과별 초기 상태(리사이즈마다 재생성) — 시드 난수로 배치 고정 */
   var INIT = {
     film: null,
@@ -1577,11 +1582,10 @@ window.TSFX = (function () {
       for (var si=0; si<seeds.length; si++){ var sd=seeds[si]; fern(sd[0],sd[1], sd[2]+(gf()-0.5)*0.5, 70+gf()*70, 2); }
       s.frostTex = tex;
     },
-    // 냉기 서림 : HUD(이름 워터마크·꺽쇠·REC 글씨)도 냉기가 서린 만큼 같이 옅어지게 참조를 잡아둔다(2026-07-25 추가).
+    // 냉기 서림 : HUD(이름 워터마크·꺽쇠·REC 글씨)도 냉기가 서린 만큼 같이 옅어지게 참조를 잡아둔다.
     //   ★캔버스 자체는 그 아래(fx-bg, z1)라 꺽쇠(z6)·REC(z5) 위로는 안 덮이므로, 그 요소들 자신을 옅게 해서 '덮인 것처럼' 낸다.
     fog: function (s, W, H, cv) {
-      var st = cv && cv.closest('.stage');
-      s.hud = st ? [].slice.call(st.querySelectorAll('.stage-head, .corner, .bg-type')) : [];
+      s.hud = hudEls(cv, true);
     },
     // 결정 반짝임 : 원본 '골드러시' 알갱이(개수·속도·은은함은 opts 한 곳에서).
     sparkle: function (s, W, H) {
@@ -1613,10 +1617,8 @@ window.TSFX = (function () {
     },
     glitch: function (s, W, H, cv) {
       s.art = document.getElementById('stageArt');
-      s.oc = document.createElement('canvas');      // RGB 색수차용 오프스크린
-      s.canvasRect = function(){ return cv.getBoundingClientRect(); };
-      var st = cv.closest('.stage');                // 장악 시 같이 숨길 프레임 HUD(꺽쇠·ID·REC)
-      s.hud = st ? [].slice.call(st.querySelectorAll('.stage-head, .corner')) : [];
+      s.canvasRect = canvasRectFn(cv);
+      s.hud = hudEls(cv);                            // 장악 시 같이 숨길 프레임 HUD(꺽쇠·ID·REC)
     },
     // 주사선 : 가로줄 굵기·간격. ★느낌을 바꾸려면 여기 숫자만 고치면 된다.
     scanline: function (s, W, H) {
@@ -1654,7 +1656,7 @@ window.TSFX = (function () {
     // 조각 글리치 : 찢김 줄 굵기·개수·속도. ★느낌을 바꾸려면 여기 숫자만 고치면 된다.
     glitchSlice: function (s, W, H, cv) {
       s.art = document.getElementById('stageArt');
-      s.canvasRect = function(){ return cv.getBoundingClientRect(); };
+      s.canvasRect = canvasRectFn(cv);
       s.tintCache = {};                  // 단색으로 칠한 일러 캐시(색마다 한 장씩 만들어 재사용)
       // ── 찢김(가로줄) ──
       s.tearH      = 0.005;              // ★찢김 줄 굵기(그림 높이 대비) — 작을수록 얇은 줄
@@ -1684,8 +1686,7 @@ window.TSFX = (function () {
     // 장악 전환 : 얼마 만에 한 번, 얼마나 길게 튈지. ★느낌을 바꾸려면 여기 숫자만 고치면 된다.
     snapCut: function (s, W, H, cv) {
       s.art = document.getElementById('stageArt');
-      s.oc = document.createElement('canvas');      // drawArtCyber 가 쓰는 오프스크린
-      s.canvasRect = function(){ return cv.getBoundingClientRect(); };
+      s.canvasRect = canvasRectFn(cv);
       s.period  = 9000;                  // ★전환이 일어나는 주기(ms) — 클수록 드물게
       s.tearIn  = 380;                   // 찢김이 고조되는 시간
       s.cutMs   = 120;                   // 하드컷 번쩍
@@ -1698,9 +1699,9 @@ window.TSFX = (function () {
       s.tears = [];
       for (var i = 0; i < s.tearN; i++)
         s.tears.push({ phase: Math.round(hnoise(i * 5.3) * s.tearPer), seed: i * 13.1 });
-      s.canvasRect = function(){ return cv.getBoundingClientRect(); };
+      s.canvasRect = canvasRectFn(cv);
       s.stage = cv && cv.closest('.stage');         // HUD/투명도 원복 참조
-      s.hud = s.stage ? [].slice.call(s.stage.querySelectorAll('.stage-head, .corner')) : [];
+      s.hud = hudEls(cv);
       s.per = 18000; s.on = 2800;                   // 약 18초마다 2.8초 장악
       s.transMs = 260;                              // ★시작·끝 전환 길이(ms) — 둘이 같다(대칭)
       s.tearMinW = 0.18; s.tearMaxW = 0.75;         // ★찢김 가로 길이 범위(그림 폭 대비) — 제각각 다르게
@@ -2058,9 +2059,9 @@ window.TSFX = (function () {
   //   ★색=캐릭터 테마색(acc, --accent) → 라이트/다크 자동 대응. 점유 배경(어둠)·흰 코어만 고정.
   function drawInterception(ctx, W, H, f, k, acc){
     var paper = cssVar('--paper', '#0a0e14'), ink = cssVar('--ink', '#eef4ff');       // 테마 배경/글자색(라이트=밝게 암전, 다크=검게)
-    // ★기존 0.92*k는 완전 장악 상태(k=1)에서도 8% 투명이 남아, 밑에 있는 다른 캔버스 레이어를 살짝 비쳐 보이게 했다
-    //   (2026-07-25 발견 — '일러 찢김(느리게)'를 밑에 깔았더니 장악 중에도 에스 일러가 옅게 비침). k=1 근처에서
-    //   완전 불투명이 되도록 배율을 올려(0.87 이후 포화) '장악'이 이름값대로 아래를 확실히 가리게 했다.
+    // ★1.15배율(0.87 이후 포화) — k=1(완전 장악)일 때 정확히 1.0배면 8% 투명이 남아, 밑에 깔린 다른
+    //   캔버스 레이어(예: '일러 찢김(느리게)')가 옅게 비쳐 보인다. k=1 근처에서 완전 불투명이 되도록
+    //   배율을 올려 '장악'이 이름값대로 아래를 확실히 가리게 한다.
     ctx.fillStyle = rgba(paper, Math.min(1, 1.15*k)); ctx.fillRect(0,0,W,H);   // 점유 배경 = 테마 배경색으로 암전(화이트테마=하얗게)
     // 1) 데이터 코드 그리드 (셀 격자 + hex 코드, 위로 천천히 스크롤, 일부 밝게 깜빡)
     var cell=46, cols=Math.ceil(W/cell)+1, rows=Math.ceil(H/cell)+1, scroll=(f*0.25)%cell, tick=(f/18)|0;
@@ -2149,7 +2150,7 @@ window.TSFX = (function () {
       ctx.clearRect(homeX, y, dwr, tearPx);
       ctx.drawImage(art, sxr, srcY, swr, srcH, homeX + dx, y + dy, dwr, tearPx);
       if (flash) {                                          // 번쩍이는 순간 = 같은 조각을 단색으로 덧칠
-        // ★옷장 의상이 바뀌면(art.src 변경) 이 캐시도 같이 비워야 옛 의상이 안 보임 — getSil과 같은 이유(2026-08-03).
+        // ★옷장 의상이 바뀌면(art.src 변경) 이 캐시도 같이 비워야 옛 의상이 안 보임 — getSil과 같은 이유.
         if (s.tintSrc !== art.currentSrc) { s.tintCache = {}; s.tintSrc = art.currentSrc; }
         var tinted = tintImage(s, art, flash);
         ctx.save(); ctx.globalAlpha = s.flashAlpha;
@@ -2163,9 +2164,9 @@ window.TSFX = (function () {
   //   테마/캐릭터색이 바뀌면 색 문자열이 달라져 자동으로 새로 만든다.
   function getSil(s, art, color){
     if(!art || !art.complete || !art.naturalWidth) return null;
-    // ★옷장에서 의상을 바꿔 art.src가 바뀌면 실루엣도 새로 그려야 한다(2026-08-03) —
-    //   전엔 색상별로만 캐시해서, 한 번 그려두면 옷장을 바꿔도 처음 그렸을 때의 옛 의상 실루엣이
-    //   그대로 남아 있었음(예: 셀루카 '이중인격' 효과가 항상 후드 실루엣만 보여주던 버그).
+    // ★옷장에서 의상을 바꿔 art.src가 바뀌면 실루엣도 새로 그려야 한다 — 색상별로만 캐시하면,
+    //   옷장을 바꿔도 처음 그렸을 때의 옛 의상 실루엣이 그대로 남는다(예: 셀루카 '이중인격' 효과가
+    //   항상 후드 실루엣만 보여주는 식의 버그가 난다).
     if (s.silSrc !== art.currentSrc) { s.silCache = {}; s.silSrc = art.currentSrc; }
     s.silCache = s.silCache || {};
     if(!s.silCache[color]){
@@ -2196,7 +2197,7 @@ window.TSFX = (function () {
     return s.tintCache[color];
   }
   // 일러 글리치 : 온전한 일러 + 색 없는 '이산 가로 찢김'(RGB 색수차·가산합성 없음 = 안 바램)
-  function drawArtCyber(ctx, art, oc, cr, amt, f){
+  function drawArtCyber(ctx, art, cr, amt, f){
     if(!art || !art.naturalWidth) return;
     var paper = cssVar('--paper', '#0a0e14');            // 찢긴 틈 = 테마 배경색(화이트테마=밝은 틈)
     var g = artRect(art, cr); if(!g) return;
@@ -2228,14 +2229,7 @@ window.TSFX = (function () {
   var kit = {
     rng: rng, hnoise: hnoise, rgba: rgba, reduced: reduced,
     tick: function (f, fps) { return Math.floor(f / (60 / (fps || 15))); },   // n fps 이산 스텝
-    palette: function (acc) { return { base: acc, bright: '#eef4fa', rgba: rgba }; },
-    // 순간효과 벽시계 엔벨로프(0..1) : m={period,on,fadeIn,fadeOut}(ms)
-    env: function (m) {
-      if (!m) return 1;
-      var per = m.period || 15000, on = m.on || 3600, fi = m.fadeIn || 450, fo = m.fadeOut || 850;
-      var t = Date.now() % per;
-      return t < on ? Math.min(1, t / fi) * Math.min(1, (on - t) / fo) : 0;
-    }
+    palette: function (acc) { return { base: acc, bright: '#eef4fa', rgba: rgba }; }
   };
   // ── 효과 목록(단일 출처) ─────────────────────────────
   //   '효과'는 그림 함수 하나로만 존재(앞/뒤 위치와 무관). 레이어가 위치를 정한다.
@@ -2320,12 +2314,11 @@ window.TSFX = (function () {
       full:  (L.full != null) ? L.full : (def.full != null ? def.full : true),
       colorDark:  (L.colorDark  != null) ? L.colorDark  : (L.color || null),
       colorLight: (L.colorLight != null) ? L.colorLight : (L.color || null),
-      momentary: L.momentary || null,
       off: !!L.off,                       // 꺼진 레이어(목록엔 남지만 렌더 제외)
       origin: L.origin || null            // 세트에서 추가될 때 '원래 설계 위치'(편집툴 표시용 · 런타임 렌더는 무시)
     };
   }
-  // 데이터의 effect(문자열 | 배열 | 옛·새 포맷) → 평탄한 레이어 스택 [{fx,place,full,colorDark,colorLight,momentary}]
+  // 데이터의 effect(문자열 | 배열 | 옛·새 포맷) → 평탄한 레이어 스택 [{fx,place,full,colorDark,colorLight}]
   //   · 이름이 프리셋이고 place 미지정 → 프리셋 레이어들로 확장(옛 데이터 ["crack"] 호환)
   //   · {fx,place,…} 객체는 그 자체가 레이어(이미 확장된 새 포맷). idempotent(여러 번 돌려도 동일).
   function normalize(effect) {
@@ -2352,10 +2345,10 @@ window.TSFX = (function () {
     return out;
   }
   // 현재 테마의 CSS 변수값 읽기(라이트/다크 자동). rgba() 는 #rrggbb 를 받음.
-  //   ★프레임당 캐시(2026-08-01) : 레이어(효과)마다 같은 변수(--ink·--accent 등)를 매 프레임 따로
-  //     읽던 걸, '같은 애니메이션 프레임 안에서는 한 번만 읽고 재사용'하도록 줄였다. 캐시는 매 rAF
-  //     tick마다(아래 loop의 varCacheTs 갱신) 통째로 비우므로, 테마 토글·세대 전환으로 색이 바뀌어도
-  //     늦어도 다음 프레임(≈16ms, 체감 불가)엔 항상 최신값 — 오래 남는 캐시가 아니라 '이번 틱 한정' 재사용.
+  //   ★프레임당 캐시 : 레이어(효과)마다 같은 변수(--ink·--accent 등)를 매 프레임 따로 읽지 않도록,
+  //     '같은 애니메이션 프레임 안에서는 한 번만 읽고 재사용'한다. 캐시는 매 rAF tick마다(아래 loop의
+  //     varCacheTs 갱신) 통째로 비우므로, 테마 토글·세대 전환으로 색이 바뀌어도 늦어도 다음 프레임
+  //     (≈16ms, 체감 불가)엔 항상 최신값 — 오래 남는 캐시가 아니라 '이번 틱 한정' 재사용이다.
   var varCache = {}, varCacheTs = -1;
   function cssVar(name, fb) {
     var v = varCache[name];
@@ -2380,14 +2373,19 @@ window.TSFX = (function () {
       for (var i = 0; i < insts.length; i++) {
         window.removeEventListener('resize', insts[i].resize);
         insts[i].cancelResize();
-        var cv = insts[i].canvas;
+        var cv = insts[i].canvas, st = insts[i].state;
+        // 효과가 프레임마다 HUD(.stage-head 등)·무대(.stage)에 직접 남긴 부작용을 원복한다.
+        //   안 그러면 하필 HUD가 흐려져 있거나 무대가 흔들리는 순간에 FX를 끄면 그 상태로 굳어버린다.
+        if (st) {
+          if (st.hud) for (var h = 0; h < st.hud.length; h++) st.hud[h].style.opacity = '';
+          if (st.stage) st.stage.style.transform = '';
+        }
         if (cv.parentNode) cv.parentNode.removeChild(cv);
       }
       insts = [];
-      // ★frame을 0으로 되돌림(2026-07-27 버그수정) — 안 그러면 벽시계 주기 효과(예: S의 '신호 가로채기'
-      //   화면장악, 620프레임 주기)가 켰다 끄고 다시 켤 때 멈춰있던 frame 값을 그대로 이어받아, 하필 그
-      //   주기의 '장악 중' 구간에서 멈췄다 켜지면 계산 없이 즉시 장악 화면부터 번쩍 나타나 보였다
-      //   (S만 유독 FX 껐다 켤 때 일러가 번쩍이던 원인). 매번 새로 켤 때는 항상 '평상시' 프레임(0)부터.
+      // ★frame을 0으로 되돌린다 — 안 그러면 벽시계 주기 효과(예: S의 '신호 가로채기' 화면장악, 620프레임
+      //   주기)가 켰다 끄고 다시 켤 때 멈춰있던 frame 값을 그대로 이어받아, 하필 그 주기의 '장악 중' 구간에서
+      //   멈췄다 켜지면 계산 없이 즉시 장악 화면부터 번쩍 나타나 보인다. 매번 새로 켤 때는 항상 '평상시' 프레임(0)부터.
       frame = 0;
       // 화면 장악 효과가 일러(<img>)를 숨겨둔 채 꺼질 수 있으므로 항상 원래대로 되돌린다.
       //   (효과를 빼면 캐릭터가 안 보이는 사고 방지. 장악 효과가 계속 있으면 다음 프레임에 다시 숨긴다.)
@@ -2395,7 +2393,7 @@ window.TSFX = (function () {
       if (art) art.style.opacity = '';
     }
 
-    // 레이어 1겹 = 캔버스 1개. L = {fx, place, full, colorDark, colorLight, momentary}
+    // 레이어 1겹 = 캔버스 1개. L = {fx, place, full, colorDark, colorLight}
     function addLayer(L) {
       var def = EFFECTS[L.fx];
       if (!def) return;                                  // 모르는 효과는 건너뜀
@@ -2431,18 +2429,16 @@ window.TSFX = (function () {
         if (def.init) def.init(st, W, H, cv);
       }
       resize();
-      // ★리사이즈 디바운스(2026-08-01) — 창을 드래그로 계속 늘였다 줄였다 하면 resize 이벤트가
-      //   연달아 여러 번 발생하는데, 그때마다 def.init()이 파티클 배열 등을 통째로 다시 만들면
-      //   낭비가 크다. 마지막 이벤트 후 150ms 동안 잠잠하면 그때 한 번만 실제로 다시 계산한다.
+      // ★리사이즈 디바운스 — 창을 드래그로 계속 늘였다 줄였다 하면 resize 이벤트가 연달아 여러 번
+      //   발생하는데, 그때마다 def.init()이 파티클 배열 등을 통째로 다시 만들면 낭비가 크다.
+      //   마지막 이벤트 후 150ms 동안 잠잠하면 그때 한 번만 실제로 다시 계산한다.
       var resizeTimer = null;
       function debouncedResize() { clearTimeout(resizeTimer); resizeTimer = setTimeout(resize, 150); }
       window.addEventListener('resize', debouncedResize);
       insts.push({
-        canvas: cv, resize: debouncedResize,
+        canvas: cv, resize: debouncedResize, state: st,
         cancelResize: function () { clearTimeout(resizeTimer); },
         draw: function (f) {
-          var e = L.momentary ? kit.env(L.momentary) : 1;
-          if (L.momentary && e <= 0.003) { ctx.clearRect(0, 0, W, H); return; }   // 순간효과 비활성 구간
           ctx.clearRect(0, 0, W, H);
           def.draw(ctx, W, H, f, st, acc());
         }
