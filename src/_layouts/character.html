@@ -87,7 +87,32 @@
       <div class="namehead span2">
         {% if page.namehead.eyebrow and page.namehead.eyebrow != "" %}<div class="eyebrow">{{ page.namehead.eyebrow }}</div>{% endif %}
         <div class="kr">{{ page.namehead.kr }}{% if page.namehead.en and page.namehead.en != "" %} <span class="en">{{ page.namehead.en }}</span>{% endif %}</div>
-        {% if page.namehead.idmeta and page.namehead.idmeta != "" %}<div class="idmeta">{{ page.namehead.idmeta }}</div>{% endif %}
+        {%- comment -%} 나이·키·소속 번호(roster, 목록·라인업과 값을 공유)와 생일·부서+역할(namehead)에서 이 줄을 매번 새로 조립한다.
+             나이·키·소속을 여기 또 손으로 적어두면 나중에 roster 값만 고치고 여기를 깜빡해 서로 어긋날 수 있어서,
+             front matter엔 원본 값만 한 번씩 두고 화면에 보일 문장은 항상 그 원본에서 계산한다. {%- endcomment -%}
+        {%- assign idm_str = "" -%}
+        {%- assign idm_sep = " · " -%}
+        {%- if page.roster.age and page.roster.age != "" -%}
+          {%- assign idm_str = page.roster.age -%}
+        {%- endif -%}
+        {%- if page.roster.height -%}
+          {%- assign idm_piece = page.roster.height | append: "cm" -%}
+          {%- if idm_str == "" -%}{%- assign idm_str = idm_piece -%}{%- else -%}{%- assign idm_str = idm_str | append: idm_sep | append: idm_piece -%}{%- endif -%}
+        {%- endif -%}
+        {%- if page.namehead.bday and page.namehead.bday != "" -%}
+          {%- if idm_str == "" -%}{%- assign idm_str = page.namehead.bday -%}{%- else -%}{%- assign idm_str = idm_str | append: idm_sep | append: page.namehead.bday -%}{%- endif -%}
+        {%- endif -%}
+        {%- assign idm_sr = "" -%}
+        {%- if page.roster.sec == "etc" -%}{%- assign idm_sr = "무소속" -%}
+        {%- elsif page.roster.sec -%}{%- assign idm_sr = "제" | append: page.roster.sec | append: "지부" -%}
+        {%- endif -%}
+        {%- if page.namehead.role and page.namehead.role != "" -%}
+          {%- if idm_sr == "" -%}{%- assign idm_sr = page.namehead.role -%}{%- else -%}{%- assign idm_sr = idm_sr | append: " " | append: page.namehead.role -%}{%- endif -%}
+        {%- endif -%}
+        {%- if idm_sr != "" -%}
+          {%- if idm_str == "" -%}{%- assign idm_str = idm_sr -%}{%- else -%}{%- assign idm_str = idm_str | append: idm_sep | append: idm_sr -%}{%- endif -%}
+        {%- endif -%}
+        {% if idm_str != "" %}<div class="idmeta">{{ idm_str }}</div>{% endif %}
         {% if page.namehead.quote and page.namehead.quote != "" %}<div class="quote">{{ page.namehead.quote }}</div>{% endif %}
       </div>
       {% if page.idcard %}

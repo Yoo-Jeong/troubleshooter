@@ -61,7 +61,7 @@
 
   /* 섹션 = 카드(캐릭터 프로필 서술 카드처럼 상단 헤더 바). 헤더 클릭 = 접기/펼치기 */
   .sec{border:1px solid var(--line);border-radius:8px;margin:0 0 14px;padding:0 12px 12px;background:var(--panel);overflow:hidden}
-  /* ★서술카드 편집이 전부 오른쪽 미리보기로 옮겨가서(2026-07-25) 왼쪽 폼의 해당 섹션은 숨김만 — DOM은 그대로 두어
+  /* 서술카드 편집은 오른쪽 미리보기에서만 하므로 왼쪽 폼의 해당 섹션은 숨김만 — DOM은 그대로 두어
      데이터 저장소(#proses, readProses/writeGen)로는 계속 씀. writeGen()이 #proses 자식만 새로 그리므로 정적 클래스로 충분. */
   .hide-panel{display:none}
   .sec-h{cursor:pointer;user-select:none;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 -12px 12px;padding:9px 12px;
@@ -572,6 +572,7 @@ function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,
 function slugify(s){ return String(s||'').toLowerCase().trim().replace(/[^a-z0-9-]+/g,'-').replace(/^-+|-+$/g,''); }  // 폴더/URL 안전 slug(영문 소문자·숫자·-)
 function joinName(g, s){ g=String(g||'').trim(); s=String(s||'').trim(); return s ? (g? g+' '+s : s) : g; }  // 이름+성 합치기(빈 값이면 앞 공백 안 생기게)
 var TOOL_ROSTER = [];   // syncLoadList가 채움: [{slug,id,ko,ht}] — 기록번호 자동 제안·중복 검사·라인업 비교용
+var TOOL_ROSTER_READY = null;   // syncLoadList가 만듦 — 저장/제출 전 반드시 이 프로미스를 기다려야 TOOL_ROSTER가 다 채워진 뒤 중복 검사가 됨
 var WAS_NEW = false;    // ?new=1(새 캐릭터)로 진입했는지
 var LOADED_ROSTER = null;  // 편집 모드로 불러온 캐릭터의 roster(목록용 역할 등 보존)
 var LOADED_SLUG = null;    // 불러온 캐릭터 슬러그(덮어쓰기 경고 판단)
@@ -587,7 +588,6 @@ var SECTORS=[
 ];
 (function fillSectorOptions(){ var sel=$('#bi_sector'); if(sel) SECTORS.forEach(function(s){ var o=document.createElement('option'); o.value=s.v; o.textContent=s.ko; sel.appendChild(o); }); })();
 var SECTOR_NAMES = {}; SECTORS.forEach(function(s){ SECTOR_NAMES[s.v]=s.label; });   // 지부 v → 상단바 소속 표기(SECTORS에서 파생)
-function sectorLabel(){ return SECTOR_NAMES[$('#bi_sector').value.trim()] || ''; }   // 지부 v → 상단바 소속 표기(별도 입력칸 없이 파생)
 function nextRecord(){  // 기존 record 최대 번호 +1 → "M-07"
   var max=0; TOOL_ROSTER.forEach(function(r){ var m=String(r.id||'').match(/(\d+)\s*$/); if(m){ var n=+m[1]; if(n>max) max=n; } });
   return 'M-'+('0'+(max+1)).slice(-2);
@@ -722,8 +722,17 @@ function genDataFrom(id, item, panelHtml, isMain, d){
   gd.idimg    = idc ? (idc.img||'')    : (b.idimg||'');
   gd.idstatus = idc ? (idc.status||'') : (b.idstatus||'');
   gd.idartist = idc ? (idc.artist||'') : (b.idartist||'');
-  var im = parseIdmeta((nh ? nh.idmeta : b.idmeta) || '');
-  gd.age=im.age; gd.height=im.height; gd.bday=im.bday; gd.sector=im.sector; gd.dept=im.dept; gd.role=im.role;
+  if(nh && (nh.bday!=null || nh.role!=null)){   // 새 포맷: 나이·키·소속은 roster에서, 생일·부서+역할은 namehead에서
+    gd.bday = nh.bday || '';
+    var spl = splitDeptFromRole(nh.role || ''); gd.dept = spl.dept; gd.role = spl.role;
+    var _r = (d && d.roster) || {};
+    gd.age = _r.age ? String(_r.age).replace(/Y$/i,'') : '';
+    gd.height = _r.height!=null ? String(_r.height) : '';
+    gd.sector = _r.sec==='etc' ? 'etc' : (_r.sec!=null ? String(_r.sec) : '');
+  } else {   // 옛 포맷(나이·키·생일·소속·역할을 문자열 하나로 합쳐 저장하던 방식) 호환 — 역파싱
+    var im = parseIdmeta((nh ? nh.idmeta : b.idmeta) || '');
+    gd.age=im.age; gd.height=im.height; gd.bday=im.bday; gd.sector=im.sector; gd.dept=im.dept; gd.role=im.role;
+  }
   if(!gd.sector){ var _ms=String(M.sector||''), _mm=_ms.match(/SECTOR\s*(\d+)/i); gd.sector = _mm?_mm[1] : (/UNAFFILIATED|무소속/i.test(_ms)?'etc':''); }
   // 이름 분해: 짧은형(meta.title / roster.ko) 을 given, 풀네임(front matter namehead 또는 본문)에서 빼서 성(surname)
   var enGiven=(M.title||'').trim(), enFull=((nh ? nh.en : b.enname)||'').trim();
@@ -1239,8 +1248,11 @@ function collect(){
   });
   st.roster = rosterOf(mainG);
   // 신원·사원증 = 대표 세대에서 파생 → front matter 로 저장(레이아웃이 이 데이터로 그림. 본문엔 카드만).
+  // 나이·키·소속 번호는 위 roster와 값이 같으므로 여기 또 저장하지 않는다 — 화면의 idmeta 한 줄은
+  // _layouts/character.html이 roster(나이·키·소속)와 이 namehead(생일·부서+역할)를 매번 조립해서 만든다.
   var mainBo = bodyObjOf(mainG);
-  st.namehead = { eyebrow:mainBo.eyebrow||'', kr:joinName(mainBo.krname, mainBo.krsur), en:mainBo.enname||'', idmeta:mainBo.idmeta||'', quote:mainBo.quote||'' };
+  st.namehead = { eyebrow:mainBo.eyebrow||'', kr:joinName(mainBo.krname, mainBo.krsur), en:mainBo.enname||'',
+    bday:mainG.bday||'', role:joinDeptRole(mainG.dept, mainG.role, ' ', false), quote:mainBo.quote||'' };
   st.idcard = mainBo.idcardOn ? { img:mainBo.idimg||'', status:mainBo.idstatus||'ACTIVE', artist:mainBo.idartist||'' } : null;
   st.body = buildFullBody(false);
   return st;
@@ -1370,7 +1382,13 @@ function assembleIdmeta(s){   // {age,height,bday,sector,dept,role} → "24Y · 
   if(sr) parts.push(sr);
   return parts.join(' · ');
 }
-function parseIdmeta(str){   // 역분해
+// 공백결합 "지휘팀 드라이버" 같은 문자열 앞의 부서(보스/캡틴/…팀)를 떼어낸다 — parseIdmeta·genDataFrom 공용.
+function splitDeptFromRole(roleFull){
+  var o={dept:'', role:roleFull||''};
+  DEPTS.forEach(function(D){ var t=D.ko; if(o.role===t || o.role.indexOf(t+' ')===0){ o.dept=t; o.role=o.role.slice(t.length).trim(); } });
+  return o;
+}
+function parseIdmeta(str){   // 역분해(옛 포맷 idmeta 문자열을 불러올 때만 씀 — 새로 저장하는 파일은 age/height/bday/sector/role을 각각 저장)
   var o={age:'',height:'',bday:'',sector:'',role:'',dept:''};
   String(str||'').split('·').forEach(function(p){ p=p.trim(); if(!p)return; var m;
     if(m=p.match(/^(\d+)\s*Y$/i)) o.age=m[1];
@@ -1381,17 +1399,15 @@ function parseIdmeta(str){   // 역분해
     else if(!o.bday && /[\d/]/.test(p)) o.bday=p;   // 생일은 숫자 포함(예: 4/1)
     else if(!o.role) o.role=p;                       // 지부 없이 역할/부서만 있으면 역할로(생일칸에 새는 것 방지)
   });
-  // 역할 앞의 부서(보스/캡틴/…팀)를 분리 (idmeta는 공백결합 "지휘팀 드라이버")
-  DEPTS.forEach(function(D){ var t=D.ko; if(o.role===t || o.role.indexOf(t+' ')===0){ o.dept=t; o.role=o.role.slice(t.length).trim(); } });
+  var spl = splitDeptFromRole(o.role); o.dept=spl.dept; o.role=spl.role;
   return o;
 }
 function md(s){ return esc(s).replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/_([^_]+)_/g,'<i>$1</i>')
   .replace(/\+\+([^+]+)\+\+/g,'<big>$1</big>').replace(/~~([^~]+)~~/g,'<small>$1</small>')
   .replace(/==([^=]+)==/g,'<span class="faint">$1</span>'); }   // **굵게** · _기울임_ · ++크게++ · ~~작게~~ · ==회색글자==
 // 여러 줄(문단 안 줄바꿈으로 묶인 것)을 한 덩어리로 보고 서식 적용 — 한 줄씩 따로 md()를 걸면 **여는쪽**과 **닫는쪽**이
-// 서로 다른 줄에 있는 경우(엔터로 줄바꿈한 가운데에서 서식이 걸쳐짐) 짝을 못 찾아 별표가 그대로 글자로 남는 버그가 있었음
-// (2026-07-25 발견 — 오른쪽 미리보기 tsBold는 <br>을 건너뛰며 인식하는데 저장용 이 함수는 줄 단위라 못 알아봄).
-// → 줄바꿈을 임시로 \n 그대로 둔 채 통째로 서식 적용한 뒤, 맨 마지막에만 \n을 <br>로 바꿔치기(★<br> 도입 전에 서식 매칭부터).
+// 서로 다른 줄에 있을 때(엔터로 줄바꿈한 가운데에서 서식이 걸쳐질 때) 짝을 못 찾아 별표가 그대로 글자로 남는다.
+// → 줄바꿈을 임시로 \n 그대로 둔 채 통째로 서식 적용한 뒤, 맨 마지막에만 \n을 <br>로 바꿔치기(<br> 도입 전에 서식 매칭부터).
 function mdBlock(lines){ return md(lines.join('\n')).replace(/\n/g,'<br>'); }
 function proseToHtml(text, ind){       // 줄 맨앞 # = 소제목, > = 강조문(lead), ``` = 코드블럭, 빈 줄 = 문단, **텍스트** = 굵게, 문단 안 줄바꿈은 그대로 <br>
   var lines = String(text||'').split('\n'), out=[], para=[], lead=[], blanks=0;
@@ -1402,7 +1418,7 @@ function proseToHtml(text, ind){       // 줄 맨앞 # = 소제목, > = 강조�
   while(i<n){
     var ln=lines[i], t=ln.trim();
     if(t.slice(0,3)==='```'){
-      // ★코드블럭(2026-07-26): 여는 ``` 뒤에 언어이름(선택, 예: ```python) — 비우면 화면에서 자동판별(hljs).
+      // 코드블럭: 여는 ``` 뒤에 언어이름(선택, 예: ```python) — 비우면 화면에서 자동판별(hljs).
       //   닫는 ``` 까지는 #/>/**같은 서식 규칙을 전혀 안 걸고 원문 그대로 둔다(코드 안에 별표 등이 서식으로 오작동하면 안 되니까).
       flush();
       var lang = t.slice(3).trim();
@@ -1416,7 +1432,7 @@ function proseToHtml(text, ind){       // 줄 맨앞 # = 소제목, > = 강조�
     if(t===''){
       blanks++;
       if(blanks===1) flush();                          // 첫 빈 줄 = 그냥 문단 구분(예전과 동일)
-      else out.push(ind+'<p><br></p>');                 // ★그 다음 빈 줄부터는 사용자가 일부러 준 여백 한 칸 → 그대로 보존(2026-07-25)
+      else out.push(ind+'<p><br></p>');                 // 그 다음 빈 줄부터는 사용자가 일부러 준 여백 한 칸 → 그대로 보존
     } else {
       blanks = 0;
       if(t.charAt(0)==='#'){ flush(); out.push(ind+'<h4>'+md(t)+'</h4>'); }
@@ -1429,7 +1445,7 @@ function proseToHtml(text, ind){       // 줄 맨앞 # = 소제목, > = 강조�
 }
 // 신원(namehead)+사원증(idcard) HTML — _layouts/character.html 이 실제 사이트에서 그리는 것과 '같은 모양'(두 번째 거울).
 //   레이아웃이 없는 미리보기(iframe)·라이브패치에서만 씀. ★모양을 바꾸면 _layouts/character.html 도 똑같이 바꿀 것!
-// gid: 세대 구분 미리보기에서 여러 세대의 사원증이 동시에 DOM에 존재할 때 id 충돌 방지용(2026-07-27).
+// gid: 세대 구분 미리보기에서 여러 세대의 사원증이 동시에 DOM에 존재할 때 id 충돌 방지용.
 //   editable(=지금 보이는 세대)이면 실제 사이트와 똑같은 고정 id(idScanToggle/idScan) — profile.js 스캔토글 스크립트가
 //   이 id를 그대로 찾으므로 보이는 세대는 반드시 이 id를 써야 함. 숨은(비대표) 세대만 gid로 접미사를 붙여 구분.
 function buildIdentity(b, editable, gid){
@@ -1441,7 +1457,10 @@ function buildIdentity(b, editable, gid){
   if(b.eyebrow) L.push('        <div class="eyebrow"'+ed('eyebrow')+'>'+esc(b.eyebrow)+'</div>');
   var krSur = b.krsur ? ' '+esc(b.krsur) : '';   // 프로필 한글 = 이름(인라인편집) + 성. 영문은 이름+성 합성이라 인라인편집 없음(신원 폼에서 수정)
   L.push('        <div class="kr">'+krIn+krSur+(b.enname?' <span class="en">'+esc(b.enname)+'</span>':'')+'</div>');
-  if(b.idmeta) L.push('        <div class="idmeta"'+ed('idmeta')+'>'+esc(b.idmeta)+'</div>');
+  // idmeta(나이·키·생일·소속)는 roster+생일+부서·역할에서 매번 계산되는 값이라 여기서 직접 고칠 수 없게 함
+  //   (예전엔 이 줄도 contenteditable이라 자유롭게 고칠 수 있었는데, 형식이 조금만 달라도 parseIdmeta가
+  //   조용히 정보를 잃어버렸음) — 나이·키·생일·소속을 고치려면 왼쪽 폼의 해당 칸을 쓴다.
+  if(b.idmeta) L.push('        <div class="idmeta">'+esc(b.idmeta)+'</div>');
   if(b.quote) L.push('        <div class="quote"'+ed('quote')+'>'+esc(b.quote)+'</div>');
   L.push('      </div>');
   if(b.idcardOn){
@@ -1464,9 +1483,8 @@ function buildIdentity(b, editable, gid){
 }
 // 서술카드에 실제 내용(글 또는 그림)이 있나 — buildBody(빈 카드 숨김)·isWritten 공용. (확장카드도 blocks를 쓰므로 같이 재사용)
 function proseHasContent(p){ return (p.blocks||[]).some(function(b){ return b.type==='img' ? !!b.img : !!String(b.body||'').trim(); }); }
-// 블록 목록(텍스트/그림) → 카드 안 마크업 줄들 — 서술카드·확장카드가 이 함수 하나를 공유(단일 출처, 2026-07-27).
-//   ★예전엔 buildBody(서술카드)와 extBodyHtml(확장카드)에 이 렌더링을 각각 손으로 옮겨 적어뒀었음 — 블록 마크업을
-//   바꿀 때마다 두 곳을 같이 고쳐야 했고, 실제로 그래서 어긋난 적이 있었음(기밀 확장카드가 사라지던 버그) → 하나로 통합.
+// 블록 목록(텍스트/그림) → 카드 안 마크업 줄들 — 서술카드·확장카드가 이 함수 하나를 공유(단일 출처).
+//   블록 마크업을 두 카드 종류에 따로 두면 바꿀 때 한쪽만 고치고 다른 쪽을 놓치기 쉬워 하나로 합쳤다.
 //   key = 이 카드를 가리키는 접두어('prose:0'/'ext:1', 콜론 없이) · ind = 블록 한 칸의 들여쓰기(호출부가 감싸는 div보다 한 단계 깊게).
 function blocksToHtml(blocks, key, ind, editable){
   var L=[];
@@ -1475,15 +1493,15 @@ function blocksToHtml(blocks, key, ind, editable){
       if(!blk.img && !editable) return;   // 저장용에선 아직 파일 안 고른 빈 그림 블록 생략
       if(editable) L.push(ind+'<div class="blk-wrap">');
       L.push(ind+'<figure class="p-fig">');
-      // ★alt 빈칸이면 카드 제목으로 대신 채우지 않고 그냥 빈 채로 — 안 그러면 저장할 때마다 "채워짐" → 다음에 불러오면
-      //   그게 '사용자가 진짜 입력한 값'처럼 보여서 빈칸으로 못 돌아감(라운드트립 불안정 버그였음).
+      // alt 빈칸이면 카드 제목으로 대신 채우지 않고 그냥 빈 채로 둔다 — 채워두면 저장 후 불러올 때
+      //   '사용자가 실제로 입력한 값'과 구별이 안 돼서 다시 빈칸으로 되돌릴 방법이 없어진다.
       L.push(ind+'  <img src="'+(blk.img?esc(blk.img):PH_IMG)+'" alt="'+esc(blk.alt||'')+'">');
       // 그림 작가 크레딧(선택) — 저장용은 값 있을 때만 태그 자체를 넣음(빈 태그 안 남김). 편집용은 늘 넣어 클릭해서 채울 수 있게.
       if(editable) L.push(ind+'  <figcaption contenteditable="true" data-edit="'+key+':artist:'+bi+'">'+esc(blk.artist||'')+'</figcaption>');
       else if(blk.artist) L.push(ind+'  <figcaption>'+esc(blk.artist)+'</figcaption>');
       L.push(ind+'</figure>');
-      // ★"이미지 바꾸기" 버튼은 그림 위에 안 덮이게 그림 밖(아래)에 따로 둔다 — 사진 위에 겹쳐 있으면
-      //   최종 화면이 어떻게 보일지 가려서 확인이 안 됐음(2026-07-25 사용자 피드백으로 위치 변경).
+      // "이미지 바꾸기" 버튼은 그림 위에 안 덮이게 그림 밖(아래)에 따로 둔다 — 사진 위에 겹치면
+      //   최종 화면이 어떻게 보일지 미리보기에서 가려진다.
       if(editable) L.push(ind+'  <button type="button" class="img-pick" data-imgpick="'+key+':'+bi+'">📁 이미지 바꾸기</button>');
       if(editable){
         L.push(ind+'<div class="p-alt" contenteditable="true" data-edit="'+key+':alt:'+bi+'">'+esc(blk.alt||'')+'</div>');
@@ -1503,7 +1521,7 @@ function blocksToHtml(blocks, key, ind, editable){
   });
   return L;
 }
-// 확장카드(.acc-b) 안쪽 — 서술카드(card-b prose)와 완전히 같은 블록(텍스트/그림) 규칙, 감싸는 태그만 다름(2026-07-26).
+// 확장카드(.acc-b) 안쪽 — 서술카드(card-b prose)와 완전히 같은 블록(텍스트/그림) 규칙, 감싸는 태그만 다름.
 //   그림 없는 기본형(대다수)은 예전과 같은 한 줄 압축 마크업, 그림이 섞이면 서술카드처럼 블록별 여러 줄로.
 function extBodyHtml(e, i, editable){
   var ed=function(k){ return editable? ' contenteditable="true" data-edit="'+k+'"' : ''; };
@@ -1512,9 +1530,8 @@ function extBodyHtml(e, i, editable){
     var flat = proseToHtml(blocks[0].body, '').replace(/\n/g,'');
     return '<div class="acc-b"'+ed('ext:'+i+':body')+'>'+flat+'</div>';
   }
-  // ★L2[0]는 앞에 공백을 안 둔다(2026-07-26 버그수정) — 확장카드 전체가 <details>...한 줄로 이어붙는데,
-  //   앞에 공백이 있으면 "</summary><div class=\"acc-b\">"를 정확히 찾는 불러오기 정규식(parseBody)이
-  //   못 찾아서 저장 후 다시 열면 확장카드가 통째로 사라지는 버그가 있었음(직접 재현·확인함).
+  // L2[0]는 앞에 공백을 안 둔다 — 확장카드 전체가 <details>...한 줄로 이어붙는데, 앞에 공백이 있으면
+  //   "</summary><div class=\"acc-b\">"를 정확히 찾는 불러오기 정규식(parseBody)이 못 찾아 확장카드가 통째로 사라진다.
   var L2=['<div class="acc-b">'].concat(blocksToHtml(blocks, 'ext:'+i, '        ', editable));
   L2.push('      </div>');
   return L2.join('\n');
@@ -1542,7 +1559,7 @@ function buildBody(b, hasStats, editable){
       L.push('        </div>');
     } else {
       // 그림이 섞인 카드 — 블록마다(텍스트=문단 묶음 / 그림=figure) 순서대로. blocksToHtml이 확장카드와 공용(단일 출처).
-      // ★편집 모드(미리보기)에서는 그림 선택·설명(alt)·순서변경(↑↓)·삭제(✕)도 이 자리에서 바로(2026-07-25, 왼쪽 폼 통합).
+      // 편집 모드(미리보기)에서는 그림 선택·설명(alt)·순서변경(↑↓)·삭제(✕)도 이 자리에서 바로(왼쪽 폼과 통합).
       //   저장용(editable=false)은 예전과 완전히 같은 마크업 — blk-wrap/버튼류는 편집모드에서만 추가.
       L.push('        <div class="card-b prose">');
       L = L.concat(blocksToHtml(blocks, 'prose:'+idx, '          ', editable));
@@ -1559,7 +1576,7 @@ function buildBody(b, hasStats, editable){
     L.push('      <div class="ext-h"><span class="idx">＋</span><h3>Extended</h3><span class="kr-sub">확장 기록</span></div>');
     exts.forEach(function(e, i){
       var cls = 'acc'+(e.classified?' classified':'');
-      var accBody = extBodyHtml(e, i, editable);   // ← 확장카드도 서술카드처럼 텍스트/그림 블록 지원(2026-07-26)
+      var accBody = extBodyHtml(e, i, editable);   // ← 확장카드도 서술카드처럼 텍스트/그림 블록 지원
       if(editable){
         // 편집화면(툴 미리보기)은 항상 열어서 그대로 편집 — '기밀'은 숨기지 않고, 클릭으로 켜고 끄는 자물쇠 버튼으로 표시
         var lockBtn = '<button type="button" class="acc-lock-tog'+(e.classified?' on':'')+'" data-extlock="'+i+'" title="기밀(CLASSIFIED)로 표시 — 실제 사이트에선 클릭 전까지 가려짐. 눌러서 켜고 끄기">🔒</button>';
@@ -1594,8 +1611,8 @@ function htmlToProse(inner){       // <p>/<h4>/<div> → 텍스트(문단=빈줄
                             .replace(/<small\b[^>]*>([\s\S]*?)<\/small>/gi,'~~$1~~')  // 작게 역변환
                             .replace(/<span class="faint">([\s\S]*?)<\/span>/gi,'==$1==');  // 회색글자 역변환
   var lines=[], re=/<(p|h4|div)\b[^>]*>([\s\S]*?)<\/\1>|<pre\b[^>]*class="[^"]*\bp-code\b[^"]*"[^>]*><code([^>]*)>([\s\S]*?)<\/code><\/pre>/gi, m, any=false;
-  // ★블록 사이엔 빈 줄 하나(문단 구분 신호)를 직접 쌓는다 — 예전엔 join('\n\n')으로 뭉뚱그려 붙였는데,
-  //   그러면 "빈 문단(사용자가 일부러 준 여백)"까지 있을 때 개수가 안 맞았다(2026-07-25, 아래 참고).
+  // 블록 사이엔 빈 줄 하나(문단 구분 신호)를 직접 쌓는다 — join('\n\n')으로 뭉뚱그려 붙이면
+  //   "빈 문단(사용자가 일부러 준 여백)"까지 있을 때 줄 수가 안 맞는다.
   function sep(){ if(lines.length) lines.push(''); }
   while(m=re.exec(s)){ any=true;
     if(m[1]==null){   // 코드블럭(pre.p-code>code) 매치 — m[3]=code 태그 속성, m[4]=코드 내용(문법강조 후엔 <span>이 섞여 있을 수 있어 태그부터 벗겨냄)
@@ -1669,7 +1686,7 @@ function parseBody(html){
   //   lookahead 없이는 실제 카드 끝보다 한 칸 앞에서 잘못 멈춘다.
   var pre=/<div class="card span2">\s*<div class="card-h">[\s\S]*?<h3>([^<]*)<\/h3><span class="kr-sub">([^<]*)<\/span><\/div>\s*<div class="card-b prose">([\s\S]*?)<\/div>\s*<\/div>(?=\s*(?:<div class="card|<div class="ext-h|<div class="pb-add|$))/g, pm;
   while(pm=pre.exec(html)){ b.proses.push({ title:stripTags(pm[1]), sub:stripTags(pm[2]), blocks:htmlToProseBlocks(pm[3]) }); }
-  // ★\s* 를 앞뒤에 둬서(2026-07-25 이전엔 없었음) acc-b 여는/닫는 태그 주변에 줄바꿈·공백이 섞여도 안전하게.
+  // \s* 를 앞뒤에 둬서 acc-b 여는/닫는 태그 주변에 줄바꿈·공백이 섞여도 안전하게.
   var ere=/<details class="acc( classified)?"><summary>([\s\S]*?)<\/summary>\s*<div class="acc-b">([\s\S]*?)<\/div>\s*<\/details>/g, em;
   while(em=ere.exec(html)){
     var isC=!!em[1], sum=em[2], title, sub;
@@ -1737,7 +1754,10 @@ function buildFM(st){
   rp.push('sec: '+(/^\d+$/.test(String(R.sec))? R.sec : q(R.sec||'etc')));
   L.push('roster: { '+rp.join(', ')+' }');
   // 신원·사원증: 레이아웃(_layouts/character.html)이 이 데이터로 신원/사원증을 그림 → 본문엔 카드만 남음.
-  var NH=st.namehead||{}, nhp=['eyebrow: '+q(NH.eyebrow||''), 'kr: '+q(NH.kr||''), 'en: '+q(NH.en||''), 'idmeta: '+q(NH.idmeta||'')];
+  // 나이·키·소속은 위 roster에 이미 있으므로 여기 안 둠(레이아웃이 roster+bday+role로 idmeta 한 줄을 조립).
+  var NH=st.namehead||{}, nhp=['eyebrow: '+q(NH.eyebrow||''), 'kr: '+q(NH.kr||''), 'en: '+q(NH.en||'')];
+  if(NH.bday) nhp.push('bday: '+q(NH.bday));
+  if(NH.role) nhp.push('role: '+q(NH.role));
   if(NH.quote) nhp.push('quote: '+q(NH.quote));
   L.push('namehead: { '+nhp.join(', ')+' }');
   if(st.idcard) L.push('idcard: { img: '+q(st.idcard.img||'')+', status: '+q(st.idcard.status||'ACTIVE')+' }');
@@ -1816,15 +1836,15 @@ function buildSrcdoc(st){
     '[data-edit]{cursor:text;border-radius:3px}[data-edit]:hover{box-shadow:0 0 0 1px var(--accent-line,#7aa)}[data-edit]:focus{outline:none;box-shadow:0 0 0 2px var(--accent);background:rgba(120,180,210,.07)}'+
     '.pb-add{display:flex;gap:10px;justify-content:center;margin-top:16px}.pb-add button{background:transparent;border:1px dashed var(--accent-line);color:var(--accent-deep);border-radius:6px;padding:7px 16px;font:inherit;font-size:13px;cursor:pointer}.pb-add button:hover{background:rgba(120,180,210,.1)}'+
     '.p-add{display:flex;gap:8px;margin-top:10px}.p-add button{background:transparent;border:1px dashed var(--accent-line);color:var(--accent-deep);border-radius:5px;padding:4px 11px;font:inherit;font-size:12px;cursor:pointer}.p-add button:hover{background:rgba(120,180,210,.1)}'+
-    // ★서술카드 편집을 오른쪽으로 통합(2026-07-25)하며 추가된 컨트롤들 — .p-add와 톤 맞춤(점선 테두리·같은 색 변수).
+    // 서술카드 편집 컨트롤들 — .p-add와 톤 맞춤(점선 테두리·같은 색 변수).
     '.card-del{margin-left:auto;flex:none;background:transparent;border:1px solid var(--line);color:var(--ink-faint);border-radius:5px;width:22px;height:22px;line-height:1;font-size:12px;cursor:pointer}.card-del:hover{border-color:#e0616b;color:#e0616b}'+
     '.blk-wrap{position:relative;margin-bottom:6px}.blk-ctl2{display:flex;gap:4px;justify-content:flex-end;margin-top:2px}'+
     '.blk-ctl2 button{background:transparent;border:1px solid var(--line);color:var(--ink-faint);border-radius:4px;width:20px;height:20px;line-height:1;font-size:11px;cursor:pointer}.blk-ctl2 button:hover{border-color:var(--accent-line);color:var(--accent-deep)}'+
-    // ★그림 위에 안 겹치게 그림 아래 보통 버튼으로(2026-07-25) — 전엔 그림 한가운데를 덮어서 최종 모습이 안 보였음.
+    // 그림 위에 안 겹치게 그림 아래 보통 버튼으로 — 그림 위에 겹치면 최종 모습이 안 보인다.
     '.img-pick{display:inline-flex;align-items:center;gap:4px;margin-top:6px;background:transparent;border:1px dashed var(--accent-line);color:var(--accent-deep);border-radius:5px;padding:4px 10px;font:inherit;font-size:12px;cursor:pointer}.img-pick:hover{background:rgba(120,180,210,.1)}'+
     '.p-alt{margin-top:6px;font-size:12px;color:var(--ink-faint);cursor:text;border-radius:3px;padding:2px 4px}.p-alt:hover{box-shadow:0 0 0 1px var(--accent-line,#7aa)}.p-alt:focus{outline:none;box-shadow:0 0 0 2px var(--accent);background:rgba(120,180,210,.07)}'+
     '.p-alt:empty::before{content:"이미지 설명 · 안 보일 때 대신 나올 글(선택)";opacity:.6;font-style:italic}'+
-    // ★글자 선택 시 뜨는 서식 툴바(2026-07-25) — 마우스로 드래그해 고른 글자에 굵게/기울임을 바로 토글.
+    // 글자 선택 시 뜨는 서식 툴바 — 마우스로 드래그해 고른 글자에 굵게/기울임을 바로 토글.
     '.fmt-bar{position:fixed;display:flex;gap:2px;background:#1a1e26;border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:3px;box-shadow:0 4px 14px rgba(0,0,0,.35);z-index:999}'+
     '.fmt-bar[hidden]{display:none}'+
     '.fmt-bar button{background:transparent;border:none;color:#eef2f6;width:26px;height:26px;border-radius:4px;font-size:13px;cursor:pointer;line-height:1}'+
@@ -1864,17 +1884,17 @@ function buildSrcdoc(st){
     //   안 돌아감 → liveText() 쪽에서 win.hljs.highlightAll()을 직접 한 번 더 불러줌(중복 호출은 hljs가 알아서 건너뜀, 안전).
     '<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"><\/script>'+
     '<script>if(window.hljs){hljs.highlightAll();document.querySelectorAll(\'pre.p-code code[class*="language-"]\').forEach(function(c){var m=c.className.match(/language-(\\S+)/);if(m)c.closest("pre").setAttribute("data-lang",m[1]);});}<\/script>'+
-    // ★한 텍스트노드만 보던 옛 방식은 엔터(<br>)로 줄이 나뉘면 **여는쪽**을 못 찾아 그대로 글자로 남았음(2026-07-25 발견) →
-    //   Range.toString()+Selection.modify로 고쳤었는데, <br>을 건너뛰는 글자수 계산이 실제 이동량과 안 맞아(오프바이원)
-    //   ①줄바꿈이 통째로 사라지고 ②별표 등 마커 한 글자가 지워지지 않고 남는 새 버그가 있었음(2026-07-25 라이브 테스트로 발견) →
-    //   Selection.modify를 아예 안 쓰고, el 전체를 직접 훑어(텍스트=글자 하나, <br>=한 칸) 좌표 목록을 만들고
-    //   그 목록에서 시작 위치를 인덱스로 정확히 찾아 Range를 세움(엔진의 근사 이동에 안 기대는 결정적 방식). 줄바꿈은 실제 <br> 노드로 재구성.
+    // 텍스트노드 하나만 보는 방식은 엔터(<br>)로 줄이 나뉘면 여는쪽 마커를 못 찾아 그대로 글자로 남는다.
+    //   Range.toString()+Selection.modify로 이동하면 <br>을 건너뛰는 글자수 계산이 실제 이동량과 안 맞아(오프바이원)
+    //   줄바꿈이 통째로 사라지거나 마커 한 글자가 안 지워지는 문제가 생긴다. 그래서 Selection.modify를 아예 안 쓰고,
+    //   el 전체를 직접 훑어(텍스트=글자 하나, <br>=한 칸) 좌표 목록을 만들고 그 목록에서 시작 위치를 인덱스로 정확히
+    //   찾아 Range를 세운다(엔진의 근사 이동에 안 기대는 결정적 방식). 줄바꿈은 실제 <br> 노드로 재구성한다.
     '<script>function tsBold(el){var d=el.ownerDocument,s=d.getSelection();if(!s.rangeCount||!s.isCollapsed)return;var r0=s.getRangeAt(0);'+
       'function flatText(n){var o="";(function w(x){var c=x.firstChild;while(c){if(c.nodeType===3)o+=c.nodeValue;else if(c.nodeType===1){if(c.tagName==="BR")o+="\\n";else w(c);}c=c.nextSibling;}})(n);return o;}'+
       'function flatList(x){var l=[];(function w(n){var c=n.firstChild;while(c){if(c.nodeType===3){var t=c.nodeValue;for(var i=0;i<t.length;i++)l.push({node:c,off:i});}else if(c.nodeType===1){if(c.tagName==="BR")l.push({node:c,off:null});else w(c);}c=c.nextSibling;}})(x);return l;}'+
-      // ★최적화(2026-07-31): 마커 탐색 시작점을 카드 전체(el)가 아니라 "지금 커서가 있는 문단(P)"으로 한정.
+      // 마커 탐색 시작점은 카드 전체(el)가 아니라 지금 커서가 있는 문단(P)으로 한정한다.
       //   마커(**~**·_~_·++~++·~~~~·==~==)는 문단 경계를 못 넘으므로 결과는 그대로면서, 카드가 길어질수록
-      //   매 키 입력마다 그 카드에 지금까지 쓴 글자 전체를 다시 훑던 비용이 문단 길이만큼으로 줄어듦.
+      //   매 키 입력마다 그 카드에 지금까지 쓴 글자 전체를 다시 훑는 비용을 문단 길이만큼으로 줄인다.
       'var scope=r0.endContainer.nodeType===1?r0.endContainer:r0.endContainer.parentNode;'+
       'while(scope&&scope!==el&&scope.tagName!=="P")scope=scope.parentNode;if(!scope)scope=el;'+
       'var pre=d.createRange();pre.setStart(scope,0);pre.setEnd(r0.endContainer,r0.endOffset);var bf=flatText(pre.cloneContents());'+
@@ -1886,9 +1906,9 @@ function buildSrcdoc(st){
       'rr.insertNode(tagEl);rr.setStartAfter(tagEl);rr.collapse(true);'+
       'var zw=d.createTextNode("\\u200b");rr.insertNode(zw);rr.setStartAfter(zw);rr.collapse(true);'+
       's.removeAllRanges();s.addRange(rr);}'+
-    // ★버그수정(2026-07-31): 굵게 등 서식이 걸린 문단 끝에서 Enter로 새 문단을 만들면, 브라우저가 그 서식을 그대로 이어받아
-    //   아직 아무 글자도 안 쓴 새 문단 전체가 굵게로 나와버렸음(직접 재현·확인). 새 문단이 "서식 태그로만 감싸인 빈 상태"일
-    //   때만 그 빈 서식을 풀어 평문으로 되돌린다 — 이미 글자가 있는 서식(의도적으로 이어쓴 경우)은 안 건드림.
+    // 굵게 등 서식이 걸린 문단 끝에서 Enter로 새 문단을 만들면, 브라우저가 그 서식을 그대로 이어받아
+    //   아직 아무 글자도 안 쓴 새 문단 전체가 굵게로 나온다. 새 문단이 "서식 태그로만 감싸인 빈 상태"일
+    //   때만 그 빈 서식을 풀어 평문으로 되돌린다 — 이미 글자가 있는 서식(의도적으로 이어쓴 경우)은 안 건드린다.
     'function tsUnwrapEmptyMark(el){var d=el.ownerDocument,s=d.getSelection();if(!s.rangeCount)return;'+
       'var node=s.getRangeAt(0).startContainer,p=node.nodeType===1?node:node.parentNode;'+
       'while(p&&p!==el&&p.tagName!=="P")p=p.parentNode;if(!p||p===el||p.tagName!=="P")return;'+
@@ -1899,30 +1919,26 @@ function buildSrcdoc(st){
       'if(!p.firstChild)p.appendChild(d.createElement("br"));'+
       'var r=d.createRange();r.selectNodeContents(p);r.collapse(true);s.removeAllRanges();s.addRange(r);}'+
     'document.addEventListener("input",function(e){var el=e.target.closest&&e.target.closest("[data-edit]");if(!el)return;var k=el.getAttribute("data-edit"),isBody=/(:body|:text:\\d+)$/.test(k);if(isBody)tsBold(el);var v=isBody?el.innerHTML:el.textContent;try{parent.pvEdit(k,v);}catch(_){}}, true);'+
-    // ★엔터=새 문단 / Shift+엔터=줄바꿈(노션·티스토리와 동일한 규칙, 2026-07-25 변경).
-    //   ↳ 예전엔 엔터를 항상 줄바꿈(<br>)으로 강제했었는데, 그러면 새 문단을 만들 방법이 아예 없었음(사용자 피드백).
-    //   문단 구분자를 <p>로 고정(안 하면 크롬이 기본으로 <div>를 씀) → htmlToProse가 <p>를 "빈 줄로 구분된 문단"으로 되읽음(대칭).
+    // 엔터=새 문단 / Shift+엔터=줄바꿈(노션·티스토리와 동일한 규칙). 엔터를 항상 줄바꿈(<br>)으로 고정하면
+    //   새 문단을 만들 방법이 아예 없어진다. 문단 구분자를 <p>로 고정(안 하면 브라우저가 기본으로 <div>를 씀)
+    //   → htmlToProse가 <p>를 "빈 줄로 구분된 문단"으로 되읽는다(대칭).
     'try{document.execCommand("defaultParagraphSeparator",false,"p");}catch(_){}'+
-    // ★버그수정(2026-07-31): 이름·부제·나이·인용구 같은 "한 줄" 칸은 Enter를 따로 안 막아서, 실수로 Enter를 누르면
-    //   화면엔 두 줄로 보이지만(브라우저 기본 줄바꿈 삽입) 실제 값은 textContent라 줄바꿈 없이 그대로 이어붙어
-    //   (예: "마이티"+Enter+"테스트" → "마이티테스트") 조용히 저장돼버렸음(직접 재현·확인) — 한 줄 칸은 Enter 자체를
-    //   막는다(보통 <input>처럼 아무 일도 안 일어남). 여러 줄(본문) 칸은 기존 그대로.
+    // 이름·부제·나이·인용구 같은 "한 줄" 칸은 Enter를 막지 않으면, 화면엔 두 줄로 보여도(브라우저 기본
+    //   줄바꿈 삽입) 실제 값은 textContent라 줄바꿈 없이 그대로 이어붙는다(예: "마이티"+Enter+"테스트" →
+    //   "마이티테스트"). 그래서 한 줄 칸은 Enter 자체를 막는다(보통 <input>처럼 아무 일도 안 일어남). 여러 줄(본문) 칸은 기존 그대로.
     'document.addEventListener("keydown",function(e){if(e.key!=="Enter")return;var el=e.target.closest&&e.target.closest("[data-edit]");if(!el)return;var k=el.getAttribute("data-edit"),isBody=/(:body|:text:\\d+)$/.test(k);'+
       'if(!isBody){e.preventDefault();return;}'+
       'if(e.shiftKey){e.preventDefault();document.execCommand("insertLineBreak");return;}'+
       'setTimeout(function(){tsUnwrapEmptyMark(el);},0);'+
     '}, true);'+
-    // ★붙여넣기는 항상 순수 텍스트만 — 워드/한글 문서 등에서 복사해오면 mso-* 같은 서식 찌꺼기가 그대로 들어와
-    //   저장 후 화면에 깨진 글자로 그대로 노출되던 문제(2026-07-26). 굵게 등은 붙여넣은 뒤 **글자**나 B버튼으로 다시 적용.
-    // ★버그수정(2026-07-26): 워드/한글(HWP)·파워포인트 등 일부 앱은 클립보드에 "text/plain"을 아예 안 담고 "text/html"만 준다.
-    //   전엔 이 경우 t가 빈 문자열이 됐고, 글자를 선택(드래그)한 채로 붙여넣으면 execCommand("insertText","")가
-    //   선택된 글자를 지우기만 하고 아무것도 안 채워서 "간헐적으로 내용이 사라지는" 것처럼 보였음(붙여넣은 서식은 버려도,
-    //   원래 있던 글자까지 지우면 안 됨) → text/plain이 없으면 text/html에서 글자만 추려 대신 쓰고, 그것도 없으면
-    //   아무 것도 안 하고 빠져나가 원래 선택 글자를 보존한다.
-    // ★버그수정(2026-07-31): 붙여넣은 텍스트에 줄바꿈이 있으면 두 가지 문제가 있었음 — ①한 줄 칸에 여러 줄을 붙이면
-    //   Enter 때와 똑같이 줄바꿈 없이 그대로 이어붙었고(직접 재현), ②여러 줄(본문) 칸엔 홑줄바꿈까지 전부 새 문단으로
-    //   쪼개져(빈 줄 하나만 있어도 문단이 한 번 더 갈라짐) 원래 한 문단이던 글이 문장마다 뚝뚝 끊어져 보였음(직접 재현).
-    //   → 한 줄 칸은 줄바꿈을 공백으로, 여러 줄 칸은 이 화면의 규칙(빈 줄=새 문단·홑줄바꿈=문단 안 줄바꿈)을 그대로 적용.
+    // 붙여넣기는 항상 순수 텍스트만 받는다 — 워드/한글 문서 등에서 복사해오면 mso-* 같은 서식 찌꺼기가 그대로
+    //   들어와 화면에 깨진 글자로 노출된다. 굵게 등은 붙여넣은 뒤 **글자**나 B버튼으로 다시 적용하면 된다.
+    //   워드/한글(HWP)·파워포인트 등 일부 앱은 클립보드에 "text/plain"을 아예 안 담고 "text/html"만 준다 —
+    //   그 경우 text/plain이 없으면 text/html에서 글자만 추려 대신 쓰고, 그것도 없으면 아무 것도 안 하고
+    //   빠져나가 원래 선택돼 있던 글자를 보존한다(빈 문자열로 insertText하면 선택 글자만 지워지고 아무것도
+    //   안 채워져 내용이 사라진 것처럼 보이기 때문).
+    // 붙여넣은 텍스트에 줄바꿈이 있으면: 한 줄 칸은 줄바꿈을 공백으로 바꿔서 Enter 때처럼 그대로 이어붙는 걸
+    //   막고, 여러 줄(본문) 칸은 이 화면의 규칙(빈 줄=새 문단·홑줄바꿈=문단 안 줄바꿈)을 그대로 적용한다.
     'document.addEventListener("paste",function(e){var el=e.target.closest&&e.target.closest("[data-edit]");if(!el)return;e.preventDefault();'+
       'var cd=(e.clipboardData||window.clipboardData),t=cd.getData("text/plain");'+
       'if(!t){var h=cd.getData("text/html");if(h){var tmp=document.createElement("div");tmp.innerHTML=h;t=tmp.textContent||tmp.innerText||"";}}'+
@@ -1931,8 +1947,9 @@ function buildSrcdoc(st){
       'if(!isBody){t=t.replace(/\\n+/g," ");}'+
       'else{t=t.replace(/\\n{2,}/g,"\\uE000").replace(/\\n/g," ").replace(/\\uE000/g,"\\n");}'+
       'document.execCommand("insertText",false,t);}, true);'+
-    // ★글자 선택 시 뜨는 서식 툴바 — 굵게(**글자**)가 타이핑 즉시 적용된 뒤 "다시 고치기 어렵다"는 피드백으로 추가(2026-07-25).
-    //   선택한 글자 위에 B/I/인용문 버튼이 뜨고, 눌러서 굵게·기울임·인용문(문단 통째로 .prose .lead 스타일)을 토글. 자동 ** 변환과는 별개 경로.
+    // 글자 선택 시 뜨는 서식 툴바 — 타이핑 즉시 적용되는 자동 ** 변환과 달리, 이미 쓴 글자를 나중에
+    //   서식 적용할 때 쓴다. 선택한 글자 위에 B/I/인용문 버튼이 뜨고, 눌러서 굵게·기울임·인용문(문단
+    //   통째로 .prose .lead 스타일)을 토글한다.
     '(function(){var bar=document.getElementById("fmtBar");'+
       // ★인용문 버튼 = 글자가 아니라 "그 글자가 속한 문단(<p>)" 통째로 바뀜(굵게/기울임과 성격이 다름) → 문단 태그를 직접 찾아 class="lead"를 토글.
       'function closestP(node, root){var n=node.nodeType===1?node:node.parentElement;while(n&&n!==root&&root.contains(n)){if(n.tagName==="P")return n;n=n.parentElement;}return null;}'+
@@ -2161,15 +2178,15 @@ function pvEdit(key, val){
   var v=String(val==null?'':val);
   if(key==='eyebrow') setValNoRender('#b_eyebrow', v.trim());
   else if(key==='krname') setValNoRender('#b_krname', v.trim());
-  else if(key==='idmeta'){ var im=parseIdmeta(v); setValNoRender('#bi_age',im.age); setValNoRender('#bi_height',im.height); setValNoRender('#bi_bday',im.bday); setValNoRender('#bi_sector',im.sector); setValNoRender('#bi_role',im.role); setValNoRender('#bi_dept',im.dept);
-    try{ var _d=PV[pvFront].contentDocument, _se=_d&&_d.querySelector('[data-meta="sector"]'); if(_se) _se.textContent=sectorLabel(); }catch(e){}   // 미리보기 상단바 소속 태그도 즉시(iframe 재생성 없이=커서 유지)
-  }
   else if(key==='quote') setValNoRender('#b_quote', v.trim());
-  else if(key.indexOf('prose:')===0){
+  else if(key.indexOf('prose:')===0 || key.indexOf('ext:')===0){
+    // 서술카드(prose)·확장카드(ext)는 같은 블록 구조라 처리 로직이 완전히 같음 — 제목/부제 선택자만 다름.
+    var cardType = key.indexOf('ext:')===0 ? 'ext' : 'prose';
     var parts=key.split(':'), idx=+parts[1], field=parts[2];
-    var card=document.querySelectorAll('#proses .prose-card')[idx]; if(!card) return;
-    if(field==='title') card.querySelector('.p-title').value=v.trim();
-    else if(field==='sub') card.querySelector('.p-sub').value=v.trim();
+    var card=cardFor(cardType, idx); if(!card) return;
+    var titleSel = cardType==='ext' ? '.e-title' : '.p-title', subSel = cardType==='ext' ? '.e-sub' : '.p-sub';
+    if(field==='title') card.querySelector(titleSel).value=v.trim();
+    else if(field==='sub') card.querySelector(subSel).value=v.trim();
     else if(field==='body'){   // 그림 없는 기본형(블록 1개) 카드 — 그 유일한 텍스트 블록에 반영
       var ta=card.querySelector('.blk-text-v'); if(ta) ta.value=htmlToProse(v);
     }
@@ -2184,28 +2201,6 @@ function pvEdit(key, val){
     else if(field==='artist'){   // 그림 작가 크레딧 — parts[3]=블록 인덱스
       var row5=card.querySelectorAll('.blk-row')[+parts[3]], artIn=row5&&row5.querySelector('.blk-artist');
       if(artIn) artIn.value=v.trim();
-    }
-  }
-  else if(key.indexOf('ext:')===0){
-    // ★확장카드도 서술카드와 같은 블록 구조라(2026-07-26) text/alt/artist 처리도 prose:와 똑같이.
-    var ep=key.split(':'), ei=+ep[1], ef=ep[2];
-    var ec=document.querySelectorAll('#exts .ext-card')[ei]; if(!ec) return;
-    if(ef==='title') ec.querySelector('.e-title').value=v.trim();
-    else if(ef==='sub') ec.querySelector('.e-sub').value=v.trim();
-    else if(ef==='body'){   // 그림 없는 기본형(블록 1개) 카드 — 그 유일한 텍스트 블록에 반영
-      var eta=ec.querySelector('.blk-text-v'); if(eta) eta.value=htmlToProse(v);
-    }
-    else if(ef==='text'){   // 그림 섞인 카드 — ep[3]=블록 인덱스
-      var erow=ec.querySelectorAll('.blk-row')[+ep[3]], eta2=erow&&erow.querySelector('.blk-text-v');
-      if(eta2) eta2.value=htmlToProse(v);
-    }
-    else if(ef==='alt'){
-      var erow4=ec.querySelectorAll('.blk-row')[+ep[3]], ealt=erow4&&erow4.querySelector('.blk-alt');
-      if(ealt) ealt.value=v.trim();
-    }
-    else if(ef==='artist'){
-      var erow5=ec.querySelectorAll('.blk-row')[+ep[3]], eart=erow5&&erow5.querySelector('.blk-artist');
-      if(eart) eart.value=v.trim();
     }
   }
   scheduleSave();
@@ -2223,7 +2218,7 @@ function pvStageEdit(idx, vals){
   scheduleSave();
 }
 window.pvStageEdit = pvStageEdit;
-// 서술카드/확장카드 둘 다 같은 블록 구조를 쓰므로(2026-07-26) 'prose'/'ext' 타입 문자열로 그 카드를 찾는 공용 함수.
+// 서술카드/확장카드 둘 다 같은 블록 구조를 쓰므로 'prose'/'ext' 타입 문자열로 그 카드를 찾는 공용 함수.
 function cardFor(cardType, idx){
   return document.querySelectorAll(cardType==='ext' ? '#exts .ext-card' : '#proses .prose-card')[idx];
 }
@@ -2313,9 +2308,9 @@ seed();
 // 진입 방식 결정: ?load=<슬러그>(그 캐릭터 편집) · ?new=1(빈 새 캐릭터) · (없으면) 이전 작업 자동 복원.
 // 캐릭터 페이지 ⚙의 '편집'과 목록의 '＋ 새 캐릭터'가 이 파라미터로 연결됨.
 (function boot(){
-  var q; try{ q = new URLSearchParams(location.search); }catch(e){ q = null; }
-  var loadSlug = q && q.get('load');
-  var isNew = q && (q.get('new') != null);
+  var qs; try{ qs = new URLSearchParams(location.search); }catch(e){ qs = null; }   // q라는 이름은 위쪽 YAML 따옴표 헬퍼 q()가 이미 쓰고 있어 겹치지 않게 qs로
+  var loadSlug = qs && qs.get('load');
+  var isNew = qs && (qs.get('new') != null);
   if((loadSlug || isNew) && window.history && history.replaceState){
     try{ history.replaceState(null, '', location.pathname); }catch(e){}   // 주소에서 ?load/?new 제거 → 새로고침하면 편집 내용 유지(복원)
   }
@@ -2342,7 +2337,7 @@ function isAccentInput(t){ return !!(t && (t.id==='accent'||t.id==='accentLight'
 var TEXT_IDS={ b_eyebrow:1,b_krname:1,b_krsur:1,b_enname:1,b_ensur:1,bi_age:1,bi_height:1,bi_bday:1,b_quote:1,
   bi_sector:1,bi_dept:1,bi_role:1,b_idstatus:1,b_idartist:1 };
 function isTextInput(t){ if(!t) return false; if(TEXT_IDS[t.id]) return true;
-  // ★.blk-text-v/.blk-alt/.blk-artist는 서술카드·확장카드 블록 공용(2026-07-26, .e-body는 텍스트영역 폐기로 삭제).
+  // .blk-text-v/.blk-alt/.blk-artist는 서술카드·확장카드 블록 공용.
   return !!(t.classList && (t.classList.contains('p-title')||t.classList.contains('p-sub')||
     t.classList.contains('blk-text-v')||t.classList.contains('blk-alt')||t.classList.contains('blk-artist')||
     t.classList.contains('e-title')||t.classList.contains('e-sub'))); }
@@ -2492,8 +2487,8 @@ $('#loadPickBtn').onclick = function(){ loadCharacter($('#loadPick').value); };
 $('#loadPick').onchange = function(){ if(this.value) loadCharacter(this.value); };
 // 불러오기 드롭다운을 실제 캐릭터 목록(characters.html 로스터)과 동기화 → 신규 캐릭터 자동 표시.
 // 못 읽으면(오프라인 등) HTML에 박아둔 기본 목록을 그대로 둔다.
-(function syncLoadList(){
-  fetch('../characters.html').then(function(r){ return r.ok ? r.text() : ''; }).then(function(html){
+TOOL_ROSTER_READY = (function syncLoadList(){
+  return fetch('../characters.html').then(function(r){ return r.ok ? r.text() : ''; }).then(function(html){
     // id·ko 는 값이 없으면 목록이 null(따옴표 없이)로 출력 → 그 캐릭터도 누락 없이 잡히게 "값" 또는 null 모두 허용.
     var re=/\{\s*k:\s*"([^"]+)"[^}]*?id:\s*(?:"([^"]*)"|null)[^}]*?ko:\s*(?:"([^"]*)"|null)[^}]*?ht:\s*(\d+)/g, m, items=[];
     while(m=re.exec(html)) items.push({ slug:m[1], id:m[2]||'', ko:m[3]||'', ht:+m[4] });   // ht = 키(cm) · 라인업 비교 라벨용
@@ -2619,6 +2614,7 @@ async function submitToDiscord(){
   if(!$('#b_krname').value.trim() && !$('#b_enname').value.trim()){
     saveMsg('먼저 이름(한글 또는 영문)을 입력하세요', false); return;
   }
+  await TOOL_ROSTER_READY;   // 목록 로딩이 안 끝난 채로 중복 검사를 하면 아직 빈 TOOL_ROSTER를 보고 통과시켜버림 → 항상 로딩 완료를 기다림
   var isExisting=TOOL_ROSTER.some(function(r){ return r.slug===slug; });
   if(isExisting && slug!==LOADED_SLUG){
     if(!confirm('폴더 이름 "'+slug+'" 은 이미 있는 캐릭터예요. 그래도 제출할까요?\n(관리자가 검토할 때 기존 캐릭터를 덮어쓸지 판단해요)')) return;
@@ -2684,6 +2680,7 @@ async function saveToSite(repick){
   var slug=slugify($('#slug').value);
   if(slug!==$('#slug').value) $('#slug').value=slug;   // 폼에도 정리된 폴더명 반영
   if(!slug){ saveMsg('먼저 위쪽 ‘폴더 이름’을 입력하세요 (영문 소문자·숫자·- 만)', false); return; }
+  await TOOL_ROSTER_READY;   // 목록 로딩이 안 끝난 채로 중복 검사를 하면 아직 빈 TOOL_ROSTER를 보고 통과시켜버림 → 항상 로딩 완료를 기다림
   // 기록번호(M-XX) 확인: 비었거나 다른 캐릭터와 겹치면 경고
   var recVal=$('#m_record').value.trim();
   if(!recVal){ if(!confirm('기록번호(예: M-07)가 비어 있어요. 그래도 저장할까요?\n(비우면 목록 정렬이 꼬일 수 있어요)')) return; }
