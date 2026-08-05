@@ -182,8 +182,7 @@ document.addEventListener('DOMContentLoaded', function(){
     var HOME_MODES = window.TS_HOME_MODES;
     // 빌드 로그 — 실제 개발 이력을 세계관 톤으로 (최신이 위, neu=true 면 시안 강조)
     var BUILD_LOG = [
-      { dt:'2026.08', tx:'인물 기록 착장 데이터 확장 · 무대 연출 개선', neu:true },
-      { dt:'2026.08', tx:'아카이브 전역 정밀 점검 완료 · 기록 구조 정비' },
+      { dt:'2026.08', tx:'데이터베이스 전역 정밀 점검 완료 · 기록 구조 정비' },
       { dt:'2026.08', tx:'외부 열람 회선 개통 · 공개 접속 경로 확보' },
       { dt:'2026.08', tx:'GALLERY · 기록 보관소 개설' },
       { dt:'2026.07', tx:'SECTOR 01 · 인물 기록 6건 등록' },
