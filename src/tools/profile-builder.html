@@ -53,6 +53,20 @@
   .prev-bar-row{display:flex;align-items:center;gap:8px}
   .prev-bar button{font-size:11px}
   .prev-bar .note{display:block;margin:5px 0 0}
+  /* 색·효과·능력치 표시 컨트롤 — 왼쪽 폼 없이도 항상 보이는 자리(패널을 접어도 그대로 남음). */
+  .prev-tools{display:flex;align-items:center;gap:8px;margin-left:auto}
+  .prev-color-tools{display:flex;gap:8px}
+  .pc-group{display:flex;align-items:center;gap:3px;padding:2px 5px;border:1px solid var(--line);border-radius:6px}
+  .pc-label{font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:.3px;color:var(--dim)}
+  .cp-sw-sm{width:20px;height:20px;border-radius:5px}
+  /* 오른쪽에 뜨는 서랍(패널)로 — 무대는 폭이 가변(auto)이라 정확한 경계는 몰라도, 무대는 보통 왼쪽에 고정폭으로
+     자리잡으므로 오른쪽 끝에서부터 고정폭을 잡으면 대부분 화면에서 무대를 안 가리고 카드 자리에만 겹친다. */
+  .fx-panel{position:absolute;top:0;right:0;bottom:0;width:360px;max-width:90%;z-index:10;
+    background:var(--panel);border-left:1px solid var(--line);padding:12px;overflow-y:auto;box-shadow:-6px 0 20px rgba(0,0,0,.35)}
+  .fx-panel[hidden]{display:none}
+  /* 실제 페이지도 900px 이하부턴 무대·카드가 좌우가 아니라 위아래로 쌓임(profile.css 같은 분기점) —
+     그 아래에선 "오른쪽 = 카드 자리"라는 전제 자체가 깨지므로, 오른쪽 서랍 대신 화면 전체를 덮게 바꾼다. */
+  @media(max-width:900px){ .fx-panel{left:0;width:auto;max-width:none} }
   /* 미리보기 = iframe 2장을 겹쳐 교차 페이드(깜빡임 방지). .show 인 쪽만 보이고 조작됨. */
   .pv-stack{position:relative;flex:1;background:#000}
   .pv-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000;
@@ -118,6 +132,12 @@
   .cp-foot{display:flex;align-items:center;gap:6px}
   .cp-foot input{flex:1;font-family:"Share Tech Mono",monospace;text-transform:lowercase}
   .cp-foot .cp-prev{width:26px;height:26px;flex:none;border-radius:5px;border:1px solid var(--line)}
+  .cp-rgb{margin-top:6px;display:flex;gap:5px}
+  .cp-rgb-f{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .cp-rgb-f span{font-family:"Share Tech Mono",monospace;font-size:9px;color:var(--dim)}
+  .cp-rgb-f input{width:100%;text-align:center;font-family:"Share Tech Mono",monospace;padding:3px 2px}
+  .cp-rgb-f input::-webkit-inner-spin-button,.cp-rgb-f input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+  .cp-rgb-f input{-moz-appearance:textfield}
   button{background:var(--panel2);border:1px solid var(--line);border-radius:5px;color:var(--tx);
     padding:5px 10px;font:inherit;font-size:12px;cursor:pointer}
   button:hover{border-color:var(--acc);color:#fff}
@@ -380,27 +400,15 @@
       </div>
     </div>
 
-    <div class="sec">
+    <div class="sec hide-panel">
+      <!-- 색·효과 조정이 전부 미리보기 위쪽 툴바(색 스와치 · ⚡효과 버튼)로 옮겨가서 이 섹션은 숨김만 —
+           DOM은 그대로 두어 데이터 저장소(값 자체·readGen/build)로는 계속 씀. 스와치 버튼은 새 자리로 옮겼고(중복 방지),
+           칸(input)은 색선택기 팝오버가 data-target으로 값을 읽고 쓰는 대상이라 값은 여기 그대로 유지. -->
       <div class="sec-h">색·효과 <span class="note" style="display:inline">· <span class="curgen"></span> · 세대별(탭 따라 바뀜)</span></div>
       <div><label>대표색 <span class="note" style="display:inline">· <span class="curgen"></span> · 시작→끝 2색 대각선 그라데이션</span></label>
-        <div class="inline"><input id="accent" class="hexin" value="#bfc7d4"><button type="button" class="cp-sw" data-target="accent" title="시작색"></button><input id="accent2" class="hexin" placeholder="끝색 · 비우면 단색"><button type="button" class="cp-sw" data-target="accent2" title="끝색"></button></div></div>
+        <div class="inline"><input id="accent" class="hexin" value="#bfc7d4"><input id="accent2" class="hexin" placeholder="끝색 · 비우면 단색"></div></div>
       <div style="margin-top:8px"><label>밝은 테마 색 <span class="note" style="display:inline">· <span class="curgen"></span> · 선택 · 시작→끝</span></label>
-        <div class="inline"><input id="accentLight" class="hexin" placeholder="비우면 대표색과 동일"><button type="button" class="cp-sw" data-target="accentLight" title="시작색"></button><input id="accent2Light" class="hexin" placeholder="끝색 · 비우면 단색"><button type="button" class="cp-sw" data-target="accent2Light" title="끝색"></button></div></div>
-
-      <label style="margin-top:12px">무대 효과 <span class="note" style="display:inline">· 능력 연출 · 앞/뒤 레이어 쌓기</span></label>
-      <div class="note" style="margin:0 0 6px"><b>뒤</b>=캐릭터 뒤 · <b>앞</b>=캐릭터 앞. <b>＋ 효과 고르기</b>로 움직이는 미리보기를 보며 고르고 · 왼쪽 <b>스위치</b>로 껐다 켜고(삭제 안 함) · <b>⠿ 드래그</b>로 순서 변경 · <b>색</b>은 다크/라이트 테마마다 따로 정할 수 있어요(기본=그 테마의 테마색).</div>
-      <div class="fxcols">
-        <div class="fxcol">
-          <div class="fxcol-h">뒤 <span class="note" style="display:inline">· 캐릭터 뒤</span></div>
-          <div id="fxColBack" class="fxlayers" data-place="back"></div>
-          <div class="fxadd"><button type="button" class="sm fx-add-btn" data-place="back">＋ 효과 고르기</button></div>
-        </div>
-        <div class="fxcol">
-          <div class="fxcol-h">앞 <span class="note" style="display:inline">· 캐릭터 앞</span></div>
-          <div id="fxColFront" class="fxlayers" data-place="front"></div>
-          <div class="fxadd"><button type="button" class="sm fx-add-btn" data-place="front">＋ 효과 고르기</button></div>
-        </div>
-      </div>
+        <div class="inline"><input id="accentLight" class="hexin" placeholder="비우면 대표색과 동일"><input id="accent2Light" class="hexin" placeholder="끝색 · 비우면 단색"></div></div>
       <input type="hidden" id="genEffect"><!-- 레이어 스택을 YAML-flow 문자열로 보관(readGen/build 가 읽음) -->
     </div>
 
@@ -428,12 +436,16 @@
       </div>
     </div>
 
-    <div class="sec">
+    <div class="sec hide-panel">
+      <!-- 옷장 추가·삭제·캡션·대표지정이 전부 오른쪽 미리보기(옷장 트랙의 ⋮ 메뉴 + ＋ 추가 타일)로 옮겨가서 이 섹션은 숨김만 —
+           DOM은 그대로 두어 데이터 저장소(#ward, readWard/writeGen)로는 계속 씀. -->
       <div class="sec-h">옷장 <span class="note" style="display:inline">· <span class="curgen"></span></span></div>
       <div class="list-row head ward-row"><span>이름</span><span>이미지</span><span>작가</span><span>기본</span><span></span></div>
       <div id="ward"></div>
       <button class="sm" id="addWard">＋ 의상 추가</button>
-      <div class="note"><b>기본</b> 하나만 선택 = 무대에 <b>처음 보이는 의상 = 대표 일러</b>.</div>
+    </div>
+    <div class="sec">
+      <div class="sec-h">옷장 배치 <span class="note" style="display:inline">· <span class="curgen"></span></span></div>
       <label class="chk stage-tog" title="미리보기에서 일러 크기·위치 조정"><input type="checkbox" id="stageEdit"> <b>무대 배치 편집</b></label>
       <div class="note" style="margin-top:5px">켜면 오른쪽 미리보기에서 <b>기본 의상</b>의 일러·고스트 크기·위치를 드래그·슬라이더로 조정합니다. (값은 저장에 그대로 반영)</div>
     </div>
@@ -453,6 +465,9 @@
         <div><label>영문 이름 <span class="note" style="display:inline">· 제목·경로·코드명에 사용</span></label><input id="b_enname" placeholder="first name"></div>
         <div><label>영문 성 <span class="note" style="display:inline">· 선택</span></label><input id="b_ensur" placeholder="last name"></div>
       </div>
+      <!-- 나이·키·생일·소속·부서·역할 편집이 신원 카드 옆 ✎ 버튼(미리보기 안 자체 팝오버)로 옮겨가서 이 칸들은 숨김만 —
+           DOM은 그대로 두어 데이터 저장소(readGen/writeGen)로는 계속 씀. -->
+      <div class="hide-panel">
       <label>한 줄 정보 <span class="note" style="display:inline">· 빈 칸은 생략됨</span></label>
       <div class="row c3">
         <div><label>나이</label><input id="bi_age" placeholder="20 (모르면 ?)"></div>
@@ -467,6 +482,7 @@
       <div class="row c2">
         <div><label>역할</label><select id="bi_role"><option value="">— 선택 —</option><!-- 항목은 JS의 ROLES 배열에서 자동 생성(단일 출처) --></select></div>
         <div></div>
+      </div>
       </div>
       <label>인용구 <span class="note" style="display:inline">· 선택</span></label>
       <input id="b_quote" placeholder="비우면 없음">
@@ -489,7 +505,9 @@
       <label class="chk" style="justify-content:flex-start;font-size:12px;margin:0 0 9px"><input type="checkbox" id="b_stat_on" checked> 능력치 카드 표시</label>
       <div style="margin:2px 0 8px"><label>+증가분 막대 색 <span class="note" style="display:inline">· 비우면 대표색 연한 버전(자동)</span></label>
         <div class="inline"><input id="statPlus" class="hexin" placeholder="비우면 자동"><button type="button" class="cp-sw" data-target="statPlus" title="+증가분 색"></button></div></div>
-      <details class="fold">   <!-- 접어서 패널 공간 절약. 기본은 접힘. '카드 표시'=프로필에 능력치 카드 노출 여부 -->
+      <!-- 능력치 항목 추가·삭제·값 편집이 전부 오른쪽 미리보기(막대 클릭 팝오버 + ＋추가)로 옮겨가서 이 목록은 숨김만 —
+           DOM은 그대로 두어 데이터 저장소(#stats, readStats/writeGen)로는 계속 씀. -->
+      <details class="fold hide-panel">   <!-- '카드 표시'=프로필에 능력치 카드 노출 여부(위 체크박스)는 별개, 계속 보임 -->
         <summary>능력치 항목 펼치기 / 접기 <span class="note" style="display:inline">· ✕ 삭제 · ＋ 추가</span></summary>
         <div class="list-row head stat-row"><span>항목</span><span>값</span><span>+증가</span><span></span></div>
         <div id="stats"></div>
@@ -525,12 +543,41 @@
       <div class="prev-bar-row">
         <button class="sm" id="toggleForm" title="편집 패널 접기/펼치기">◀ 패널</button>
         <span class="mono" style="color:var(--dim);font-size:11px">PREVIEW</span>
+        <span class="prev-tools">
+          <span class="prev-color-tools">
+            <span class="pc-group" title="대표색(다크 테마) · 시작→끝"><span class="pc-label">다크</span>
+              <button type="button" class="cp-sw cp-sw-sm" data-target="accent" title="대표색(다크) · 시작색"></button><button type="button" class="cp-sw cp-sw-sm" data-target="accent2" title="대표색(다크) · 끝색(선택, 비우면 단색)"></button>
+            </span>
+            <span class="pc-group" title="밝은 테마 색(선택) · 시작→끝"><span class="pc-label">라이트</span>
+              <button type="button" class="cp-sw cp-sw-sm" data-target="accentLight" title="밝은 테마 · 시작색(선택, 비우면 다크와 동일)"></button><button type="button" class="cp-sw cp-sw-sm" data-target="accent2Light" title="밝은 테마 · 끝색(선택, 비우면 단색)"></button>
+            </span>
+          </span>
+          <button class="sm" id="fxPanelToggle" type="button" title="무대 효과 편집">⚡ 효과</button>
+          <button class="sm" id="statPanelToggle" type="button" title="능력치 카드 표시 켜기/끄기">📊 능력치</button>
+        </span>
       </div>
       <span class="note">✎ 오른쪽 글자를 <b>클릭</b>해 바로 수정 · 이미지 안 보이면 파일명 확인<br>
         줄 맨 앞 <b>#</b>=소제목, <b>&gt;</b>=강조문 · <b>엔터</b>=새 문단 · <b>Shift+엔터</b>=줄바꿈(붙어보임)<br>
         글자를 선택하면 뜨는 <b>B</b>·<b>I</b> 버튼(또는 <b>**글자**</b>처럼 타이핑)으로 굵게·기울임 — 다시 누르면 풀림</span>
     </div>
     <div class="pv-stack">
+      <!-- 효과 편집기는 여기(.pv-stack)에 떠 있는 패널 — 왼쪽 무대는 안 가리고 오른쪽 서술카드 자리쯤에만 겹쳐 보이게.
+           무대 폭이 화면 크기에 따라 auto라 정확한 경계를 모를 수 있어, 카드 쪽인 오른쪽에서부터 고정폭으로 잡음(대부분 화면에서 무대와 안 겹침). -->
+      <div class="fx-panel" id="fxPanel" hidden>
+        <div class="note" style="margin:0 0 6px"><b>뒤</b>=캐릭터 뒤 · <b>앞</b>=캐릭터 앞. <b>＋ 효과 고르기</b>로 움직이는 미리보기를 보며 고르고 · 왼쪽 <b>스위치</b>로 껐다 켜고(삭제 안 함) · <b>⠿ 드래그</b>로 순서 변경 · <b>색</b>은 다크/라이트 테마마다 따로 정할 수 있어요(기본=그 테마의 테마색).</div>
+        <div class="fxcols">
+          <div class="fxcol">
+            <div class="fxcol-h">뒤 <span class="note" style="display:inline">· 캐릭터 뒤</span></div>
+            <div id="fxColBack" class="fxlayers" data-place="back"></div>
+            <div class="fxadd"><button type="button" class="sm fx-add-btn" data-place="back">＋ 효과 고르기</button></div>
+          </div>
+          <div class="fxcol">
+            <div class="fxcol-h">앞 <span class="note" style="display:inline">· 캐릭터 앞</span></div>
+            <div id="fxColFront" class="fxlayers" data-place="front"></div>
+            <div class="fxadd"><button type="button" class="sm fx-add-btn" data-place="front">＋ 효과 고르기</button></div>
+          </div>
+        </div>
+      </div>
       <iframe class="pv-frame" title="preview"></iframe>
       <iframe class="pv-frame" title="preview"></iframe>
     </div>
@@ -1460,7 +1507,7 @@ function buildIdentity(b, editable, gid){
   // idmeta(나이·키·생일·소속)는 roster+생일+부서·역할에서 매번 계산되는 값이라 여기서 직접 고칠 수 없게 함
   //   (예전엔 이 줄도 contenteditable이라 자유롭게 고칠 수 있었는데, 형식이 조금만 달라도 parseIdmeta가
   //   조용히 정보를 잃어버렸음) — 나이·키·생일·소속을 고치려면 왼쪽 폼의 해당 칸을 쓴다.
-  if(b.idmeta) L.push('        <div class="idmeta">'+esc(b.idmeta)+'</div>');
+  if(b.idmeta) L.push('        <div class="idmeta">'+esc(b.idmeta)+(editable?'<button type="button" class="idmeta-edit" title="나이·키·생일·소속·부서·역할 수정">✎</button>':'')+'</div>');
   if(b.quote) L.push('        <div class="quote"'+ed('quote')+'>'+esc(b.quote)+'</div>');
   L.push('      </div>');
   if(b.idcardOn){
@@ -1849,7 +1896,40 @@ function buildSrcdoc(st){
     '.fmt-bar[hidden]{display:none}'+
     '.fmt-bar button{background:transparent;border:none;color:#eef2f6;width:26px;height:26px;border-radius:4px;font-size:13px;cursor:pointer;line-height:1}'+
     '.fmt-bar button:hover{background:rgba(255,255,255,.15)}'+
-    '.fmt-bar button.on{background:var(--accent);color:#fff}</style>'+
+    '.fmt-bar button.on{background:var(--accent);color:#fff}'+
+    // 옷장 관리(트랙 슬롯의 ⋮ 손잡이 · ＋추가 타일 · 편집 팝오버) — 옷장 트랙(.slot)은 profile.css가 이미 54×54px·position:relative로 그리므로 그 위에 얹기만 함.
+    '.ward-handle{position:absolute;top:-4px;right:-4px;width:20px;height:20px;border-radius:50%;border:1px solid var(--line);background:var(--paper);color:var(--ink-faint);font-size:12px;line-height:1;cursor:grab;touch-action:none;display:flex;align-items:center;justify-content:center;z-index:2}'+
+    '.ward-handle:hover{border-color:var(--accent-line);color:var(--accent-deep)}'+
+    '.slot.dragging{opacity:.6;cursor:grabbing}'+
+    '.ward-add-tile{display:flex;flex-direction:column;align-items:center;gap:4px;background:transparent;border:none;font:inherit;cursor:pointer;padding:0}'+
+    '.ward-add-tile .thumb{width:54px;height:54px;border-radius:10px;border:1px dashed var(--accent-line);display:flex;align-items:center;justify-content:center;color:var(--accent-deep);font-size:18px}'+
+    '.ward-add-tile .cap{font-family:"Share Tech Mono";font-size:var(--fs-xs);color:var(--ink-faint);letter-spacing:.5px}'+
+    '.ward-pop{position:fixed;display:flex;flex-direction:column;gap:6px;background:#1a1e26;border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);z-index:999;width:180px}'+
+    '.ward-pop[hidden]{display:none}'+
+    '.ward-pop input{background:#11151b;border:1px solid rgba(255,255,255,.15);color:#eef2f6;border-radius:5px;padding:5px 7px;font:inherit;font-size:12px}'+
+    '.ward-pop button{background:transparent;border:1px solid rgba(255,255,255,.2);color:#eef2f6;border-radius:5px;padding:5px 7px;font:inherit;font-size:12px;cursor:pointer;text-align:left}'+
+    '.ward-pop button:hover{background:rgba(255,255,255,.1)}'+
+    '.ward-pop .wp-del{border-color:rgba(224,97,107,.5);color:#e0616b}'+
+    '.ward-pop .wp-del:hover{background:rgba(224,97,107,.12)}'+
+    '.ward-pop .wp-del.armed{background:#e0616b;border-color:#e0616b;color:#fff;text-align:center}'+
+    // 능력치 관리(막대 클릭 → 편집 팝오버 · 목록 끝 ＋추가 줄) — .statbars는 2열 그리드라 추가 줄은 grid-column으로 전체 폭을 차지하게 함.
+    '.sb.stat-editable{cursor:pointer;border-radius:6px;padding:2px 4px;margin:-2px -4px;transition:background .15s}'+
+    '.sb.stat-editable:hover{background:rgba(255,255,255,.06)}'+
+    '.stat-pop{position:fixed;display:flex;flex-direction:column;gap:6px;background:#1a1e26;border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);z-index:999;width:180px;box-sizing:border-box}'+
+    '.stat-pop[hidden]{display:none}'+
+    '.stat-pop input{background:#11151b;border:1px solid rgba(255,255,255,.15);color:#eef2f6;border-radius:5px;padding:5px 7px;font:inherit;font-size:12px;width:100%;box-sizing:border-box}'+
+    // 숫자칸의 브라우저 기본 위아래 화살표(스핀버튼)를 없앰 — 팝오버 폭이 좁아 화살표가 작은 스크롤바처럼 걸려보였음.
+    '.stat-pop input[type=number]{-moz-appearance:textfield}'+
+    '.stat-pop input[type=number]::-webkit-inner-spin-button,.stat-pop input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}'+
+    '.stat-pop label{display:flex;flex-direction:column;gap:2px;font-size:11px;color:#9aa4b0}'+
+    // 신원 한 줄 정보(나이·키·생일·소속·부서·역할) 편집 — 신원 카드의 idmeta 옆 ✎ 버튼 → 자체 팝오버.
+    '.idmeta-edit{margin-left:6px;background:transparent;border:1px solid var(--line);color:var(--ink-faint);border-radius:4px;width:18px;height:18px;line-height:1;font-size:10px;cursor:pointer;vertical-align:middle}'+
+    '.idmeta-edit:hover{border-color:var(--accent-line);color:var(--accent-deep)}'+
+    '.id-pop{position:fixed;display:flex;flex-direction:column;gap:6px;background:#1a1e26;border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);z-index:999;width:220px;box-sizing:border-box}'+
+    '.id-pop[hidden]{display:none}'+
+    '.id-pop .idp-row{display:flex;gap:5px}'+
+    '.id-pop label{flex:1;display:flex;flex-direction:column;gap:2px;font-size:11px;color:#9aa4b0}'+
+    '.id-pop input,.id-pop select{background:#11151b;border:1px solid rgba(255,255,255,.15);color:#eef2f6;border-radius:5px;padding:5px 7px;font:inherit;font-size:12px;width:100%;box-sizing:border-box}</style>'+
     '</head><body><div class="mscreen">'+
       '<div class="osbar mono"><img class="lg" src="../../assets/img/ui/ts_typo.png" alt="">'+
       '<span class="os">TS·OS</span><span class="sec"><span class="d"></span>SECURE LINK</span>'+
@@ -2025,10 +2105,150 @@ function buildSrcdoc(st){
       '},true);'+
       // ★파일을 고른 뒤엔 같은 출처라 File 객체를 그대로 부모 함수 인자로 넘긴다(postMessage 불필요).
       //   같은 파일을 다시 골라도 change가 또 뜨도록 매번 value를 비움.
-      'document.getElementById("pvFilePick").addEventListener("change",function(){var f=this.files&&this.files[0];this.value="";if(!f)return;try{parent.pvImagePick(window.pvPickTarget,f);}catch(_){}});'+
+      'document.getElementById("pvFilePick").addEventListener("change",function(){var f=this.files&&this.files[0];this.value="";if(!f)return;'+
+        'var pt=window.pvPickTarget||"";try{if(pt.indexOf("ward:")===0)parent.pvWardImagePick(+pt.slice(5),f);else parent.pvImagePick(pt,f);}catch(_){}});'+
       '(function(){var PH="'+PH_IMG+'";function fx(i){if(i.id==="stageArt"||i.id==="stageGhost")return;if(i.dataset.ph)return;i.dataset.ph=1;i.src=PH;i.style.opacity=".82";if(i.closest&&i.closest(".idcard-stage")){i.style.objectFit="contain";}else{i.style.cssText+=";object-fit:contain;width:auto;max-width:120px;max-height:140px;margin:10px auto;display:block;";}}'+
       'document.addEventListener("error",function(e){if(e.target.tagName==="IMG")fx(e.target);},true);'+
       'addEventListener("load",function(){document.querySelectorAll("img").forEach(function(i){if(i.id==="stageArt"||i.id==="stageGhost")return;if(!i.getAttribute("src")||!i.naturalWidth)fx(i);});});})();<\/script>'+
+    // 옷장 관리(트랙 슬롯의 ⋮ 손잡이 · ＋추가 타일 · 편집 팝오버 · 드래그 순서변경) — profile.js/profile-generations.js는 안 건드리고
+    //   이 스크립트 하나로만 동작(옷장 실제 그림·전환 로직은 그대로, 편집용 UI만 위에 얹음).
+    '<script>(function(){'+
+      'var pop=document.createElement("div");pop.className="ward-pop";pop.hidden=true;'+
+      'pop.innerHTML=\'<input class="wp-cap" placeholder="이름(예: 후드)"><input class="wp-artist" placeholder="그린 사람(선택)"><button type="button" class="wp-img">\\uD83D\\uDCC1 이미지 바꾸기</button><button type="button" class="wp-main">\\u2606 대표로 지정</button><button type="button" class="wp-del">\\u2715 삭제</button>\';'+
+      'document.body.appendChild(pop);'+
+      'var popIdx=-1,popSlot=null,delBtn=pop.querySelector(".wp-del"),delArmTimer=null;'+
+      // ★삭제는 확인이 필요하지만 alert 계열(confirm())은 iframe 안에서 브라우저 전체가 멈춰버리는 등 문제가 있어(자동화 테스트에서도 실제로 겪음),
+      //   버튼을 한 번 더 눌러야 지워지는 "두 번 누르기" 방식으로 대신함 — 화면을 막지 않으면서도 실수로 지우는 걸 막아준다.
+      'function disarmDel(){delBtn.textContent="\\u2715 삭제";delBtn.classList.remove("armed");clearTimeout(delArmTimer);delArmTimer=null;}'+
+      'function slots(){var t=document.querySelector(".wardrobe .track");return t?[].slice.call(t.querySelectorAll(".slot")):[];}'+
+      // 팝오버는 position:fixed(화면 기준)라 그 안 스크롤 영역(.mscreen)이 움직여도 안 따라감 → 편집 중이던
+      // 슬롯에서 뚝 떨어져 보였다(스크롤하면 팝오버만 화면에 그대로 남음) — 스크롤마다 다시 붙여준다.
+      'function place(){if(pop.hidden||!popSlot)return;var r=popSlot.getBoundingClientRect();'+
+        'pop.style.top=Math.min(window.innerHeight-190,r.bottom+6)+"px";'+
+        'pop.style.left=Math.min(window.innerWidth-190,Math.max(6,r.left))+"px";}'+
+      'function openPop(slot,idx){popIdx=idx;popSlot=slot;disarmDel();'+
+        'var capEl=pop.querySelector(".wp-cap"),artEl=pop.querySelector(".wp-artist");'+
+        'var capSpan=slot.querySelector(".cap");capEl.value=capSpan?capSpan.textContent:"";'+
+        'artEl.value=slot.getAttribute("data-artist")||"";'+
+        'pop.hidden=false;place();}'+
+      'function closePop(){pop.hidden=true;popIdx=-1;popSlot=null;disarmDel();}'+
+      '(function(){var ms=document.querySelector(".mscreen");if(ms)ms.addEventListener("scroll",place,{passive:true});})();'+
+      // 캡션·작가는 팝오버 입력칸이 슬롯 자체와 별개 요소라, 화면 반영은 여기서 직접 하고(부모의 render() 없이) 저장만 부모에.
+      'pop.querySelector(".wp-cap").addEventListener("input",function(){if(popSlot){var c=popSlot.querySelector(".cap");if(c)c.textContent=this.value;}try{parent.pvWardEdit(popIdx,{cap:this.value});}catch(_){}});'+
+      'pop.querySelector(".wp-artist").addEventListener("input",function(){if(popSlot)popSlot.setAttribute("data-artist",this.value);try{parent.pvWardEdit(popIdx,{artist:this.value});}catch(_){}});'+
+      'pop.querySelector(".wp-main").addEventListener("click",function(){try{parent.pvWardEdit(popIdx,{on:true});}catch(_){}closePop();});'+
+      'delBtn.addEventListener("click",function(){if(popIdx<0)return;'+
+        'if(!delBtn.classList.contains("armed")){delBtn.textContent="한 번 더 누르면 삭제";delBtn.classList.add("armed");'+
+          'delArmTimer=setTimeout(disarmDel,3000);return;}'+   // 3초 안에 다시 안 누르면 원래대로(실수 방지)
+        'try{parent.pvWardDel(popIdx);}catch(_){}closePop();});'+
+      'pop.querySelector(".wp-img").addEventListener("click",function(){window.pvPickTarget="ward:"+popIdx;var fi=document.getElementById("pvFilePick");if(fi)fi.click();});'+
+      'document.addEventListener("click",function(e){if(!pop.hidden&&!pop.contains(e.target)&&!(e.target.closest&&e.target.closest(".ward-handle")))closePop();});'+
+      // 슬롯마다 ⋮ 손잡이 + 트랙 끝에 ＋추가 타일을 붙임. paintWardrobe가 다시 그릴 때(세대 전환 등)마다 새로 붙어야 하므로
+      // profile-generations.js가 하듯 window.__paintWardrobe 자체를 감싼다(profile.js가 이 훅을 그 용도로 미리 열어둠).
+      'function decorate(){var t=document.querySelector(".wardrobe .track");if(!t)return;'+
+        't.querySelectorAll(".slot").forEach(function(s){if(s.querySelector(".ward-handle"))return;'+
+          'var h=document.createElement("button");h.type="button";h.className="ward-handle";h.textContent="\\u22EE";h.title="꾹 눌러 순서 바꾸기 · 짧게 눌러 편집";s.appendChild(h);});'+
+        'var add=t.querySelector(".ward-add-tile");'+
+        'if(!add){add=document.createElement("button");add.type="button";add.className="ward-add-tile";'+
+          'add.innerHTML=\'<span class="thumb"><span class="plus">＋</span></span><span class="cap">옷 추가</span>\';'+
+          'add.addEventListener("click",function(){try{parent.pvWardAdd();}catch(_){}});}'+
+        't.appendChild(add);}'+   // 이미 있어도 맨 끝으로 다시 옮김(슬롯이 새로 그려진 뒤라 순서가 밀릴 수 있음)
+      'if(window.__paintWardrobe){var _orig=window.__paintWardrobe;window.__paintWardrobe=function(list){_orig(list);decorate();};}'+
+      // 드래그(⋮ 손잡이, Pointer Events=마우스·터치·펜 공용) — 문턱 넘게 움직이면 순서변경, 그대로면 탭으로 보고 편집 팝오버.
+      'var TH=6,drag=null;'+
+      'document.addEventListener("pointerdown",function(e){var h=e.target.closest&&e.target.closest(".ward-handle");if(!h)return;var s=h.closest(".slot");if(!s)return;e.preventDefault();'+
+        'drag={x:e.clientX,y:e.clientY,startIdx:slots().indexOf(s),slot:s,moved:false};'+
+        'try{h.setPointerCapture(e.pointerId);}catch(_){}});'+
+      'document.addEventListener("pointermove",function(e){if(!drag)return;var dx=e.clientX-drag.x,dy=e.clientY-drag.y;'+
+        // ★드래그 중인 슬롯 자신이 마우스 바로 아래로 옮겨오므로(transform) pointer-events를 꺼서
+        //   elementFromPoint가 자기 자신 말고 "그 아래(옮겨갈 자리)"의 슬롯을 짚게 한다 — 안 그러면
+        //   자기 자신이 항상 잡혀서 over===drag.slot이 되어 순서변경이 절대 안 걸리는 문제가 있었음.
+        'if(!drag.moved&&Math.hypot(dx,dy)>TH){drag.moved=true;drag.slot.classList.add("dragging");drag.slot.style.pointerEvents="none";}'+
+        'if(!drag.moved)return;'+
+        'drag.slot.style.transform="translate("+dx+"px,"+dy+"px)";drag.slot.style.zIndex=5;'+
+        'var el=document.elementFromPoint(e.clientX,e.clientY),over=el&&el.closest&&el.closest(".slot");'+
+        'if(over&&over!==drag.slot){var sl=slots(),oi=sl.indexOf(over),ci=sl.indexOf(drag.slot);'+
+          'if(oi>-1&&ci>-1&&oi!==ci){document.querySelector(".wardrobe .track").insertBefore(drag.slot,oi<ci?over:over.nextSibling);}}});'+
+      'document.addEventListener("pointerup",function(e){if(!drag)return;var s=drag.slot;s.classList.remove("dragging");s.style.transform="";s.style.zIndex="";s.style.pointerEvents="";'+
+        'if(drag.moved){var fi=slots().indexOf(s);if(fi!==drag.startIdx){try{parent.pvWardReorder(drag.startIdx,fi);}catch(_){}}}'+
+        'else{openPop(s,slots().indexOf(s));}'+
+        'drag=null;});'+
+    '})();<\/script>'+
+    // 능력치 관리(막대 클릭 → 이름·값·증가분 편집 팝오버). 항목 추가/삭제는 지원 안 함(칸 개수가 늘면 정해진
+    //   2열×6행 격자를 넘어가 레이아웃이 깨짐) — 항목 자체를 늘리거나 줄여야 하면 코드에서 직접 고친다.
+    '<script>(function(){'+
+      'var pop=document.createElement("div");pop.className="stat-pop";pop.hidden=true;'+
+      'pop.innerHTML=\'<input type="text" class="stp-name" placeholder="이름"><label>값<input type="number" inputmode="numeric" class="stp-val" min="0" max="10" step="1"></label><label>증가분<input type="number" inputmode="numeric" class="stp-plus" min="0" max="10" step="1"></label>\';'+
+      'document.body.appendChild(pop);'+
+      'var popIdx=-1,popEl=null;'+
+      // 팝오버는 position:fixed(화면 기준)라 스크롤 영역(.mscreen)이 움직여도 안 따라감 → 편집 중이던 막대에서
+      // 뚝 떨어져 보였다(스크롤하면 팝오버만 화면에 그대로 남음) — 스크롤마다 다시 붙여준다.
+      'function place(){if(pop.hidden||!popEl)return;var r=popEl.getBoundingClientRect();'+
+        'pop.style.top=Math.min(window.innerHeight-140,r.bottom+6)+"px";'+
+        'pop.style.left=Math.min(window.innerWidth-190,Math.max(6,r.left))+"px";}'+
+      // 현재 값은 왼쪽 폼이 아니라 화면에 이미 그려진 막대(.n)에서 그대로 읽는다 — 이미 0~10으로 정리된 값이라 왕복이 안전함.
+      'function openPop(el,idx){popIdx=idx;popEl=el;'+
+        'var nameEl=pop.querySelector(".stp-name"),valEl=pop.querySelector(".stp-val"),plusEl=pop.querySelector(".stp-plus");'+
+        'var kEl=el.querySelector(".k"),nEl=el.querySelector(".n"),bEl=nEl&&nEl.querySelector("b");'+
+        'nameEl.value=kEl?kEl.textContent:"";'+
+        'valEl.value=nEl&&nEl.firstChild?(parseInt(nEl.firstChild.textContent,10)||0):0;'+
+        'plusEl.value=bEl?(parseInt(bEl.textContent.replace("+",""),10)||0):0;'+
+        'pop.hidden=false;place();}'+
+      'function closePop(){pop.hidden=true;popIdx=-1;popEl=null;}'+
+      '(function(){var ms=document.querySelector(".mscreen");if(ms)ms.addEventListener("scroll",place,{passive:true});})();'+
+      'pop.querySelector(".stp-name").addEventListener("input",function(){try{parent.pvStatEdit(popIdx,{name:this.value});}catch(_){}});'+
+      'pop.querySelector(".stp-val").addEventListener("input",function(){try{parent.pvStatEdit(popIdx,{val:this.value});}catch(_){}});'+
+      'pop.querySelector(".stp-plus").addEventListener("input",function(){try{parent.pvStatEdit(popIdx,{plus:this.value});}catch(_){}});'+
+      'document.addEventListener("click",function(e){if(!pop.hidden&&!pop.contains(e.target)&&!(e.target.closest&&e.target.closest(".sb.stat-editable")))closePop();});'+
+      // paintStats는 매번 .statbars 안을 통째로 새로 그리므로(옷장 트랙과 같은 방식), 다시 그릴 때마다(세대 전환 등) 다시 붙어야 함
+      // → window.__paintStats 자체를 감싼다(옷장의 window.__paintWardrobe 훅과 같은 방식, profile.js가 이 용도로 미리 열어둠).
+      'function decorate(box){if(!box)return;'+
+        '[].forEach.call(box.querySelectorAll(".sb"),function(el,i){el.classList.add("stat-editable");'+
+          'el.addEventListener("click",function(){openPop(el,i);});});}'+
+      'if(window.__paintStats){var _orig=window.__paintStats;window.__paintStats=function(stats,box){_orig(stats,box);decorate(box||document.querySelector(".statbars"));};}'+
+    '})();<\/script>'+
+    // 신원 한 줄 정보(나이·키·생일·소속·부서·역할) 편집 — namehead는 페이지당 한 번만 그려지고 다시 그려지지 않으므로
+    //   옷장·능력치처럼 매번 다시 붙일 필요 없이 한 번만 배선하면 됨.
+    '<script>(function(){'+
+      'var btn=document.querySelector(".idmeta-edit");if(!btn)return;'+
+      'var pop=document.createElement("div");pop.className="id-pop";pop.hidden=true;'+
+      'pop.innerHTML=\'<div class="idp-row"><label>나이<input class="idp-age" placeholder="20 (모르면 ?)"></label><label>키(cm)<input class="idp-height" type="number"></label></div>\'+'+
+        '\'<label>생일<input class="idp-bday" placeholder="1/1"></label>\'+'+
+        '\'<label>지부<select class="idp-sector"></select></label>\'+'+
+        '\'<label>부서<select class="idp-dept"></select></label>\'+'+
+        '\'<label>역할<select class="idp-role"></select></label>\';'+
+      'document.body.appendChild(pop);'+
+      'var ageEl=pop.querySelector(".idp-age"),heightEl=pop.querySelector(".idp-height"),bdayEl=pop.querySelector(".idp-bday"),'+
+        'sectorEl=pop.querySelector(".idp-sector"),deptEl=pop.querySelector(".idp-dept"),roleEl=pop.querySelector(".idp-role");'+
+      // 드롭다운 항목은 부모 폼의 실제 <select>에서 그대로 복제(단일 출처 = 부모의 SECTORS/DEPTS/ROLES 배열).
+      'function cloneOpts(sel,srcId){try{sel.innerHTML=parent.document.getElementById(srcId).innerHTML;}catch(e){}}'+
+      'cloneOpts(sectorEl,"bi_sector");cloneOpts(deptEl,"bi_dept");cloneOpts(roleEl,"bi_role");'+
+      'function place(){if(pop.hidden)return;var r=btn.getBoundingClientRect();'+
+        'pop.style.top=Math.min(window.innerHeight-220,r.bottom+6)+"px";'+
+        'pop.style.left=Math.min(window.innerWidth-230,Math.max(6,r.left))+"px";}'+
+      'function openPop(){try{'+
+          'ageEl.value=parent.document.getElementById("bi_age").value;'+
+          'heightEl.value=parent.document.getElementById("bi_height").value;'+
+          'bdayEl.value=parent.document.getElementById("bi_bday").value;'+
+          'sectorEl.value=parent.document.getElementById("bi_sector").value;'+
+          'deptEl.value=parent.document.getElementById("bi_dept").value;'+
+          'roleEl.value=parent.document.getElementById("bi_role").value;'+
+        '}catch(e){}'+
+        'pop.hidden=false;place();}'+
+      'function closePop(){pop.hidden=true;}'+
+      'btn.addEventListener("click",function(){if(pop.hidden)openPop();else closePop();});'+
+      '(function(){var ms=document.querySelector(".mscreen");if(ms)ms.addEventListener("scroll",place,{passive:true});})();'+
+      // 타이핑마다(input) 반영하면 구조변경이라 iframe을 통째로 다시 그려 팝오버가 매 글자마다 사라진다
+      // → 칸을 벗어나거나(change) 드롭다운을 고른 순간에만 반영.
+      'function commit(patch){try{parent.pvIdentityEdit(patch);}catch(_){}}'+
+      'ageEl.addEventListener("change",function(){commit({age:this.value});});'+
+      'heightEl.addEventListener("change",function(){commit({height:this.value});});'+
+      'bdayEl.addEventListener("change",function(){commit({bday:this.value});});'+
+      'sectorEl.addEventListener("change",function(){commit({sector:this.value});});'+
+      'deptEl.addEventListener("change",function(){commit({dept:this.value});});'+
+      'roleEl.addEventListener("change",function(){commit({role:this.value});});'+
+      'document.addEventListener("click",function(e){if(!pop.hidden&&!pop.contains(e.target)&&e.target!==btn)closePop();});'+
+    '})();<\/script>'+
     editorScript+'</body></html>';
 }
 
@@ -2218,6 +2438,73 @@ function pvStageEdit(idx, vals){
   scheduleSave();
 }
 window.pvStageEdit = pvStageEdit;
+// 옷장 관리(미리보기 트랙의 ⋮ 메뉴·＋ 타일·드래그)에서 온 값 → 왼쪽 숨은 옷장 폼(#ward)에 반영.
+//   슬롯 인덱스 = ward-row 인덱스와 1:1(paintWardrobe가 옷장 배열을 그대로, 필터 없이 그리기 때문).
+function pvWardRows(){ return document.querySelectorAll('#ward .ward-row'); }
+// 캡션·작가는 순수 글자 편집이라 render()(iframe 통째로 재생성)를 부르면 타이핑마다 팝오버까지 같이
+// 사라진다 — 서술카드처럼 자동저장만 하고 화면 반영은 미리보기 쪽 스크립트가 그 자리에서 직접 함.
+// 대표 지정만은 무대에 뜨는 그림이 바뀌는 구조변경이라 예외적으로 다시 그린다.
+function pvWardEdit(idx, patch){
+  var row=pvWardRows()[idx]; if(!row) return;
+  if(patch.cap!=null) row.querySelector('.w-cap').value=patch.cap;
+  if(patch.artist!=null) row.querySelector('.w-artist').value=patch.artist;
+  if(patch.on){ row.querySelector('.w-on').checked=true; render(); return; }   // 라디오라 이 슬롯만 켜지면 나머지는 브라우저가 자동으로 끔
+  scheduleSave();
+}
+window.pvWardEdit = pvWardEdit;
+function pvWardAdd(){   // readWard()가 캡션·이미지 둘 다 빈 행은 걸러내므로(#addWard처럼 완전히 빈 채로 추가하면
+  $('#ward').appendChild(wardRow('새 의상', '', false));   // 미리보기에 슬롯이 안 뜸) 기본 캡션을 채워서 추가한다.
+  render();
+}
+window.pvWardAdd = pvWardAdd;
+function pvWardDel(idx){
+  var row=pvWardRows()[idx]; if(!row) return;
+  var wasOn=row.querySelector('.w-on').checked;
+  row.remove();
+  if(wasOn){ var first=$('#ward .ward-row .w-on'); if(first) first.checked=true; }   // 대표를 지웠으면 첫 슬롯을 대표로
+  render();
+}
+window.pvWardDel = pvWardDel;
+function pvWardReorder(from, to){
+  var wb=$('#ward'), rows=[].slice.call(wb.children);
+  if(from<0||from>=rows.length||to<0||to>=rows.length||from===to) return;
+  var moved=rows.splice(from,1)[0]; rows.splice(to,0,moved);
+  rows.forEach(function(r){ wb.appendChild(r); });   // appendChild는 기존 노드를 옮길 뿐(복제 아님) → 순서만 바뀜
+  render();
+}
+window.pvWardReorder = pvWardReorder;
+function pvWardImagePick(idx, file){
+  var row=pvWardRows()[idx]; if(!row) return;
+  var fi=row.querySelector('.imgbtn input[type=file]'); if(!fi) return;
+  var dt=new DataTransfer(); dt.items.add(file); fi.files=dt.files;
+  fi.dispatchEvent(new Event('change', {bubbles:true}));   // 파일 선택 공용 change 리스너가 이름 반영·등록·render()까지 다 함
+}
+window.pvWardImagePick = pvWardImagePick;
+// 능력치 관리(미리보기 막대 클릭 → 이름·값·증가분 편집)에서 온 값 → 왼쪽 숨은 능력치 폼(#stats)에 반영.
+//   liveStats()가 이미 있는 '막대만 다시 그리는' 라이브패치라 재사용(iframe 전체를 다시 그릴 필요가 없음, 옷장과 다른 점).
+//   항목 추가·삭제는 미리보기에서 지원 안 함(정해진 2열×6행 격자를 넘기면 레이아웃이 깨짐) — 필요하면 코드에서 직접.
+function pvStatRows(){ return document.querySelectorAll('#stats .stat-row'); }
+function pvStatEdit(idx, patch){
+  var row=pvStatRows()[idx]; if(!row) return;
+  if(patch.name!=null) row.querySelector('.s-name').value=patch.name;
+  if(patch.val!=null) row.querySelector('.s-val').value=patch.val;
+  if(patch.plus!=null) row.querySelector('.s-plus').value=patch.plus;
+  liveStats();
+}
+window.pvStatEdit = pvStatEdit;
+// 신원 카드 ✎ 팝오버(나이·키·생일·소속·부서·역할)에서 온 값 → 왼쪽 숨은 칸(#bi_*)에 반영.
+//   idmeta 문자열은 buildIdentity가 만들 때 그 자리에서 조립돼 iframe HTML에 그대로 박히므로(별도 그림함수 없음)
+//   막대·옷장 슬롯처럼 부분만 다시 그리는 라이브패치가 없다 — 값이 바뀌면 항상 통째로 다시 그림(render).
+function pvIdentityEdit(patch){
+  if(patch.age!=null) setVal('#bi_age', patch.age);
+  if(patch.height!=null) setVal('#bi_height', patch.height);
+  if(patch.bday!=null) setVal('#bi_bday', patch.bday);
+  if(patch.sector!=null) setVal('#bi_sector', patch.sector);
+  if(patch.dept!=null) setVal('#bi_dept', patch.dept);
+  if(patch.role!=null) setVal('#bi_role', patch.role);
+  render();
+}
+window.pvIdentityEdit = pvIdentityEdit;
 // 서술카드/확장카드 둘 다 같은 블록 구조를 쓰므로 'prose'/'ext' 타입 문자열로 그 카드를 찾는 공용 함수.
 function cardFor(cardType, idx){
   return document.querySelectorAll(cardType==='ext' ? '#exts .ext-card' : '#proses .prose-card')[idx];
@@ -2426,11 +2713,17 @@ $('#addExt').onclick   = function(){ $('#exts').appendChild(extRow({})); render(
 
   var pop=document.createElement('div'); pop.className='cp-pop'; pop.hidden=true;
   pop.innerHTML='<div class="cp-sv"><div class="cp-sv-t"></div></div><div class="cp-hue"><div class="cp-hue-t"></div></div>'+
-    '<div class="cp-foot"><input class="cp-hex hexin" maxlength="7" spellcheck="false"><span class="cp-prev"></span></div>';
+    '<div class="cp-foot"><input class="cp-hex hexin" maxlength="7" spellcheck="false"><span class="cp-prev"></span></div>'+
+    '<div class="cp-rgb">'+
+      '<span class="cp-rgb-f"><span>R</span><input class="cp-r" type="number" min="0" max="255"></span>'+
+      '<span class="cp-rgb-f"><span>G</span><input class="cp-g" type="number" min="0" max="255"></span>'+
+      '<span class="cp-rgb-f"><span>B</span><input class="cp-b" type="number" min="0" max="255"></span>'+
+    '</div>';
   document.body.appendChild(pop);
   var svEl=pop.querySelector('.cp-sv'), svT=pop.querySelector('.cp-sv-t'),
       hueEl=pop.querySelector('.cp-hue'), hueT=pop.querySelector('.cp-hue-t'),
-      hexEl=pop.querySelector('.cp-hex'), prevEl=pop.querySelector('.cp-prev');
+      hexEl=pop.querySelector('.cp-hex'), prevEl=pop.querySelector('.cp-prev'),
+      rEl=pop.querySelector('.cp-r'), gEl=pop.querySelector('.cp-g'), bEl=pop.querySelector('.cp-b');
   var cur={h:0,s:0,v:0,input:null,sw:null,onCommit:null};
 
   function draw(){   // 현재 h,s,v → 팝오버 화면 갱신, hex 반환
@@ -2438,8 +2731,18 @@ $('#addExt').onclick   = function(){ $('#exts').appendChild(extRow({})); render(
     svEl.style.background='linear-gradient(to top,#000,transparent),linear-gradient(to right,#fff,'+rgb2hex(pure.r,pure.g,pure.b)+')';
     svT.style.left=(cur.s*100)+'%'; svT.style.top=((1-cur.v)*100)+'%'; hueT.style.left=(cur.h/360*100)+'%';
     var rgb=hsv2rgb(cur.h,cur.s,cur.v), hex=rgb2hex(rgb.r,rgb.g,rgb.b);
-    prevEl.style.background=hex; hexEl.value=hex; return hex;
+    prevEl.style.background=hex; hexEl.value=hex;
+    // 지금 타이핑 중인 칸은 건드리지 않는다(포커스 있는 동안 값을 되돌려 쓰면 커서가 튐).
+    if(document.activeElement!==rEl) rEl.value=Math.round(rgb.r);
+    if(document.activeElement!==gEl) gEl.value=Math.round(rgb.g);
+    if(document.activeElement!==bEl) bEl.value=Math.round(rgb.b);
+    return hex;
   }
+  function fromRgbInputs(){   // R/G/B 칸 값 → h,s,v (셋 다 있는 칸 기준으로 조합)
+    var r=Math.max(0,Math.min(255,+rEl.value||0)), g=Math.max(0,Math.min(255,+gEl.value||0)), b=Math.max(0,Math.min(255,+bEl.value||0));
+    var hsv=rgb2hsv(r,g,b); cur.h=hsv.h; cur.s=hsv.s; cur.v=hsv.v;
+  }
+  [rEl,gEl,bEl].forEach(function(el){ el.addEventListener('input', function(){ fromRgbInputs(); commit(); }); });
   function commit(){   // 바인딩된 입력칸+스와치에 반영 + 라이브 패치(재생성 없음=번쩍임 없음)
     var hex=draw();
     if(cur.onCommit){ cur.onCommit(hex); return; }        // 효과 색: 콜백이 레이어·스와치·라이브패치 처리
@@ -2480,6 +2783,9 @@ $('#addExt').onclick   = function(){ $('#exts').appendChild(extRow({})); render(
 })();
 $('#repaint').onclick = function(){ pvLastHTML = null; render(); };   // 강제 새로고침(내용 같아도 다시 그림)
 $('#toggleForm').onclick = function(){ var c=document.querySelector('.wrap').classList.toggle('collapsed'); this.textContent = c?'▶ 편집':'◀ 패널'; };
+$('#fxPanelToggle').onclick = function(){ var p=$('#fxPanel'); p.hidden=!p.hidden; };
+// 능력치 카드 자체를 껐다 켬(카드 삭제/추가) — 켜져 있으면 위 '＋텍스트'류 버튼들처럼 그림이 바뀌는 구조변경이라 render()로 다시 그림.
+$('#statPanelToggle').onclick = function(){ var cb=$('#b_stat_on'); cb.checked=!cb.checked; render(); };
 $('#reset').onclick = function(){ if(confirm('입력한 내용을 모두 지울까요? (빈 상태로 돌아갑니다)')){ try{ localStorage.removeItem('tsPB'); }catch(e){} location.reload(); } };
 $('#gen').onclick = showOut;
 $('#loadBtn').onclick = function(){ loadFromText($('#loadSrc').value); };
