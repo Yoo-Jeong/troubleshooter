@@ -50,6 +50,49 @@
     bindWardrobe();   // 슬롯 클릭 재배선(재렌더마다)
   }
 
+  // 0.4) 상단바(topbar) 실제 높이 → --topbar-h — 옷장·무대(.left-fixed)가 스크롤 시 topbar 바로 밑에 고정되는
+  //      위치 계산(profile.css)이 이 값을 그대로 씀. 캐릭터마다 이름·소속 태그 길이가 달라 topbar 높이가 다르고,
+  //      웹폰트(Orbitron)가 늦게 도착하면 그 사이에도 높이가 바뀌므로, 숫자를 한 번 재서 박아두지 않고
+  //      매번 실측한다 — 그래야 스크롤을 살짝 내렸을 때 무대 위 여백이 갑자기 줄어드는 어긋남이 안 생긴다.
+  function syncTopbarHeight(){
+    var tb = document.querySelector('.topbar');
+    if(!tb) return;
+    document.documentElement.style.setProperty('--topbar-h', tb.getBoundingClientRect().height + 'px');
+  }
+
+  // 0.45) 무대 높이가 화면보다 크면 .stage-col 스스로 스크롤(안전망) — 무대 자체의 기본 크기는 이제
+  //       화면마다 다시 계산하지 않는다(권장 화면 크기 1280×800에서 안 잘리게 고정값을 --stage-f 하나로
+  //       .sheet에 박아둠, profile.css 참고) — 권장 크기보다 작은 화면에서만 이 스크롤이 실제로 쓰인다.
+  //       .left-fixed가 sticky일 때만 의미가 있고(좁은 화면은 position:static이라 페이지 전체가 스크롤됨),
+  //       정확한 값은 화면·폰트마다 달라 매번 실측한다(syncTopbarHeight와 같은 이유).
+  function syncStageColHeight(){
+    var sc = document.querySelector('.stage-col'), ms = document.querySelector('.mscreen'), lf = document.querySelector('.left-fixed');
+    var tab = document.querySelector('.stage-fold-tab'), stage = document.querySelector('.stage');
+    if(!sc || !ms || !lf) return;
+    if(getComputedStyle(lf).position !== 'sticky'){   // 좁은 화면: 전부 제한 없이 자연스럽게(모바일은 세로로 쌓여 문제 자체가 없음)
+      sc.style.maxHeight = ''; if(tab) tab.style.right = '';
+      return;
+    }
+    var stickyTop = parseFloat(getComputedStyle(lf).top) || 0;
+    var availH = ms.clientHeight - stickyTop - 14;
+    sc.style.maxHeight = availH + 'px';
+    if(tab){
+      // 탭(‹/›)의 top은 원래 손으로 잰 고정값(120px, 무대가 안 잘렸던 원래 높이 874px 기준 위에서 약 14% 지점 —
+      //   세로 중앙이 아니라 위쪽에 가까움)이었는데, 화면마다 보이는 높이가 달라져(위 availH) 그 자리에 안 맞게
+      //   됐다 — 절대값 대신 같은 비율(14%)로 다시 계산해서 예전과 같은 자리에 오게 한다(접힌 상태에서도 안
+      //   흔들리게 여전히 고정 px).
+      tab.style.top = Math.round(availH * (120/874)) + 'px';
+      // .stage-col가 스크롤바 자리를 항상 비워두다 보니(scrollbar-gutter:stable) .left-fixed 오른쪽 끝이
+      //   실제 무대(.stage) 오른쪽 끝보다 그 자리만큼(보통 13~17px, OS·브라우저마다 다름) 더 밀렸다 — 탭은
+      //   원래 "무대 경계에 절반 걸치기"로 설계됐는데(그 경계=무대 끝=예전 left-fixed 끝) 그 전제가 깨진 것.
+      //   둘의 실제 차이를 재서 무대의 진짜 오른쪽 끝에 다시 절반 걸치도록 되돌린다.
+      if(stage){
+        var gutterGap = lf.getBoundingClientRect().right - stage.getBoundingClientRect().right;
+        tab.style.right = (gutterGap - 14) + 'px';
+      }
+    }
+  }
+
   // 0.5) 페이지 메타 — CHAR_META(또는 세대별 meta)를 뼈대(osbar·topbar·stage)에 채움. 세대 전환 시 재호출.
   //      HTML은 data-meta 자리표시만, 실제 값은 데이터 한 곳에.
   function paintMeta(M){
@@ -168,6 +211,17 @@
   paintWardrobe(window.CHAR_WARDROBE);
   paintMeta(window.CHAR_META);
   paintStats(window.CHAR_STATS);
+
+  syncTopbarHeight();
+  syncStageColHeight();   // --topbar-h가 먼저 정확해야 sticky top 계산이 맞으므로 이 순서로.
+  // 폰트 로딩이 끝나 글자 너비가 바뀌면 줄바꿈이 달라져 높이도 바뀔 수 있어 한 번 더 잰다.
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ syncTopbarHeight(); syncStageColHeight(); });
+  // 화면 크기가 바뀌면(반응형·창 크기 조절) 둘 다 다시 재야 함 — 리사이즈 중 매번 재느라 버벅이지 않게 살짝 늦춤.
+  var layoutResizeTimer;
+  window.addEventListener('resize', function(){
+    clearTimeout(layoutResizeTimer);
+    layoutResizeTimer = setTimeout(function(){ syncTopbarHeight(); syncStageColHeight(); }, 150);
+  });
 
   // 외부(프로필 작성 툴 미리보기 · profile-generations.js)에서 iframe 재생성 없이 부분만 다시 그릴 수 있게 노출(번쩍임 방지용).
   window.__paintStats = paintStats;

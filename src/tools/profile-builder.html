@@ -38,35 +38,52 @@
     border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
   header .tag{color:var(--acc);border:1px solid var(--line);border-radius:4px;padding:1px 7px;font-size:11px}
   header .hint{color:var(--dim);font-size:11px;margin-left:auto}
-  .wrap{display:grid;grid-template-columns:minmax(360px,460px) 1fr;gap:0;align-items:start}
-  .wrap.collapsed{grid-template-columns:0 1fr}
-  .wrap.collapsed .form{display:none}
-  .form{grid-column:1;padding:0 16px 60px;overflow-y:auto;height:calc(100vh - 45px)}
-  /* 왼쪽 패널 최상단 툴바(저장·폴더·테마) — 스크롤해도 상단 고정(sticky) */
-  .form-top{position:sticky;top:0;z-index:6;background:var(--bg);
-    margin:0 -16px 10px;padding:14px 16px 10px;border-bottom:1px solid var(--line)}
-  .form-top-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
-  .form-top .note{margin:6px 0 0}
-  .prev{grid-column:2;position:sticky;top:45px;height:calc(100vh - 45px);border-left:1px solid var(--line);
+  /* 왼쪽 폼(.form)은 옷장·능력치·색·효과·신원·사원증·세대·불러오기·목록 이미지까지 전부 오른쪽 미리보기 안에서
+     직접 편집하게 옮겨가서 이제 데이터 저장소 역할만 함(화면엔 안 보임, 아래 .form{display:none}) — 미리보기가
+     화면 전체를 씀. 각 값을 어디서 고치는지는 미리보기 쪽 버튼·팝오버·패널에 달린 title/설명 참고. */
+  .wrap{display:block}
+  .form{display:none}
+  /* 저장·제출 — 미리보기 상단바 왼쪽에 항상 노출. 저장/폴더 · 닉네임/제출 두 줄로 나눠 한 줄에 안 몰리게. */
+  .save-group{display:flex;flex-direction:column;gap:3px}
+  .save-group-row{display:flex;align-items:center;gap:5px;justify-content:flex-end}   /* 도구 패널 안 저장·폴더 버튼 오른쪽 정렬(더 익숙한 배치) — 상단바 제출 줄은 폭이 내용만큼이라 시각적으로 그대로 */
+  .save-group-row input{width:84px;font-size:11px;padding:3px 6px}
+  #saveMsg{min-height:12px}
+  .prev{height:calc(100vh - 45px);border-left:1px solid var(--line);
     display:flex;flex-direction:column;background:#000}
   .prev-bar{padding:6px 10px;background:var(--panel);border-bottom:1px solid var(--line)}
   .prev-bar-row{display:flex;align-items:center;gap:8px}
+  /* 접힘 — 접기 버튼(.prev-bar-right 안)만 남기고 제출 묶음·색·도구 버튼·안내글을 숨겨 편집 공간을 돌려준다.
+     .prev-bar-right 자체는 안 숨김(그 안의 접기 버튼이 계속 보여야 하므로) — 안쪽 .prev-tools만 숨긴다. */
+  .prev-bar.collapsed .save-group-row,.prev-bar.collapsed .prev-tools{display:none}
+  .prev-bar.collapsed #prevBarNotes{display:none}
   .prev-bar button{font-size:11px}
   .prev-bar .note{display:block;margin:5px 0 0}
-  /* 색·효과·능력치 표시 컨트롤 — 왼쪽 폼 없이도 항상 보이는 자리(패널을 접어도 그대로 남음). */
-  .prev-tools{display:flex;align-items:center;gap:8px;margin-left:auto}
+  .prev-bar .bar-note{margin-top:8px}   /* 제출 안내·글쓰기 안내를 서로 다른 글로 알아보게 줄 간격을 둠 */
+  .prev-bar .submit-note{padding:5px 8px;border-left:2px solid var(--acc);background:var(--panel)}
+  /* 색·효과·능력치 표시 컨트롤 + 접기 버튼 — 이 덩어리 하나만 오른쪽 끝에 붙임(margin-left:auto는 여기 한 곳에만). */
+  .prev-bar-right{display:flex;align-items:center;gap:8px;margin-left:auto}
+  .prev-tools{display:flex;align-items:center;gap:8px}
   .prev-color-tools{display:flex;gap:8px}
   .pc-group{display:flex;align-items:center;gap:3px;padding:2px 5px;border:1px solid var(--line);border-radius:6px}
   .pc-label{font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:.3px;color:var(--dim)}
   .cp-sw-sm{width:20px;height:20px;border-radius:5px}
-  /* 오른쪽에 뜨는 서랍(패널)로 — 무대는 폭이 가변(auto)이라 정확한 경계는 몰라도, 무대는 보통 왼쪽에 고정폭으로
+  /* 오른쪽에 뜨는 서랍(패널) — 효과·목록 이미지·도구가 다 같이 씀(모양 하나 재사용).
+     무대는 폭이 가변(auto)이라 정확한 경계는 몰라도, 무대는 보통 왼쪽에 고정폭으로
      자리잡으므로 오른쪽 끝에서부터 고정폭을 잡으면 대부분 화면에서 무대를 안 가리고 카드 자리에만 겹친다. */
-  .fx-panel{position:absolute;top:0;right:0;bottom:0;width:360px;max-width:90%;z-index:10;
+  .side-panel{position:absolute;top:0;right:0;bottom:0;width:360px;max-width:90%;z-index:10;
     background:var(--panel);border-left:1px solid var(--line);padding:12px;overflow-y:auto;box-shadow:-6px 0 20px rgba(0,0,0,.35)}
-  .fx-panel[hidden]{display:none}
+  .side-panel[hidden]{display:none}
+  /* 성격이 다른 섹션(표시·저장·불러오기 등)이 서로 붙어 보여 헷갈린다는 피드백 — 구분선+여백을 넉넉히 둠. */
+  .side-panel h4{font-size:12px;letter-spacing:.5px;color:var(--dim);margin:22px 0 8px;padding-top:16px;border-top:1px solid var(--line);text-transform:uppercase}
+  /* 닫기(✕) 전용 줄 — 내용 위에 겹쳐 띄우면 글이 잘려 보여서, 맨 위에 자기 자리를 갖는 줄로 분리(-12px 로 패널
+     테두리까지 꽉 채움). flex 정렬이라 ✕ 글자가 버튼 정중앙에 온다(plain 버튼은 line-height 문제로 살짝 치우쳐 보임). */
+  .side-panel-head{display:flex;justify-content:flex-end;margin:-12px -12px 10px;padding:6px 8px;border-bottom:1px solid var(--line)}
+  .side-panel-close{display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:4px;width:22px;height:22px;padding:0;font-size:12px;line-height:1;cursor:pointer}
+  .side-panel-close:hover{border-color:var(--acc);color:var(--acc)}
+  .side-panel h4:first-of-type{margin-top:0;padding-top:0;border-top:0}
   /* 실제 페이지도 900px 이하부턴 무대·카드가 좌우가 아니라 위아래로 쌓임(profile.css 같은 분기점) —
      그 아래에선 "오른쪽 = 카드 자리"라는 전제 자체가 깨지므로, 오른쪽 서랍 대신 화면 전체를 덮게 바꾼다. */
-  @media(max-width:900px){ .fx-panel{left:0;width:auto;max-width:none} }
+  @media(max-width:900px){ .side-panel{left:0;width:auto;max-width:none} }
   /* 미리보기 = iframe 2장을 겹쳐 교차 페이드(깜빡임 방지). .show 인 쪽만 보이고 조작됨. */
   .pv-stack{position:relative;flex:1;background:#000}
   .pv-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000;
@@ -220,7 +237,9 @@
   .fxrow.off .fx-nm{text-decoration:line-through}
   .fxrow.dragging{opacity:.35}
   .fxrow.dropbefore{box-shadow:0 -2px 0 var(--acc)}
-  .fx-nm-row{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+  /* 효과 이름을 토글 옆에 욱여넣으면(좁은 컬럼이라 손잡이·스위치가 이미 자리를 많이 차지) 이름이 잘려 보인다는
+     피드백 — 손잡이·스위치·원래위치배지 줄과 이름 줄을 아예 분리한다(이름은 그 아래 자기 줄에서 폭 전부 사용). */
+  .fx-top-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}
   .fx-grip{cursor:grab;color:var(--tx);opacity:.4;font-size:14px;line-height:1;user-select:none;flex:none}
   .fx-grip:hover{opacity:.75}
   .fx-grip:active{cursor:grabbing}
@@ -231,7 +250,7 @@
   .fx-sw-t::after{content:'';position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#f0f0f0;box-shadow:0 1px 2px rgba(0,0,0,.35);transition:transform .15s}
   .fx-sw input:checked + .fx-sw-t{background:var(--acc);border-color:var(--acc)}
   .fx-sw input:checked + .fx-sw-t::after{transform:translateX(16px)}
-  .fxrow .fx-nm{font-size:12px;font-weight:600;flex:1;min-width:0;word-break:keep-all;line-height:1.25}   /* 긴 이름(데이터 스트림)은 잘리지 말고 단어 단위로 줄바꿈 */
+  .fxrow .fx-nm{display:block;font-size:12px;font-weight:600;word-break:keep-all;line-height:1.3;margin-bottom:6px}
   .fx-origin{flex:none;font-size:9px;font-weight:700;letter-spacing:.03em;padding:1px 5px;border-radius:3px;line-height:1.5;color:var(--dim);border:1px dashed var(--line)}   /* 세트 조각의 원래 설계 위치 */
   .fx-origin.moved{color:var(--warn);border-color:var(--warn);border-style:solid}   /* 원래 위치에서 옮겨졌을 때 강조 */
   .fxrow-ctl{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
@@ -340,48 +359,21 @@
 </div>
 <header>
   <h1>PROFILE BUILDER</h1><span class="tag mono">TS·OS</span>
-  <span class="hint">폼을 채우면 오른쪽에 실시간 미리보기 · 다 되면 [코드 생성]</span>
+  <!-- 테마는 캐릭터 데이터와 무관한 툴 자체 설정이라 상시 노출(도구 패널 안에 안 숨김). -->
+  <button class="sm" id="themeBtn" title="툴·미리보기 테마 전환" style="margin-left:auto">◐ 테마</button>
 </header>
 
 <div class="wrap">
   <!-- ================= 폼 ================= -->
   <div class="form">
 
-    <div class="form-top">
-      <div class="form-top-row">
-        <button class="pri" id="savefile" title="이 캐릭터를 사이트에 바로 저장">💾 저장</button>
-        <button class="sm" id="filepick" title="저장 폴더 바꾸기">📁</button>
-        <input id="submitterName" placeholder="닉네임(선택)" title="제출 시 관리자에게 표시될 이름" style="max-width:96px;flex:none">
-        <button class="sm" id="submitDiscord" title="GitHub 계정 없이 — 지금 작성한 내용을 관리자 디스코드로 보내기">📤 제출</button>
-        <button class="sm" id="themeBtn" title="툴·미리보기 테마 전환" style="margin-left:auto">◐ 테마</button>
-      </div>
-      <span class="note" id="saveMsg" style="display:block"></span>
-      <div class="note"><b>💾 저장</b> — 이 컴퓨터에 사이트 폴더가 있을 때 (관리자용)<br><b>📤 제출</b> — GitHub 계정 없이 디스코드로 보내기 (멤버용, 관리자가 확인 후 반영)</div>
-    </div>
+    <!-- 저장·제출·불러오기·목록 이미지는 전부 미리보기 상단바 "☰ 도구"·"📏 목록 이미지" 버튼이 여는
+         패널로 옮겨가서 이 자리엔 아무것도 없음 — 폼 칸(#savefile 등)은 그 패널 안에 그대로 있고,
+         저장 로직(readGen 등)은 안 건드림. -->
 
-    <div class="sec">
-      <div class="sec-h">기존 프로필 불러오기 (편집 모드)</div>
-      <div class="inline" style="flex-wrap:wrap">
-        <select id="loadPick" style="flex:1;min-width:150px">
-          <option value="">기존 캐릭터 선택…</option>
-          <option>vector</option><option>myt</option><option>meant</option>
-          <option>merely</option><option>s</option><option>seluka</option>
-        </select>
-        <button class="sm pri" id="loadPickBtn">불러오기</button>
-        <label class="filebtn">📁 파일 열기<input type="file" id="loadFile" accept=".html,.md" hidden></label>
-      </div>
-      <span class="note" id="loadMsg" style="display:block;margin:7px 0 0"></span>
-      <div style="margin-top:9px"><label>폴더 이름 <span class="note" style="display:inline">· 공통 · 저장 위치·주소·이미지 폴더 · 영문 소문자</span></label>
-        <input id="slug" placeholder="영문 소문자 (예: myt)"></div>
-      <details style="margin-top:7px">
-        <summary class="note" style="cursor:pointer;user-select:none">▸ 또는 코드 직접 붙여넣기</summary>
-        <textarea id="loadSrc" rows="4" style="margin-top:6px" placeholder="---&#10;layout: character&#10;...&#10;---&#10;&lt;div class=&quot;namehead ...&quot;&gt;..."></textarea>
-        <button class="sm" id="loadBtn" style="margin-top:6px">붙여넣기 불러오기</button>
-      </details>
-    </div>
-
-    <!-- ===== 세대 ===== 위: 세대 구분 on/off + 이 세대 내용 초기화 · 아래(gen-body): 켰을 때만 보이는 탭/대표지정 -->
-    <div class="sec genbar" id="genbar">
+    <!-- ===== 세대 ===== 세대 구분 켜기/끄기·탭 전환·대표 지정·초기화가 전부 오른쪽 미리보기(타임라인 클릭 + 옆 ⚙메뉴 + 상단바
+         '세대 구분 사용' 버튼)로 옮겨가서 이 섹션은 숨김만 — DOM은 그대로 두어 데이터 저장소(GEN_ON·CUR_GEN·readGen 등)로는 계속 씀. -->
+    <div class="sec genbar hide-panel" id="genbar">
       <div class="sec-h">세대 <span class="note" style="display:inline">· 타임라인 나누기 (선택)</span></div>
       <div class="genbar-top">
         <label><input type="checkbox" id="genOn"> <b>세대 구분(타임라인) 사용</b></label>
@@ -412,30 +404,6 @@
       <input type="hidden" id="genEffect"><!-- 레이어 스택을 YAML-flow 문자열로 보관(readGen/build 가 읽음) -->
     </div>
 
-    <div class="sec">
-      <div class="sec-h">목록 이미지 <span class="note" style="display:inline">· 공통 · 캐릭터 목록에서 보이는 그림</span></div>
-      <div class="note" style="margin:0 0 7px">목록엔 <b>옷장에서 main으로 고른 그림</b>이 그대로 나와요(따로 안 올려도 됨). 두상만 있는 캐릭터도 옷장에 두상을 넣으면 목록에 그대로 뜹니다.
-        다른 캐릭터와 <b>키를 맞춰 나란히 세우고 싶을 때만</b> 아래를 켜세요.</div>
-      <label class="chk" style="justify-content:flex-start"><input type="checkbox" id="lineupResize"> <b>목록에서 키 비교 (같은 키 기준으로 리사이즈)</b>
-        <span class="note" style="display:inline">· 배경 투명한 전신일 때만</span></label>
-      <div id="lineupResizeBox" style="display:none;margin-top:9px">
-        <div class="note">신원의 <b>키(cm)</b>와 옷장 <b>main</b> 그림을 기준으로, 다른 캐릭터들과 같은 바닥선에 세웁니다. (두상 등 전신이 아니면 꺼 두세요)</div>
-        <div class="note" id="lineupMsg" style="margin:5px 0 0;min-height:14px"></div>
-        <div class="lp-tools">
-          <span class="note" style="margin:0">옆에 세워 비교 <span style="opacity:.7">(현재 목록에서 선택)</span>:</span>
-          <span id="lineupChips" class="lp-chips">캐릭터 목록을 불러오는 중…</span>
-          <label class="chk" style="justify-content:flex-start;margin:0 0 0 auto"><input type="checkbox" id="lineupGridOn" checked> 키 눈금</label>
-        </div>
-        <div class="lineup-prev">
-          <div class="lp-empty" id="lineupEmpty">옷장 main 그림과 신원의 키(cm)를 넣으면 여기 미리보기가 떠요</div>
-          <div class="lp-stage" id="lineupStage" style="display:none">
-            <div class="lp-grid-wrap" id="lineupGrid"></div>
-            <div class="lp-row" id="lineupRow"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <div class="sec hide-panel">
       <!-- 옷장 추가·삭제·캡션·대표지정이 전부 오른쪽 미리보기(옷장 트랙의 ⋮ 메뉴 + ＋ 추가 타일)로 옮겨가서 이 섹션은 숨김만 —
            DOM은 그대로 두어 데이터 저장소(#ward, readWard/writeGen)로는 계속 씀. -->
@@ -444,13 +412,16 @@
       <div id="ward"></div>
       <button class="sm" id="addWard">＋ 의상 추가</button>
     </div>
-    <div class="sec">
+    <!-- 켜기/끄기가 상단바 '🖼 배치' 버튼으로 옮겨가서 이 섹션은 숨김만 — DOM(#stageEdit)은 그대로 데이터 저장소로 씀. -->
+    <div class="sec hide-panel">
       <div class="sec-h">옷장 배치 <span class="note" style="display:inline">· <span class="curgen"></span></span></div>
       <label class="chk stage-tog" title="미리보기에서 일러 크기·위치 조정"><input type="checkbox" id="stageEdit"> <b>무대 배치 편집</b></label>
       <div class="note" style="margin-top:5px">켜면 오른쪽 미리보기에서 <b>기본 의상</b>의 일러·고스트 크기·위치를 드래그·슬라이더로 조정합니다. (값은 저장에 그대로 반영)</div>
     </div>
 
-    <div class="sec">
+    <!-- ===== 신원 ===== 전부 오른쪽 미리보기(이름·부제·인용구는 클릭해서 바로 · 기록번호·한글 성·영문 이름은
+         신원 카드 옆 ✎ 팝오버)로 옮겨가서 이 섹션은 숨김만 — DOM은 그대로 두어 데이터 저장소로는 계속 씀. -->
+    <div class="sec hide-panel">
       <div class="sec-h">신원 <span class="note" style="display:inline">· <span class="curgen"></span> · 오른쪽 프로필 카드 맨 위</span></div>
       <div class="note" style="margin:0 0 7px">표시 이름·경로·코드명(프레임 뒤 세로글자)은 <b>영문 이름</b>에서 자동으로 채워집니다.</div>
       <label>기록번호 <span class="note" style="display:inline">· 공통(세대 무관) · 목록 정렬 · 사원 ID</span></label>
@@ -465,9 +436,6 @@
         <div><label>영문 이름 <span class="note" style="display:inline">· 제목·경로·코드명에 사용</span></label><input id="b_enname" placeholder="first name"></div>
         <div><label>영문 성 <span class="note" style="display:inline">· 선택</span></label><input id="b_ensur" placeholder="last name"></div>
       </div>
-      <!-- 나이·키·생일·소속·부서·역할 편집이 신원 카드 옆 ✎ 버튼(미리보기 안 자체 팝오버)로 옮겨가서 이 칸들은 숨김만 —
-           DOM은 그대로 두어 데이터 저장소(readGen/writeGen)로는 계속 씀. -->
-      <div class="hide-panel">
       <label>한 줄 정보 <span class="note" style="display:inline">· 빈 칸은 생략됨</span></label>
       <div class="row c3">
         <div><label>나이</label><input id="bi_age" placeholder="20 (모르면 ?)"></div>
@@ -483,12 +451,13 @@
         <div><label>역할</label><select id="bi_role"><option value="">— 선택 —</option><!-- 항목은 JS의 ROLES 배열에서 자동 생성(단일 출처) --></select></div>
         <div></div>
       </div>
-      </div>
       <label>인용구 <span class="note" style="display:inline">· 선택</span></label>
       <input id="b_quote" placeholder="비우면 없음">
     </div>
 
-    <div class="sec">
+    <!-- ===== 사원증 ===== 켜기/끄기는 상단바 '🪪 사원증' 버튼, 이미지·상태·그린사람은 사원증 카드를 직접 클릭해서
+         수정하는 걸로 옮겨가서 이 섹션은 숨김만 — DOM은 그대로 두어 데이터 저장소로는 계속 씀. -->
+    <div class="sec hide-panel">
       <div class="sec-h">사원증 <span class="note" style="display:inline">· <span class="curgen"></span></span></div>
       <label class="chk" style="justify-content:flex-start;font-size:12px;margin:0 0 8px"><input type="checkbox" id="b_idcard_on" checked> 사원증 넣기</label>
       <div class="note" style="margin:0 0 7px">사원 ID(<b>TS-…</b>)는 <b>기록번호</b>에서 자동으로 만들어져요 · 발급 출처는 <b>CENTRAL DATABASE</b> 고정.</div>
@@ -500,14 +469,14 @@
       <input id="b_idartist" placeholder="비우면 표시 안 함">
     </div>
 
-    <div class="sec">
+    <!-- ===== 능력치 ===== 카드 표시는 상단바 '📊 능력치' 버튼, +증가분 색은 상단바 스와치, 항목 값 편집은
+         미리보기 막대 클릭으로 옮겨가서 이 섹션은 숨김만 — DOM은 그대로 두어 데이터 저장소로는 계속 씀. -->
+    <div class="sec hide-panel">
       <div class="sec-h">능력치 <span class="note" style="display:inline">· <span class="curgen"></span> · 0~10, 증가분</span></div>
       <label class="chk" style="justify-content:flex-start;font-size:12px;margin:0 0 9px"><input type="checkbox" id="b_stat_on" checked> 능력치 카드 표시</label>
       <div style="margin:2px 0 8px"><label>+증가분 막대 색 <span class="note" style="display:inline">· 비우면 대표색 연한 버전(자동)</span></label>
         <div class="inline"><input id="statPlus" class="hexin" placeholder="비우면 자동"><button type="button" class="cp-sw" data-target="statPlus" title="+증가분 색"></button></div></div>
-      <!-- 능력치 항목 추가·삭제·값 편집이 전부 오른쪽 미리보기(막대 클릭 팝오버 + ＋추가)로 옮겨가서 이 목록은 숨김만 —
-           DOM은 그대로 두어 데이터 저장소(#stats, readStats/writeGen)로는 계속 씀. -->
-      <details class="fold hide-panel">   <!-- '카드 표시'=프로필에 능력치 카드 노출 여부(위 체크박스)는 별개, 계속 보임 -->
+      <details class="fold">
         <summary>능력치 항목 펼치기 / 접기 <span class="note" style="display:inline">· ✕ 삭제 · ＋ 추가</span></summary>
         <div class="list-row head stat-row"><span>항목</span><span>값</span><span>+증가</span><span></span></div>
         <div id="stats"></div>
@@ -529,41 +498,52 @@
       <div class="note">서술카드와 똑같이 텍스트·그림 블록을 자유롭게 쌓을 수 있어요(＋텍스트/＋그림, #소제목·&gt;강조문·```코드블럭 등도 그대로 동작).</div>
     </div>
 
-    <div class="inline">
-      <button id="repaint">미리보기 새로고침</button>
-      <button id="reset" title="입력한 내용을 모두 지우고 빈 상태로" style="margin-left:auto">전체 지우기</button>
-    </div>
-    <div class="note" style="margin-top:5px">✎ 입력하면 이 브라우저에 <b>자동 저장</b>(임시)돼요 · 실제 반영은 위쪽 <b>💾 저장</b>.
-      <button id="gen" class="linkbtn" style="margin-left:4px">⋯ 코드로 내보내기 (백업·수동)</button></div>
   </div>
 
   <!-- ================= 미리보기 ================= -->
   <div class="prev">
-    <div class="prev-bar">
+    <div class="prev-bar" id="prevBar">
       <div class="prev-bar-row">
-        <button class="sm" id="toggleForm" title="편집 패널 접기/펼치기">◀ 패널</button>
-        <span class="mono" style="color:var(--dim);font-size:11px">PREVIEW</span>
-        <span class="prev-tools">
-          <span class="prev-color-tools">
-            <span class="pc-group" title="대표색(다크 테마) · 시작→끝"><span class="pc-label">다크</span>
-              <button type="button" class="cp-sw cp-sw-sm" data-target="accent" title="대표색(다크) · 시작색"></button><button type="button" class="cp-sw cp-sw-sm" data-target="accent2" title="대표색(다크) · 끝색(선택, 비우면 단색)"></button>
+        <!-- 제출은 GitHub 계정 없는 멤버도 쓰는 핵심 동작이라 상단바에 항상 노출.
+             저장(💾)은 사이트 폴더 있는 관리자만 쓰므로 "☰ 도구" 패널 쪽에 둠(아래 참고). -->
+        <div class="save-group-row">
+          <input id="submitterName" placeholder="닉네임(선택)" title="제출 시 관리자에게 표시될 이름">
+          <button class="sm" id="submitDiscord" title="GitHub 계정 없이 — 지금 작성한 내용을 관리자 디스코드로 보내기">📤 제출</button>
+        </div>
+        <!-- 색·도구 묶음 + 접기 버튼을 한 덩어리로 감싸 오른쪽 끝에 붙임(margin-left:auto는 이 덩어리 하나에만 —
+             안쪽 두 개에 각각 auto를 주면 서로 밀어내며 사이가 벌어져 가운데로 밀려 보였음). -->
+        <span class="prev-bar-right">
+          <span class="prev-tools">
+            <span class="prev-color-tools">
+              <span class="pc-group" title="대표색(다크 테마) · 시작→끝"><span class="pc-label">다크</span>
+                <button type="button" class="cp-sw cp-sw-sm" data-target="accent" title="대표색(다크) · 시작색"></button><button type="button" class="cp-sw cp-sw-sm" data-target="accent2" title="대표색(다크) · 끝색(선택, 비우면 단색)"></button>
+              </span>
+              <span class="pc-group" title="밝은 테마 색(선택) · 시작→끝"><span class="pc-label">라이트</span>
+                <button type="button" class="cp-sw cp-sw-sm" data-target="accentLight" title="밝은 테마 · 시작색(선택, 비우면 다크와 동일)"></button><button type="button" class="cp-sw cp-sw-sm" data-target="accent2Light" title="밝은 테마 · 끝색(선택, 비우면 단색)"></button>
+              </span>
+              <span class="pc-group" title="능력치 +증가분 막대 색(선택) · 비우면 자동"><span class="pc-label">증가분</span>
+                <button type="button" class="cp-sw cp-sw-sm" data-target="statPlus" title="+증가분 막대 색(선택, 비우면 대표색 연한 버전)"></button>
+              </span>
             </span>
-            <span class="pc-group" title="밝은 테마 색(선택) · 시작→끝"><span class="pc-label">라이트</span>
-              <button type="button" class="cp-sw cp-sw-sm" data-target="accentLight" title="밝은 테마 · 시작색(선택, 비우면 다크와 동일)"></button><button type="button" class="cp-sw cp-sw-sm" data-target="accent2Light" title="밝은 테마 · 끝색(선택, 비우면 단색)"></button>
-            </span>
+            <!-- 효과·배치·목록 이미지는 무대를 직접 만지는 기능이라 무대 바로 아래(미리보기 안쪽)에 버튼을 두고,
+                 여기(상단바)엔 그 나머지 부차적인 기능(카드 표시·세대 구분·불러오기·저장)만 "☰ 도구" 하나로 모음. -->
+            <button class="sm" id="toolsPanelToggle" type="button" title="능력치·사원증 표시 · 세대 구분 · 불러오기 · 저장">☰ 도구</button>
           </span>
-          <button class="sm" id="fxPanelToggle" type="button" title="무대 효과 편집">⚡ 효과</button>
-          <button class="sm" id="statPanelToggle" type="button" title="능력치 카드 표시 켜기/끄기">📊 능력치</button>
+          <!-- 제출·색·도구와는 관련 없는 "이 줄 전체를 접기" 기능이라 다른 버튼들과 안 헷갈리게 옆에 따로 둠(같은 오른쪽 덩어리 안). -->
+          <button class="sm" id="prevBarToggle" type="button" title="이 도구줄 접기/펼치기">▴</button>
         </span>
       </div>
-      <span class="note">✎ 오른쪽 글자를 <b>클릭</b>해 바로 수정 · 이미지 안 보이면 파일명 확인<br>
-        줄 맨 앞 <b>#</b>=소제목, <b>&gt;</b>=강조문 · <b>엔터</b>=새 문단 · <b>Shift+엔터</b>=줄바꿈(붙어보임)<br>
-        글자를 선택하면 뜨는 <b>B</b>·<b>I</b> 버튼(또는 <b>**글자**</b>처럼 타이핑)으로 굵게·기울임 — 다시 누르면 풀림</span>
+      <div id="prevBarNotes">
+        <div class="note bar-note submit-note"><b>📤 제출</b> — GitHub 계정 없이 지금 작성한 내용을 관리자 디스코드로 보내기(관리자가 확인 후 반영)</div>
+        <div class="note bar-note">✎ 오른쪽 글자를 <b>클릭</b>해 바로 수정 · 이미지 안 보이면 파일명 확인<br>
+          줄 맨 앞 <b>#</b>=소제목, <b>&gt;</b>=강조문 · <b>엔터</b>=새 문단 · <b>Shift+엔터</b>=줄바꿈(붙어보임)<br>
+          글자를 선택하면 뜨는 <b>B</b>·<b>I</b> 버튼(또는 <b>**글자**</b>처럼 타이핑)으로 굵게·기울임 — 다시 누르면 풀림</div>
+      </div>
     </div>
     <div class="pv-stack">
       <!-- 효과 편집기는 여기(.pv-stack)에 떠 있는 패널 — 왼쪽 무대는 안 가리고 오른쪽 서술카드 자리쯤에만 겹쳐 보이게.
            무대 폭이 화면 크기에 따라 auto라 정확한 경계를 모를 수 있어, 카드 쪽인 오른쪽에서부터 고정폭으로 잡음(대부분 화면에서 무대와 안 겹침). -->
-      <div class="fx-panel" id="fxPanel" hidden>
+      <div class="side-panel" id="fxPanel" hidden>
         <div class="note" style="margin:0 0 6px"><b>뒤</b>=캐릭터 뒤 · <b>앞</b>=캐릭터 앞. <b>＋ 효과 고르기</b>로 움직이는 미리보기를 보며 고르고 · 왼쪽 <b>스위치</b>로 껐다 켜고(삭제 안 함) · <b>⠿ 드래그</b>로 순서 변경 · <b>색</b>은 다크/라이트 테마마다 따로 정할 수 있어요(기본=그 테마의 테마색).</div>
         <div class="fxcols">
           <div class="fxcol">
@@ -578,6 +558,75 @@
           </div>
         </div>
       </div>
+      <div class="side-panel" id="lineupPanel" hidden>
+        <h4>목록 이미지 <span class="note" style="display:inline">· 공통 · 캐릭터 목록에서 보이는 그림</span></h4>
+        <div class="note" style="margin:0 0 7px">목록엔 <b>옷장에서 main으로 고른 그림</b>이 그대로 나와요(따로 안 올려도 됨). 두상만 있는 캐릭터도 옷장에 두상을 넣으면 목록에 그대로 뜹니다.
+          다른 캐릭터와 <b>키를 맞춰 나란히 세우고 싶을 때만</b> 아래를 켜세요.</div>
+        <label class="chk" style="justify-content:flex-start"><input type="checkbox" id="lineupResize"> <b>목록에서 키 비교 (같은 키 기준으로 리사이즈)</b>
+          <span class="note" style="display:inline">· 배경 투명한 전신일 때만</span></label>
+        <div id="lineupResizeBox" style="display:none;margin-top:9px">
+          <div class="note">신원의 <b>키(cm)</b>와 옷장 <b>main</b> 그림을 기준으로, 다른 캐릭터들과 같은 바닥선에 세웁니다. (두상 등 전신이 아니면 꺼 두세요)</div>
+          <div class="note" id="lineupMsg" style="margin:5px 0 0;min-height:14px"></div>
+          <div class="lp-tools">
+            <span class="note" style="margin:0">옆에 세워 비교 <span style="opacity:.7">(현재 목록에서 선택)</span>:</span>
+            <span id="lineupChips" class="lp-chips">캐릭터 목록을 불러오는 중…</span>
+            <label class="chk" style="justify-content:flex-start;margin:0 0 0 auto"><input type="checkbox" id="lineupGridOn" checked> 키 눈금</label>
+          </div>
+          <div class="lineup-prev">
+            <div class="lp-empty" id="lineupEmpty">옷장 main 그림과 신원의 키(cm)를 넣으면 여기 미리보기가 떠요</div>
+            <div class="lp-stage" id="lineupStage" style="display:none">
+              <div class="lp-grid-wrap" id="lineupGrid"></div>
+              <div class="lp-row" id="lineupRow"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- "도구" 패널 — 자주 안 만지는 부차적인 기능(카드 표시 켜기/끄기·세대 구분·불러오기·저장)을 한 곳에 모음.
+           효과·배치·목록 이미지처럼 무대를 직접 만지는 건 무대 바로 아래 버튼으로 두고, 이 패널엔 그 나머지만. -->
+      <div class="side-panel" id="toolsPanel" hidden>
+        <h4>표시</h4>
+        <button class="sm" id="statPanelToggle" type="button" title="능력치 카드 표시 켜기/끄기" style="width:100%;margin-bottom:6px">📊 능력치 표시 켜기/끄기</button>
+        <button class="sm" id="idPanelToggle" type="button" title="사원증 표시 켜기/끄기" style="width:100%">🪪 사원증 표시 켜기/끄기</button>
+        <button class="sm" id="genPanelToggle" type="button" title="1·2·3세대로 나눠 따로 작성하기" style="width:100%;margin-top:6px">🕘 세대 구분 사용</button>
+
+        <h4>기존 프로필 불러오기</h4>
+        <div class="inline" style="flex-wrap:wrap">
+          <select id="loadPick" style="flex:1;min-width:150px">
+            <option value="">기존 캐릭터 선택…</option>
+            <option>vector</option><option>myt</option><option>meant</option>
+            <option>merely</option><option>s</option><option>seluka</option>
+          </select>
+          <button class="sm pri" id="loadPickBtn">불러오기</button>
+          <label class="filebtn">📁 파일 열기<input type="file" id="loadFile" accept=".html,.md" hidden></label>
+        </div>
+        <span class="note" id="loadMsg" style="display:block;margin:7px 0 0"></span>
+        <div style="margin-top:9px"><label>폴더 이름 <span class="note" style="display:inline">· 공통 · 저장 위치·주소·이미지 폴더 · 영문 소문자</span></label>
+          <input id="slug" placeholder="영문 소문자 (예: myt)"></div>
+        <details style="margin-top:7px">
+          <summary class="note" style="cursor:pointer;user-select:none">▸ 또는 코드 직접 붙여넣기</summary>
+          <textarea id="loadSrc" rows="4" style="margin-top:6px" placeholder="---&#10;layout: character&#10;...&#10;---&#10;&lt;div class=&quot;namehead ...&quot;&gt;..."></textarea>
+          <button class="sm" id="loadBtn" style="margin-top:6px">붙여넣기 불러오기</button>
+        </details>
+
+        <h4>기타</h4>
+        <div class="inline">
+          <button id="repaint">미리보기 새로고침</button>
+          <button id="reset" title="입력한 내용을 모두 지우고 빈 상태로" style="margin-left:auto">전체 지우기</button>
+        </div>
+        <div class="note" style="margin-top:5px">✎ 입력하면 이 브라우저에 <b>자동 저장</b>(임시)돼요 · 실제 반영은 아래 <b>💾 저장</b>.
+          <button id="gen" class="linkbtn" style="margin-left:4px">⋯ 코드로 내보내기 (백업·수동)</button></div>
+
+        <!-- 제출은 멤버도 쓰는 핵심 동작이라 상단바에 항상 노출 — 저장은 사이트 폴더 있는 관리자 전용이라 여기만.
+             맨 아래 둔 이유: 나머지(표시·불러오기·기타)는 자주 만지는 옵션이고 저장은 "다 하고 나서 마지막에" 누르는 동작이라. -->
+        <h4>저장 <span class="note" style="display:inline">· 이 컴퓨터에 사이트 폴더가 있을 때 (관리자용)</span></h4>
+        <div class="save-group-row">
+          <button class="pri sm" id="savefile" title="이 캐릭터를 사이트에 바로 저장">💾 저장</button>
+          <button class="sm" id="filepick" title="저장 폴더 바꾸기">📁</button>
+        </div>
+        <span class="note" id="saveMsg"></span>
+      </div>
+
       <iframe class="pv-frame" title="preview"></iframe>
       <iframe class="pv-frame" title="preview"></iframe>
     </div>
@@ -743,7 +792,7 @@ function splitGenPanels(body){
 }
 // front matter + 세대 패널 → 한 세대의 폼 데이터(genData). isMain 이면 top-level(d) 값을 쓰고, 아니면 item 값을.
 function genDataFrom(id, item, panelHtml, isMain, d){
-  var gd = blankGen(); item = item || {};
+  var gd = blankGen(isMain); item = item || {};
   gd.art = item.img || (isMain ? (d.art||'') : '');
   gd.artArtist = item.artist || (isMain ? (d.artArtist||'') : '');   // gd.art와 같은 원천(옷장 main)에서 나온 값 — 참고용, 실제 저장 시엔 readGen이 옷장에서 다시 계산
   gd.effect = effectToField(item.effect);
@@ -953,9 +1002,12 @@ function readGen(){
     stats:readStats(), wardrobe:ward, proses:readProses(), exts:readExts()
   };
 }
-function blankGen(){ return { accent:'#bfc7d4', accentLight:'', accent2:'', accent2Light:'', art:'', effect:'', eyebrow:'', krname:'', krsur:'', enname:'', ensur:'',
-  age:'', height:'', bday:'', sector:'', dept:'', role:'', quote:'', idcardOn:true, idimg:'', idstatus:'', idartist:'',
-  statOn:true, stats:[], wardrobe:[], proses:[], exts:[] }; }
+// isMain=false 로 명시하면 사원증·능력치를 기본 꺼짐으로(1·2세대처럼 "곁가지" 세대는 보통 그 둘을 안 씀) —
+//   인자를 안 주면(기존 호출 다수) 그대로 켜짐이라 동작이 안 바뀐다.
+function blankGen(isMain){ var on = isMain!==false;
+  return { accent:'#bfc7d4', accentLight:'', accent2:'', accent2Light:'', art:'', effect:'', eyebrow:'', krname:'', krsur:'', enname:'', ensur:'',
+  age:'', height:'', bday:'', sector:'', dept:'', role:'', quote:'', idcardOn:on, idimg:'', idstatus:'', idartist:'',
+  statOn:on, stats:[], wardrobe:[], proses:[], exts:[] }; }
 // ---- 세대 데이터 → 폼(DOM) 쓰기 ----
 function writeGen(gd){
   gd = gd || blankGen();
@@ -1049,12 +1101,12 @@ function fxRowHTML(L, i, isFirst, isLast){
   var themeD=!L.colorDark,  colD=L.colorDark ||'#4bbad6';    // 다크 테마 : 체크=테마색 따라감 / 해제=아래 스와치 색
   var themeL=!L.colorLight, colL=L.colorLight||'#4bbad6';    // 라이트 테마 : 다크와 별개로 독립 설정
   return '<div class="fxrow'+(on?'':' off')+'" data-i="'+i+'">'+
-    '<div class="fx-nm-row">'+
+    '<div class="fx-top-row">'+
       (tk?'<span class="fx-grip lock" title="화면 장악 효과는 항상 앞">🔒</span>':'<span class="fx-grip" draggable="true" title="드래그해서 순서 변경">⠿</span>')+
       '<label class="fx-sw" title="효과 켜기/끄기"><input type="checkbox" class="fx-on" data-act="onoff"'+(on?' checked':'')+'><span class="fx-sw-t"></span></label>'+
-      '<span class="fx-nm" title="'+esc(fxLabel(L.fx))+(tk?' · 항상 앞':'')+'">'+esc(fxLabel(L.fx))+'</span>'+
       (L.origin ? '<span class="fx-origin'+(L.place!==L.origin?' moved':'')+'" title="세트 설계상 원래 위치'+(L.place!==L.origin?' (지금은 옮겨짐)':'')+'">원래 '+(L.origin==='front'?'앞':'뒤')+'</span>' : '')+   // 세트 조각의 설계 위치(옮기면 강조)
     '</div>'+
+    '<div class="fx-nm" title="'+esc(fxLabel(L.fx))+(tk?' · 항상 앞':'')+'">'+esc(fxLabel(L.fx))+'</div>'+
     '<div class="fxrow-ctl">'+
       '<button type="button" class="fx-mv" data-act="up"'+(isFirst?' disabled':'')+' title="위로">↑</button>'+
       '<button type="button" class="fx-mv" data-act="down"'+(isLast?' disabled':'')+' title="아래로">↓</button>'+
@@ -1188,6 +1240,8 @@ function refreshGenBar(){
   var gb=$('#genbar'); if(gb) gb.classList.toggle('single', !GEN_ON);
   var chk=$('#genOn'); if(chk) chk.checked=GEN_ON;
   var rb=$('#genReset'); if(rb) rb.textContent = GEN_ON ? (genMeta(CUR_GEN).label+' 초기화') : '내용 초기화';
+  // 세대 구분을 켜면 미리보기에 타임라인+⚙메뉴가 새로 생겨 이 상시 버튼과 하는 일이 겹침 → 그때는 숨김.
+  var gpt=$('#genPanelToggle'); if(gpt) gpt.hidden = GEN_ON;
   var host=$('#genTabs');
   if(host){ host.innerHTML=GENS.map(function(g){   // 탭 = 편집할 세대 선택(대표 지정은 아래 라디오)
     var cur=(g.id===CUR_GEN), main=(g.id===MAIN_GEN), written=genWritten(g.id);
@@ -1209,18 +1263,22 @@ function selectGen(id){   // 세대 탭 전환: 현재 폼 저장 → 다른 세
   if(id===CUR_GEN) return;
   GEN_FORMS[CUR_GEN]=readGen();
   CUR_GEN=id;
-  writeGen(GEN_FORMS[id] || (GEN_FORMS[id]=blankGen()));
+  writeGen(GEN_FORMS[id] || (GEN_FORMS[id]=blankGen(id===MAIN_GEN)));
   syncLineupHeight();          // 라인업 키는 대표세대 기준(공통) → 탭 바꿔도 유지
   refreshGenBar(); syncColorPickers();
-  // 미리보기: iframe 재생성 없이 내부에서 부드럽게 세대 전환(profile.js __genSwitch) → 번쩍임 없음. 없으면 재생성 폴백.
-  var win=null; try{ win=PV[pvFront].contentWindow; }catch(e){}
-  if(win && win.__genSwitch){ try{ win.__genSwitch(id); pvSetAccent(); scheduleSave(); return; }catch(e){} }
+  // ★iframe 재생성 없이 부드럽게 넘기는 __genSwitch 최적화는 안 쓴다 — 카드 영역(신원 ✎ 팝오버 등)의 편집 기능은
+  //   iframe이 처음 열릴 때 한 번만 그 안 요소를 찾아 배선되는데, __genSwitch는 무대만 바꾸고 카드는 그대로 두거나
+  //   방문자용 "기록 없음" 틀로 바꿔서 편집 배선이 없는 상태가 됐다(실제로 겪은 버그). render()는 뒤 iframe에
+  //   전부 새로 지어 배선한 뒤 다 된 뒤에야 화면에 꺼내므로(2장 교차 페이드) 번쩍임 없이도 항상 편집 가능하다.
   pvLastHTML=null; render();
 }
 function setMain(id){   // 대표 세대 지정
   GEN_FORMS[CUR_GEN]=readGen();
   MAIN_GEN=id; refreshGenBar(); syncLineupHeight(); pvLastHTML=null; render();
 }
+// 미리보기 타임라인 클릭·⚙메뉴가 왼쪽 탭이 하던 것과 똑같은 함수를 그대로 부른다(로직 두 벌 안 만듦).
+window.pvGenSwitch = selectGen;
+window.pvGenSetMain = setMain;
 
 /* ---------- 폼(세대 3벌) → 상태 객체 ----------
    top-level(meta/stats/wardrobe/accent/art) = 대표(MAIN) 세대 값.
@@ -1246,7 +1304,9 @@ function buildFullBody(editable){
     return buildBody(bodyObjOf(gdF), gdF.stats.length>0, false);
   }
   // editable=true → 미리보기(iframe): 레이아웃이 없으므로 래퍼 + 신원/사원증(buildIdentity) + 카드를 직접 조립(레이아웃과 같은 모양).
-  var gens = GEN_ON ? GENS.filter(function(g){ return genWritten(g.id); }) : [genMeta(MAIN_GEN)];
+  //   지금 편집 중인 세대(CUR_GEN)는 아직 한 글자도 안 썼어도 반드시 포함시킨다 — 안 그러면 세대 타임라인을
+  //   눌러 안 써본 세대로 넘어갔을 때 편집 가능한 패널이 아예 안 생겨서(방문자용 "기록 없음" 틀만 남아) 못 고친다.
+  var gens = GEN_ON ? GENS.filter(function(g){ return genWritten(g.id) || g.id===CUR_GEN; }) : [genMeta(MAIN_GEN)];
   return gens.map(function(g){
     var gd = GEN_FORMS[g.id] || blankGen(), bo = bodyObjOf(gd), ed = (g.id===CUR_GEN);
     return '      <div class="gen-panel" data-gen="'+g.id+'">\n'
@@ -1498,17 +1558,18 @@ function proseToHtml(text, ind){       // 줄 맨앞 # = 소제목, > = 강조�
 function buildIdentity(b, editable, gid){
   var ed=function(k){ return editable? ' contenteditable="true" data-edit="'+k+'"' : ''; };
   var idSuf = editable ? '' : ('-'+(gid!=null?gid:'x'));
-  var krIn = editable ? '<span'+ed('krname')+'>'+esc(b.krname)+'</span>' : esc(b.krname);
   var L=[];
   L.push('      <div class="namehead span2">');
-  if(b.eyebrow) L.push('        <div class="eyebrow"'+ed('eyebrow')+'>'+esc(b.eyebrow)+'</div>');
-  var krSur = b.krsur ? ' '+esc(b.krsur) : '';   // 프로필 한글 = 이름(인라인편집) + 성. 영문은 이름+성 합성이라 인라인편집 없음(신원 폼에서 수정)
-  L.push('        <div class="kr">'+krIn+krSur+(b.enname?' <span class="en">'+esc(b.enname)+'</span>':'')+'</div>');
+  // 부제는 비어 있으면 아예 안 그림(카드에서 직접 편집 안 하고 ✎ 팝오버 전용이라, 빈 칸 안내글도 필요 없음).
+  if(b.eyebrow) L.push('        <div class="eyebrow">'+esc(b.eyebrow)+'</div>');
+  // 이름·성·기록번호는 전부 구조적인 값(슬러그·경로에 쓰임)이라 카드에서 직접 타이핑하지 않고 옆 ✎ 팝오버에서만 고친다.
+  var krSur = b.krsur ? ' '+esc(b.krsur) : '';
+  L.push('        <div class="kr">'+esc(b.krname)+krSur+(b.enname?' <span class="en">'+esc(b.enname)+'</span>':'')+'</div>');
   // idmeta(나이·키·생일·소속)는 roster+생일+부서·역할에서 매번 계산되는 값이라 여기서 직접 고칠 수 없게 함
   //   (예전엔 이 줄도 contenteditable이라 자유롭게 고칠 수 있었는데, 형식이 조금만 달라도 parseIdmeta가
-  //   조용히 정보를 잃어버렸음) — 나이·키·생일·소속을 고치려면 왼쪽 폼의 해당 칸을 쓴다.
-  if(b.idmeta) L.push('        <div class="idmeta">'+esc(b.idmeta)+(editable?'<button type="button" class="idmeta-edit" title="나이·키·생일·소속·부서·역할 수정">✎</button>':'')+'</div>');
-  if(b.quote) L.push('        <div class="quote"'+ed('quote')+'>'+esc(b.quote)+'</div>');
+  //   조용히 정보를 잃어버렸음) — ✎ 팝오버 하나가 부제·한글 이름·성·영문 이름·성·기록번호·나이·키·생일·소속·부서·역할을 전부 관리.
+  if(editable || b.idmeta) L.push('        <div class="idmeta">'+(b.idmeta?esc(b.idmeta):(editable?'<span class="idmeta-empty">정보 없음</span>':''))+(editable?'<button type="button" class="idmeta-edit" title="부제·이름·기록번호·나이·키·생일·소속·부서·역할 수정">✎</button>':'')+'</div>');
+  if(editable || b.quote) L.push('        <div class="quote"'+ed('quote')+'>'+esc(b.quote)+'</div>');
   L.push('      </div>');
   if(b.idcardOn){
     L.push('');
@@ -1516,13 +1577,13 @@ function buildIdentity(b, editable, gid){
     L.push('        <div class="card-h"><span class="idx">ID</span><h3>Agent Pass</h3><span class="kr-sub">사원증 · 인증 기록</span><button class="fx-toggle mono" id="idScanToggle'+idSuf+'" type="button" title="사원증 스캔 효과 끄기/켜기">SCAN ON</button></div>');
     L.push('        <div class="idcard-b"><div class="idcard-stage">');
     L.push('          <span class="idc-corner tl"></span><span class="idc-corner tr"></span><span class="idc-corner bl"></span><span class="idc-corner br"></span>');
-    L.push('          <img src="'+esc(b.idimg)+'" alt="'+esc((b.krname||'')+' 사원증')+'">');
+    L.push('          <img src="'+esc(b.idimg)+'" alt="'+esc((b.krname||'')+' 사원증')+'"'+(editable?' class="idc-imgpick" data-imgpick="idimg" title="클릭해서 사원증 이미지 바꾸기"':'')+'>');
     L.push('          <span class="idc-scan" id="idScan'+idSuf+'"></span><span class="idc-stamp">● AUTHENTICATED</span>');
     L.push('        </div><div class="idc-meta">');
     L.push('          <span>RETRIEVED · <b>'+esc(b.idsource||'CENTRAL DATABASE')+'</b></span>');
     L.push('          <span>ID · <b>'+esc(b.idrecord)+'</b></span>');
-    L.push('          <span>STATUS · <b class="ok">'+esc(b.idstatus||'ACTIVE')+'</b></span>');
-    if(b.idartist) L.push('          <span>@'+esc(b.idartist)+'</span>');
+    L.push('          <span>STATUS · <b class="ok"'+ed('idstatus')+'>'+esc(b.idstatus||'ACTIVE')+'</b></span>');
+    if(editable || b.idartist) L.push('          <span>@<b'+ed('idartist')+'>'+esc(b.idartist)+'</b></span>');
     L.push('        </div></div>');
     L.push('      </div>');
   }
@@ -1840,7 +1901,12 @@ function buildSrcdoc(st){
   var accent2L = curGd.accent2Light || '';     // 밝은 2번째: 있으면 light에 적용, 없으면 :root(어두운 2번째) 상속 = 레이아웃과 동일
   // 로컬 선택 이미지는 미리보기에서 blob URL로 표시(파일명은 그대로 출력에 유지)
   var artSrc = resolveImg(curGd.art);
-  var ward = st.wardrobe.map(function(w){ var c={}; for(var k in w) c[k]=w[k]; c.img=resolveImg(w.img); return c; });
+  // st.meta/st.wardrobe/st.stats는 항상 대표 세대 것(저장 파일의 top-level 값) — 미리보기 초기 페인트는
+  // 그게 아니라 '지금 편집 중인 세대'를 보여줘야 해서 curGd에서 따로 계산한다(옷장·무대 뒤 이름이 세대를
+  // 바꿔도 대표 세대 것으로 남아있던 버그의 원인이 이것 — 최초 페인트가 항상 대표 세대 값을 썼었음).
+  var curMeta = metaOf(curGd);
+  var curStats = statsOut(curGd.stats);
+  var ward = curGd.wardrobe.map(function(w){ var c={}; for(var k in w) c[k]=w[k]; c.img=resolveImg(w.img); return c; });
   var gens = { current: CUR_GEN, items: (st.generations.items||[]).map(function(it){ var c={}; for(var k in it) c[k]=it[k]; c.img=resolveImg(it.img);
     if(c.wardrobe) c.wardrobe=c.wardrobe.map(function(w){ var d={}; for(var k in w) d[k]=w[k]; d.img=resolveImg(w.img); return d; }); return c; }) };
   var body = buildFullBody(true).replace(/(<img\b[^>]*\ssrc=")([^"]*)(")/gi, function(m,a,s,c){ return a+resolveImg(s)+c; });
@@ -1866,6 +1932,17 @@ function buildSrcdoc(st){
     // 선택한 레이어의 슬라이더만 표시. 고스트는 실제(옅은) 최종상태 그대로 보이고 그 상태로 편집(편집 박스는 이미지가 옅어도 크기가 있어 드래그 가능).
     'var _eb=document.getElementById("edBoth");if(_eb&&_eb.parentNode)_eb.parentNode.style.display="none";'+
     'var _p=document.getElementById("edP"),_rows=[].slice.call(_p.querySelectorAll(".row")),_grps=[].slice.call(_p.querySelectorAll(".grp")),_cur=0;'+
+    // 이 패널을 열었던 스위치(🖼 배치)를 그대로 다시 눌러 끄는 것과 같은 닫기 버튼 — edit-core.js(공용 코어)는 안 건드리고
+    //   이 어댑터(툴 전용)에서만 붙인다(실제 ?edit 모드는 이 버튼이 필요 없어서 core 자체엔 안 넣음).
+    //   제목(#edGrip)은 전체가 "드래그해서 이동" 손잡이라 그 안에 버튼을 얹으면 클릭이 드래그로 먹혀버릴 수 있어,
+    //   같은 줄에 나란히 두되 별도 엘리먼트로 감싼다(제목 겹쳐 잘리는 것도 방지).
+    'var _h5=_p.querySelector("#edGrip"),_head=document.createElement("div");'+
+      '_head.style.cssText="display:flex;align-items:center;gap:8px;margin:0 0 8px";'+
+      '_h5.parentNode.insertBefore(_head,_h5);_head.appendChild(_h5);_h5.style.cssText="flex:1;margin:0";'+
+      'var _closeBtn=document.createElement("button");_closeBtn.type="button";_closeBtn.textContent="\\u2715";'+
+      '_closeBtn.title="닫기";_closeBtn.style.cssText="flex:none;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid #4aa;color:#8ee;border-radius:4px;width:20px;height:20px;padding:0;font-size:11px;line-height:1;cursor:pointer";'+
+      '_closeBtn.addEventListener("click",function(){try{parent.pvStagePanelToggle();}catch(_){}});'+
+      '_head.appendChild(_closeBtn);'+
     'var _st=document.createElement("style");_st.textContent="#edP .row label,#edP .lyr button,#edP h5{white-space:nowrap}";document.head.appendChild(_st);'+   // 패널 한글 라벨 줄바꿈(keep-all 상속) 방지 — 폭은 그대로(숫자칸 안 밀리게)
     'function _showLayer(i){_cur=i;_rows.forEach(function(r,j){r.style.display=(Math.floor(j/4)===i)?"":"none";});_grps.forEach(function(g){g.style.display="none";});try{_core.resync();}catch(e){}}'+
     '_p.querySelectorAll(".lyr button").forEach(function(b,i){b.addEventListener("click",function(){_showLayer(i);});});_showLayer(0);'+
@@ -1877,7 +1954,7 @@ function buildSrcdoc(st){
     '<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Chakra+Petch:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Share+Tech+Mono&family=Gothic+A1:wght@300;400;500;700;800&display=swap" rel="stylesheet">'+
     '<link rel="stylesheet" href="../../assets/css/common.css">'+
     '<link rel="stylesheet" href="../../assets/css/transitions.css">'+
-    '<link rel="stylesheet" href="../../assets/css/profile.css?v=47">'+
+    '<link rel="stylesheet" href="../../assets/css/profile.css?v=55">'+
     '<style>:root,:root[data-theme="dark"]{--accent:'+accent+';--accent2:'+accent2+';'+(st.statPlus?'--stat-plus:'+st.statPlus+';':'')+'}:root[data-theme="light"]{--accent:'+accentL+';'+(accent2L?'--accent2:'+accent2L+';':'')+'}'+
     '.stage .ghost{display:block}'+   /* 미리보기(폭 좁음)에서 고스트 확실히 표시 — profile.css 캐시와 무관하게. !important 안 씀=이미지 없을 때 profile.js 인라인 숨김은 존중 */
     '[data-edit]{cursor:text;border-radius:3px}[data-edit]:hover{box-shadow:0 0 0 1px var(--accent-line,#7aa)}[data-edit]:focus{outline:none;box-shadow:0 0 0 2px var(--accent);background:rgba(120,180,210,.07)}'+
@@ -1892,10 +1969,10 @@ function buildSrcdoc(st){
     '.p-alt{margin-top:6px;font-size:12px;color:var(--ink-faint);cursor:text;border-radius:3px;padding:2px 4px}.p-alt:hover{box-shadow:0 0 0 1px var(--accent-line,#7aa)}.p-alt:focus{outline:none;box-shadow:0 0 0 2px var(--accent);background:rgba(120,180,210,.07)}'+
     '.p-alt:empty::before{content:"이미지 설명 · 안 보일 때 대신 나올 글(선택)";opacity:.6;font-style:italic}'+
     // 글자 선택 시 뜨는 서식 툴바 — 마우스로 드래그해 고른 글자에 굵게/기울임을 바로 토글.
-    '.fmt-bar{position:fixed;display:flex;gap:2px;background:#1a1e26;border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:3px;box-shadow:0 4px 14px rgba(0,0,0,.35);z-index:999}'+
+    '.fmt-bar{position:fixed;display:flex;gap:2px;background:var(--elev);border:1px solid var(--line);border-radius:6px;padding:3px;box-shadow:0 4px 14px rgba(0,0,0,.35);z-index:999}'+
     '.fmt-bar[hidden]{display:none}'+
-    '.fmt-bar button{background:transparent;border:none;color:#eef2f6;width:26px;height:26px;border-radius:4px;font-size:13px;cursor:pointer;line-height:1}'+
-    '.fmt-bar button:hover{background:rgba(255,255,255,.15)}'+
+    '.fmt-bar button{background:transparent;border:none;color:var(--ink);width:26px;height:26px;border-radius:4px;font-size:13px;cursor:pointer;line-height:1}'+
+    '.fmt-bar button:hover{background:var(--accent-tint)}'+
     '.fmt-bar button.on{background:var(--accent);color:#fff}'+
     // 옷장 관리(트랙 슬롯의 ⋮ 손잡이 · ＋추가 타일 · 편집 팝오버) — 옷장 트랙(.slot)은 profile.css가 이미 54×54px·position:relative로 그리므로 그 위에 얹기만 함.
     '.ward-handle{position:absolute;top:-4px;right:-4px;width:20px;height:20px;border-radius:50%;border:1px solid var(--line);background:var(--paper);color:var(--ink-faint);font-size:12px;line-height:1;cursor:grab;touch-action:none;display:flex;align-items:center;justify-content:center;z-index:2}'+
@@ -1904,32 +1981,51 @@ function buildSrcdoc(st){
     '.ward-add-tile{display:flex;flex-direction:column;align-items:center;gap:4px;background:transparent;border:none;font:inherit;cursor:pointer;padding:0}'+
     '.ward-add-tile .thumb{width:54px;height:54px;border-radius:10px;border:1px dashed var(--accent-line);display:flex;align-items:center;justify-content:center;color:var(--accent-deep);font-size:18px}'+
     '.ward-add-tile .cap{font-family:"Share Tech Mono";font-size:var(--fs-xs);color:var(--ink-faint);letter-spacing:.5px}'+
-    '.ward-pop{position:fixed;display:flex;flex-direction:column;gap:6px;background:#1a1e26;border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);z-index:999;width:180px}'+
+    '.ward-pop{position:fixed;display:flex;flex-direction:column;gap:6px;background:var(--elev);border:1px solid var(--line);border-radius:8px;padding:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);z-index:999;width:180px}'+
     '.ward-pop[hidden]{display:none}'+
-    '.ward-pop input{background:#11151b;border:1px solid rgba(255,255,255,.15);color:#eef2f6;border-radius:5px;padding:5px 7px;font:inherit;font-size:12px}'+
-    '.ward-pop button{background:transparent;border:1px solid rgba(255,255,255,.2);color:#eef2f6;border-radius:5px;padding:5px 7px;font:inherit;font-size:12px;cursor:pointer;text-align:left}'+
-    '.ward-pop button:hover{background:rgba(255,255,255,.1)}'+
+    '.ward-pop input{background:var(--elev2);border:1px solid var(--line);color:var(--ink);border-radius:5px;padding:5px 7px;font:inherit;font-size:12px}'+
+    '.ward-pop button{background:transparent;border:1px solid var(--line);color:var(--ink);border-radius:5px;padding:5px 7px;font:inherit;font-size:12px;cursor:pointer;text-align:left}'+
+    '.ward-pop button:hover{background:var(--accent-tint)}'+
     '.ward-pop .wp-del{border-color:rgba(224,97,107,.5);color:#e0616b}'+
     '.ward-pop .wp-del:hover{background:rgba(224,97,107,.12)}'+
     '.ward-pop .wp-del.armed{background:#e0616b;border-color:#e0616b;color:#fff;text-align:center}'+
     // 능력치 관리(막대 클릭 → 편집 팝오버 · 목록 끝 ＋추가 줄) — .statbars는 2열 그리드라 추가 줄은 grid-column으로 전체 폭을 차지하게 함.
     '.sb.stat-editable{cursor:pointer;border-radius:6px;padding:2px 4px;margin:-2px -4px;transition:background .15s}'+
-    '.sb.stat-editable:hover{background:rgba(255,255,255,.06)}'+
-    '.stat-pop{position:fixed;display:flex;flex-direction:column;gap:6px;background:#1a1e26;border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);z-index:999;width:180px;box-sizing:border-box}'+
+    '.sb.stat-editable:hover{background:var(--accent-tint)}'+
+    '.stat-pop{position:fixed;display:flex;flex-direction:column;gap:6px;background:var(--elev);border:1px solid var(--line);border-radius:8px;padding:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);z-index:999;width:180px;box-sizing:border-box}'+
     '.stat-pop[hidden]{display:none}'+
-    '.stat-pop input{background:#11151b;border:1px solid rgba(255,255,255,.15);color:#eef2f6;border-radius:5px;padding:5px 7px;font:inherit;font-size:12px;width:100%;box-sizing:border-box}'+
+    '.stat-pop input{background:var(--elev2);border:1px solid var(--line);color:var(--ink);border-radius:5px;padding:5px 7px;font:inherit;font-size:12px;width:100%;box-sizing:border-box}'+
     // 숫자칸의 브라우저 기본 위아래 화살표(스핀버튼)를 없앰 — 팝오버 폭이 좁아 화살표가 작은 스크롤바처럼 걸려보였음.
     '.stat-pop input[type=number]{-moz-appearance:textfield}'+
     '.stat-pop input[type=number]::-webkit-inner-spin-button,.stat-pop input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}'+
-    '.stat-pop label{display:flex;flex-direction:column;gap:2px;font-size:11px;color:#9aa4b0}'+
+    '.stat-pop label{display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--ink-faint)}'+
     // 신원 한 줄 정보(나이·키·생일·소속·부서·역할) 편집 — 신원 카드의 idmeta 옆 ✎ 버튼 → 자체 팝오버.
     '.idmeta-edit{margin-left:6px;background:transparent;border:1px solid var(--line);color:var(--ink-faint);border-radius:4px;width:18px;height:18px;line-height:1;font-size:10px;cursor:pointer;vertical-align:middle}'+
     '.idmeta-edit:hover{border-color:var(--accent-line);color:var(--accent-deep)}'+
-    '.id-pop{position:fixed;display:flex;flex-direction:column;gap:6px;background:#1a1e26;border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);z-index:999;width:220px;box-sizing:border-box}'+
+    '.id-pop{position:fixed;display:flex;flex-direction:column;gap:6px;background:var(--elev);border:1px solid var(--line);border-radius:8px;padding:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);z-index:999;width:220px;box-sizing:border-box}'+
     '.id-pop[hidden]{display:none}'+
     '.id-pop .idp-row{display:flex;gap:5px}'+
-    '.id-pop label{flex:1;display:flex;flex-direction:column;gap:2px;font-size:11px;color:#9aa4b0}'+
-    '.id-pop input,.id-pop select{background:#11151b;border:1px solid rgba(255,255,255,.15);color:#eef2f6;border-radius:5px;padding:5px 7px;font:inherit;font-size:12px;width:100%;box-sizing:border-box}</style>'+
+    '.id-pop label{flex:1;display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--ink-faint)}'+
+    '.id-pop input,.id-pop select{background:var(--elev2);border:1px solid var(--line);color:var(--ink);border-radius:5px;padding:5px 7px;font:inherit;font-size:12px;width:100%;box-sizing:border-box}'+
+    // 인용구·사원증 그린사람은 비어 있어도(편집 모드) 요소를 그려두고 이 안내글로 "클릭해서 입력"을 알려줌
+    //   (그림 설명 칸 .p-alt:empty::before와 같은 방식) — 클릭하면 바로 타이핑해서 처음 값을 넣을 수 있다.
+    //   부제는 이름·기록번호와 함께 ✎ 팝오버에서만 고침(카드에서 직접 클릭 편집 안 함).
+    '.namehead .quote:empty::before{content:"인용구(선택) · 눌러서 입력";opacity:.5;font-style:italic}'+
+    '.idc-meta b:empty::before{content:"그린 사람(선택)";opacity:.5;font-style:italic}'+
+    '.idmeta-empty{opacity:.5;font-style:italic}'+
+    '.idc-imgpick{cursor:pointer}.idc-imgpick:hover{box-shadow:0 0 0 2px var(--accent)}'+
+    // 무대 바로 아래 도구 버튼 줄(효과·배치·목록 이미지) — 무대를 직접 만지는 기능이라 여기 붙여 위치로 뜻이 보이게 함.
+    '.stage-tools{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}'+
+    '.stage-tools button{background:var(--panel-2,rgba(255,255,255,.05));border:1px solid var(--line);color:var(--ink-soft);border-radius:6px;padding:5px 9px;font:inherit;font-size:11px;cursor:pointer}'+
+    '.stage-tools button:hover{border-color:var(--accent-line);color:var(--accent-deep)}'+
+    // 세대 관리(타임라인 옆 ⚙) — 대표세대지정·세대구분끄기·이세대초기화. 팝오버 톤은 옷장/능력치/신원과 동일.
+    '.gen-gear{align-self:flex-end;margin:0 0 6px 6px;background:transparent;border:1px solid var(--line);color:var(--ink-faint);border-radius:4px;width:22px;height:22px;line-height:1;font-size:12px;cursor:pointer}'+
+    '.gen-gear:hover{border-color:var(--accent-line);color:var(--accent-deep)}'+
+    '.gen-pop{position:fixed;display:flex;flex-direction:column;gap:6px;background:var(--elev);border:1px solid var(--line);border-radius:8px;padding:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);z-index:999;width:190px;box-sizing:border-box}'+
+    '.gen-pop[hidden]{display:none}'+
+    '.gen-pop button{background:transparent;border:1px solid var(--line);color:var(--ink);border-radius:5px;padding:6px 8px;font:inherit;font-size:12px;cursor:pointer;text-align:left}'+
+    '.gen-pop button:hover{background:var(--accent-tint)}'+
+    '.gen-pop .gp-reset.armed{background:#e0616b;border-color:#e0616b;color:#fff;text-align:center}</style>'+
     '</head><body><div class="mscreen">'+
       '<div class="osbar mono"><img class="lg" src="../../assets/img/ui/ts_typo.png" alt="">'+
       '<span class="os">TS·OS</span><span class="sec"><span class="d"></span>SECURE LINK</span>'+
@@ -1948,14 +2044,29 @@ function buildSrcdoc(st){
       '<div class="stage-head"><span data-meta="id"></span><span class="rec"><span class="dot"></span>REC · VISUAL FEED<button class="fx-toggle mono" id="fxToggle" type="button" title="무대 효과 끄기/켜기">FX ON</button></span></div>'+
       '<img class="ghost" id="stageGhost" src="'+artSrc+'" alt="">'+
       '<img class="art" id="stageArt" src="'+artSrc+'" alt="'+esc(st.artAlt||'')+'">'+
-      '<div class="art-credit" id="artCredit">'+esc(curGd.artArtist||'')+'</div></section></div></div>'+
-      '<section class="file">'+body+'</section></div></div>'+
+      '<div class="art-credit" id="artCredit">'+esc(curGd.artArtist||'')+'</div></section>'+
+      // 효과·배치·목록 이미지는 무대를 직접 만지는 기능이라 무대 바로 아래 버튼으로 둠(도구 패널과 분리) —
+      //   패널 자체는 부모(이 페이지)에 있으므로 클릭은 parent.pvXxx()로 넘긴다(세대 관리 ⚙메뉴와 같은 방식).
+      '<div class="stage-tools"><button type="button" id="stFx" title="무대 효과 편집">⚡ 효과</button>'+
+      '<button type="button" id="stPlace" title="일러·고스트 크기·위치 편집">🖼 배치</button>'+
+      '<button type="button" id="stLineup" title="목록에서 키 비교용 이미지 설정">📏 목록 이미지</button></div>'+
+      '<script>(function(){function on(id,fn){var b=document.getElementById(id);if(b)b.addEventListener("click",fn);}'+
+        'on("stFx",function(){try{parent.pvFxPanelToggle();}catch(_){}});'+
+        'on("stPlace",function(){try{parent.pvStagePanelToggle();}catch(_){}});'+
+        'on("stLineup",function(){try{parent.pvLineupPanelToggle();}catch(_){}});'+
+      '})();<\/script>'+
+      '</div></div>'+
+      '<section class="file">'+body+'</section></div>'+
+      // 다른 화면과 통일감을 위한 마감 푸터 — 실제 페이지(_layouts/character.html)와 마크업 동일하게(레이아웃
+      //   바꾸면 이 미리보기 사본도 같이 고칠 것 — 프로필 툴 대원칙).
+      '<footer class="foot"><span><span class="g">AGENT</span> · UID 000-ACCESS</span><span class="r">TS-DB · '+esc(curMeta.title||'')+'</span></footer>'+
+      '</div>'+
       '<input type="file" accept="image/*" hidden id="pvFilePick">'+   // 서술카드 그림 블록의 "이미지 바꾸기"가 쓰는 공유 파일창(같은 프레임 클릭이라야 브라우저가 대화상자를 허용)
       '<div class="fmt-bar" id="fmtBar" hidden><button type="button" data-fmt="bold"><b>B</b></button><button type="button" data-fmt="italic"><i>I</i></button><button type="button" data-fmt="quote" title="인용문으로">&ldquo;</button><button type="button" data-fmt="faint" title="회색 글자로(연하게)" style="opacity:.6">A</button><button type="button" data-fmt="code" title="코드블럭으로(고른 문단 전체)" style="font-family:monospace">&lt;/&gt;</button></div>'+   // 글자 선택 시 뜨는 서식 툴바
-    '<script>window.CHAR_META='+CH(st.meta)+';window.CHAR_STATS='+CH(st.stats)+';'+
+    '<script>window.CHAR_META='+CH(curMeta)+';window.CHAR_STATS='+CH(curStats)+';'+
       'window.CHAR_WARDROBE='+CH(ward)+';window.CHAR_GENERATIONS='+CH(gens)+';<\/script>'+
     '<script src="../../assets/js/common.js?v=8"><\/script>'+
-    '<script src="../../assets/js/profile.js?v=33"><\/script>'+
+    '<script src="../../assets/js/profile.js?v=38"><\/script>'+
     '<script src="../../assets/js/profile-generations.js?v=1"><\/script>'+
     '<script src="../../assets/js/profile-ui.js?v=1"><\/script>'+
     '<script src="../../assets/js/stage-fx.js?v=131"><\/script>'+
@@ -2092,6 +2203,11 @@ function buildSrcdoc(st){
         'place();});'+
     '})();'+
       'document.addEventListener("click",function(e){'+
+        // 타임라인(genline) 세대 클릭 — profile-generations.js 자신의 리스너는 iframe 재생성 없이 부드럽게
+        // 넘기지만, 그건 카드 영역을 편집 배선 없는 방문자용 마크업으로 다시 그려서 잠깐 "진짜 프로필 페이지"처럼
+        // 보이게 만든다. 그래서 이 캡처 단계 리스너가 먼저 잡아 stopPropagation으로 그 리스너까지 안 내려가게
+        // 막고, 부모의 세대 전환(폼 동기화 + 통짜 재생성)만 일어나게 한다(profile-generations.js는 안 건드림).
+        'var gl=e.target.closest&&e.target.closest(".genline .gen");if(gl){e.stopPropagation();try{parent.pvGenSwitch(gl.getAttribute("data-gen"));}catch(_){}return;}'+
         'var a=e.target.closest&&e.target.closest("[data-add]");if(a){e.preventDefault();try{parent.pvAdd(a.getAttribute("data-add"));}catch(_){}return;}'+
         // ★그림 블록 "이미지 바꾸기" — 대화상자는 반드시 이 프레임 안의 클릭이라야 열림 → iframe 자신의 #pvFilePick을 누름(부모 쪽 input이면 브라우저가 막음).
         'var ip=e.target.closest&&e.target.closest("[data-imgpick]");if(ip){e.preventDefault();window.pvPickTarget=ip.getAttribute("data-imgpick");var fi=document.getElementById("pvFilePick");if(fi)fi.click();return;}'+
@@ -2106,7 +2222,7 @@ function buildSrcdoc(st){
       // ★파일을 고른 뒤엔 같은 출처라 File 객체를 그대로 부모 함수 인자로 넘긴다(postMessage 불필요).
       //   같은 파일을 다시 골라도 change가 또 뜨도록 매번 value를 비움.
       'document.getElementById("pvFilePick").addEventListener("change",function(){var f=this.files&&this.files[0];this.value="";if(!f)return;'+
-        'var pt=window.pvPickTarget||"";try{if(pt.indexOf("ward:")===0)parent.pvWardImagePick(+pt.slice(5),f);else parent.pvImagePick(pt,f);}catch(_){}});'+
+        'var pt=window.pvPickTarget||"";try{if(pt.indexOf("ward:")===0)parent.pvWardImagePick(+pt.slice(5),f);else if(pt==="idimg")parent.pvIdImagePick(f);else parent.pvImagePick(pt,f);}catch(_){}});'+
       '(function(){var PH="'+PH_IMG+'";function fx(i){if(i.id==="stageArt"||i.id==="stageGhost")return;if(i.dataset.ph)return;i.dataset.ph=1;i.src=PH;i.style.opacity=".82";if(i.closest&&i.closest(".idcard-stage")){i.style.objectFit="contain";}else{i.style.cssText+=";object-fit:contain;width:auto;max-width:120px;max-height:140px;margin:10px auto;display:block;";}}'+
       'document.addEventListener("error",function(e){if(e.target.tagName==="IMG")fx(e.target);},true);'+
       'addEventListener("load",function(){document.querySelectorAll("img").forEach(function(i){if(i.id==="stageArt"||i.id==="stageGhost")return;if(!i.getAttribute("src")||!i.naturalWidth)fx(i);});});})();<\/script>'+
@@ -2212,21 +2328,37 @@ function buildSrcdoc(st){
     '<script>(function(){'+
       'var btn=document.querySelector(".idmeta-edit");if(!btn)return;'+
       'var pop=document.createElement("div");pop.className="id-pop";pop.hidden=true;'+
-      'pop.innerHTML=\'<div class="idp-row"><label>나이<input class="idp-age" placeholder="20 (모르면 ?)"></label><label>키(cm)<input class="idp-height" type="number"></label></div>\'+'+
+      // 부제·이름·기록번호는 전부 이 팝오버 하나에서만 고친다 — 카드에서 직접 클릭해 고치게 두면
+      //   (부제·인용구처럼) 이 줄만 예외로 보여서 "왜 이건 되고 저건 안 되지" 헷갈림. 부제·한글 이름은
+      //   자유 텍스트라 원래 카드에서 직접 고쳐도 안전하지만, 바로 옆 한글 성·영문 이름(슬러그·경로에 쓰임)은
+      //   안전하게 팝오버로만 둬야 해서, 같은 줄 안에서 "이건 되고 이건 안 되고"가 안 생기게 전부 여기로 모았다.
+      'pop.innerHTML=\'<label>부제<input class="idp-eyebrow" placeholder="이름 위 작은 글(선택)"></label>\'+'+
+        '\'<div class="idp-row"><label>한글 이름<input class="idp-krname" placeholder="이름"></label><label>한글 성<input class="idp-krsur" placeholder="성(선택)"></label></div>\'+'+
+        '\'<div class="idp-row"><label>영문 이름<input class="idp-enname" placeholder="first name"></label><label>영문 성<input class="idp-ensur" placeholder="선택"></label></div>\'+'+
+        '\'<label>기록번호<input class="idp-record" placeholder="예: M-01"></label>\'+'+
+        '\'<div class="idp-row"><label>나이<input class="idp-age" placeholder="20 (모르면 ?)"></label><label>키(cm)<input class="idp-height" type="number"></label></div>\'+'+
         '\'<label>생일<input class="idp-bday" placeholder="1/1"></label>\'+'+
         '\'<label>지부<select class="idp-sector"></select></label>\'+'+
         '\'<label>부서<select class="idp-dept"></select></label>\'+'+
         '\'<label>역할<select class="idp-role"></select></label>\';'+
       'document.body.appendChild(pop);'+
-      'var ageEl=pop.querySelector(".idp-age"),heightEl=pop.querySelector(".idp-height"),bdayEl=pop.querySelector(".idp-bday"),'+
+      'var eyebrowEl=pop.querySelector(".idp-eyebrow"),krnameEl=pop.querySelector(".idp-krname"),'+
+        'recordEl=pop.querySelector(".idp-record"),krsurEl=pop.querySelector(".idp-krsur"),ennameEl=pop.querySelector(".idp-enname"),ensurEl=pop.querySelector(".idp-ensur"),'+
+        'ageEl=pop.querySelector(".idp-age"),heightEl=pop.querySelector(".idp-height"),bdayEl=pop.querySelector(".idp-bday"),'+
         'sectorEl=pop.querySelector(".idp-sector"),deptEl=pop.querySelector(".idp-dept"),roleEl=pop.querySelector(".idp-role");'+
       // 드롭다운 항목은 부모 폼의 실제 <select>에서 그대로 복제(단일 출처 = 부모의 SECTORS/DEPTS/ROLES 배열).
       'function cloneOpts(sel,srcId){try{sel.innerHTML=parent.document.getElementById(srcId).innerHTML;}catch(e){}}'+
       'cloneOpts(sectorEl,"bi_sector");cloneOpts(deptEl,"bi_dept");cloneOpts(roleEl,"bi_role");'+
       'function place(){if(pop.hidden)return;var r=btn.getBoundingClientRect();'+
-        'pop.style.top=Math.min(window.innerHeight-220,r.bottom+6)+"px";'+
+        'pop.style.top=Math.min(window.innerHeight-400,r.bottom+6)+"px";'+
         'pop.style.left=Math.min(window.innerWidth-230,Math.max(6,r.left))+"px";}'+
       'function openPop(){try{'+
+          'eyebrowEl.value=parent.document.getElementById("b_eyebrow").value;'+
+          'krnameEl.value=parent.document.getElementById("b_krname").value;'+
+          'recordEl.value=parent.document.getElementById("m_record").value;'+
+          'krsurEl.value=parent.document.getElementById("b_krsur").value;'+
+          'ennameEl.value=parent.document.getElementById("b_enname").value;'+
+          'ensurEl.value=parent.document.getElementById("b_ensur").value;'+
           'ageEl.value=parent.document.getElementById("bi_age").value;'+
           'heightEl.value=parent.document.getElementById("bi_height").value;'+
           'bdayEl.value=parent.document.getElementById("bi_bday").value;'+
@@ -2241,6 +2373,12 @@ function buildSrcdoc(st){
       // 타이핑마다(input) 반영하면 구조변경이라 iframe을 통째로 다시 그려 팝오버가 매 글자마다 사라진다
       // → 칸을 벗어나거나(change) 드롭다운을 고른 순간에만 반영.
       'function commit(patch){try{parent.pvIdentityEdit(patch);}catch(_){}}'+
+      'eyebrowEl.addEventListener("change",function(){commit({eyebrow:this.value});});'+
+      'krnameEl.addEventListener("change",function(){commit({krname:this.value});});'+
+      'recordEl.addEventListener("change",function(){commit({record:this.value});});'+
+      'krsurEl.addEventListener("change",function(){commit({krsur:this.value});});'+
+      'ennameEl.addEventListener("change",function(){commit({enname:this.value});});'+
+      'ensurEl.addEventListener("change",function(){commit({ensur:this.value});});'+
       'ageEl.addEventListener("change",function(){commit({age:this.value});});'+
       'heightEl.addEventListener("change",function(){commit({height:this.value});});'+
       'bdayEl.addEventListener("change",function(){commit({bday:this.value});});'+
@@ -2248,6 +2386,39 @@ function buildSrcdoc(st){
       'deptEl.addEventListener("change",function(){commit({dept:this.value});});'+
       'roleEl.addEventListener("change",function(){commit({role:this.value});});'+
       'document.addEventListener("click",function(e){if(!pop.hidden&&!pop.contains(e.target)&&e.target!==btn)closePop();});'+
+    '})();<\/script>'+
+    // 세대 관리 ⚙메뉴 — 타임라인(genline)은 profile-generations.js가 세대 2개 이상일 때만 그리므로(단일 프로필=없음),
+    //   그 시점에 맞춰 DOMContentLoaded 뒤에 찾아 옆에 버튼을 붙인다(먼저 등록된 initGens의 리스너가 먼저 돈다).
+    '<script>(function(){function setup(){'+
+      'var line=document.querySelector(".genline");if(!line)return;'+
+      'var gear=document.createElement("button");gear.type="button";gear.className="gen-gear";gear.title="세대 관리";gear.textContent="\\u2699";'+
+      'line.parentNode.insertBefore(gear,line.nextSibling);'+
+      'var pop=document.createElement("div");pop.className="gen-pop";pop.hidden=true;'+
+      'pop.innerHTML=\'<button type="button" class="gp-main">\\u2605 대표로 지정</button>\'+'+
+        '\'<button type="button" class="gp-off">세대 구분 끄기 (단일 프로필로)</button>\'+'+
+        '\'<button type="button" class="gp-reset">초기화</button>\';'+
+      'document.body.appendChild(pop);'+
+      'var mainBtn=pop.querySelector(".gp-main"),resetBtn=pop.querySelector(".gp-reset"),armTimer=null;'+
+      'function activeGen(){var g=line.querySelector(".gen.on");return g?g.getAttribute("data-gen"):null;}'+
+      // "이 세대"라고만 하면 지금 몇 세대를 누르는지 헷갈린다는 피드백 — 타임라인의 실제 라벨(예: "1세대")을 그대로 씀.
+      'function activeGenLabel(){var g=line.querySelector(".gen.on");var l=g&&g.querySelector(".glab");return l?l.textContent:"이 세대";}'+
+      'function disarmReset(){resetBtn.textContent=activeGenLabel()+" 초기화";resetBtn.classList.remove("armed");clearTimeout(armTimer);armTimer=null;}'+
+      'function place(){if(pop.hidden)return;var r=gear.getBoundingClientRect();'+
+        'pop.style.top=Math.min(window.innerHeight-150,r.bottom+6)+"px";'+
+        'pop.style.left=Math.min(window.innerWidth-198,Math.max(6,r.right-190))+"px";}'+
+      'function openPop(){disarmReset();mainBtn.textContent="\\u2605 "+activeGenLabel()+"를 대표로 지정";pop.hidden=false;place();}'+
+      'function closePop(){pop.hidden=true;disarmReset();}'+
+      'gear.addEventListener("click",function(){if(pop.hidden)openPop();else closePop();});'+
+      '(function(){var ms=document.querySelector(".mscreen");if(ms)ms.addEventListener("scroll",place,{passive:true});})();'+
+      'pop.querySelector(".gp-main").addEventListener("click",function(){var id=activeGen();if(id){try{parent.pvGenSetMain(id);}catch(_){}}closePop();});'+
+      'pop.querySelector(".gp-off").addEventListener("click",function(){try{parent.pvGenToggle(false);}catch(_){}closePop();});'+
+      // 삭제와 같은 "두 번 누르기" 방식 — confirm()은 iframe 안에서 브라우저가 멈추는 문제가 있어 안 씀(옷장 삭제와 같은 이유).
+      'resetBtn.addEventListener("click",function(){'+
+        'if(!resetBtn.classList.contains("armed")){resetBtn.textContent="정말 "+activeGenLabel()+"를 지울까요? 다시 클릭";resetBtn.classList.add("armed");armTimer=setTimeout(disarmReset,3000);return;}'+
+        'var id=activeGen();try{parent.pvGenReset(id);}catch(_){}closePop();});'+
+      'document.addEventListener("click",function(e){if(!pop.hidden&&!pop.contains(e.target)&&e.target!==gear)closePop();});'+
+    '}'+
+    'if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",setup);else setup();'+
     '})();<\/script>'+
     editorScript+'</body></html>';
 }
@@ -2399,6 +2570,8 @@ function pvEdit(key, val){
   if(key==='eyebrow') setValNoRender('#b_eyebrow', v.trim());
   else if(key==='krname') setValNoRender('#b_krname', v.trim());
   else if(key==='quote') setValNoRender('#b_quote', v.trim());
+  else if(key==='idstatus') setValNoRender('#b_idstatus', v.trim());
+  else if(key==='idartist') setValNoRender('#b_idartist', v.trim());
   else if(key.indexOf('prose:')===0 || key.indexOf('ext:')===0){
     // 서술카드(prose)·확장카드(ext)는 같은 블록 구조라 처리 로직이 완전히 같음 — 제목/부제 선택자만 다름.
     var cardType = key.indexOf('ext:')===0 ? 'ext' : 'prose';
@@ -2480,6 +2653,14 @@ function pvWardImagePick(idx, file){
   fi.dispatchEvent(new Event('change', {bubbles:true}));   // 파일 선택 공용 change 리스너가 이름 반영·등록·render()까지 다 함
 }
 window.pvWardImagePick = pvWardImagePick;
+// 사원증 이미지 클릭 → 미리보기에서 고른 파일을 왼쪽 숨은 #b_idimg 칸의 진짜 파일입력에 그대로 넣음(옷장과 같은 패턴).
+function pvIdImagePick(file){
+  var wrap = $('#b_idimg') && $('#b_idimg').closest('.imgcell'); if(!wrap) return;
+  var fi = wrap.querySelector('input[type=file]'); if(!fi) return;
+  var dt=new DataTransfer(); dt.items.add(file); fi.files=dt.files;
+  fi.dispatchEvent(new Event('change', {bubbles:true}));
+}
+window.pvIdImagePick = pvIdImagePick;
 // 능력치 관리(미리보기 막대 클릭 → 이름·값·증가분 편집)에서 온 값 → 왼쪽 숨은 능력치 폼(#stats)에 반영.
 //   liveStats()가 이미 있는 '막대만 다시 그리는' 라이브패치라 재사용(iframe 전체를 다시 그릴 필요가 없음, 옷장과 다른 점).
 //   항목 추가·삭제는 미리보기에서 지원 안 함(정해진 2열×6행 격자를 넘기면 레이아웃이 깨짐) — 필요하면 코드에서 직접.
@@ -2496,6 +2677,12 @@ window.pvStatEdit = pvStatEdit;
 //   idmeta 문자열은 buildIdentity가 만들 때 그 자리에서 조립돼 iframe HTML에 그대로 박히므로(별도 그림함수 없음)
 //   막대·옷장 슬롯처럼 부분만 다시 그리는 라이브패치가 없다 — 값이 바뀌면 항상 통째로 다시 그림(render).
 function pvIdentityEdit(patch){
+  if(patch.eyebrow!=null) setVal('#b_eyebrow', patch.eyebrow);
+  if(patch.krname!=null) setVal('#b_krname', patch.krname);
+  if(patch.record!=null) setVal('#m_record', patch.record);
+  if(patch.krsur!=null) setVal('#b_krsur', patch.krsur);
+  if(patch.enname!=null) setVal('#b_enname', patch.enname);
+  if(patch.ensur!=null) setVal('#b_ensur', patch.ensur);
   if(patch.age!=null) setVal('#bi_age', patch.age);
   if(patch.height!=null) setVal('#bi_height', patch.height);
   if(patch.bday!=null) setVal('#bi_bday', patch.bday);
@@ -2587,7 +2774,7 @@ function seed(){   // 새 캐릭터 기본: 대표(3세대)에만 씨앗(능력�
   main.wardrobe = [{cap:'후드',img:'',on:true},{cap:'정장',img:'',on:false}];
   main.proses = [{title:'Appearance',sub:'외관',body:''},{title:'Personality',sub:'성격',body:''},{title:'Abilities',sub:'특성',body:''}];
   MAIN_GEN='3'; CUR_GEN='3'; GEN_ON=false;   // 새 캐릭터 기본 = 단일(세대 없음). 필요하면 '세대 구분 사용'으로 켬.
-  GEN_FORMS = { '1':blankGen(), '2':blankGen(), '3':main };
+  GEN_FORMS = { '1':blankGen(false), '2':blankGen(false), '3':main };   // 1·2세대는 사원증·능력치 기본 꺼짐
   writeGen(GEN_FORMS['3']);
   refreshGenBar();
 }
@@ -2681,20 +2868,33 @@ $('#genMainPick').addEventListener('change', function(e){
   document.addEventListener('keydown', function(e){ if(e.key==='Escape' && !ov.hidden) closeFxGallery(); });
 })();
 // 세대 구분(타임라인) on/off — 끄면 대표 세대 하나만 편집(단일). 켜면 1·2·3 탭이 나타남.
-$('#genOn').addEventListener('change', function(){
-  GEN_ON=this.checked;
+//   미리보기 안 타임라인 옆 ⚙메뉴("세대 구분 끄기")·상단 '세대 구분 사용' 버튼(genPanelToggle)도
+//   이 함수 하나만 부른다(단일 출처) — 왼쪽 체크박스로 켜든 미리보기에서 켜든 결과가 항상 같다.
+function setGenOn(on){
+  GEN_ON=on;
   GEN_FORMS[CUR_GEN]=readGen();                 // 지금 편집분 저장
   if(!GEN_ON && CUR_GEN!==MAIN_GEN){ CUR_GEN=MAIN_GEN; writeGen(GEN_FORMS[MAIN_GEN]||(GEN_FORMS[MAIN_GEN]=blankGen())); }  // 단일=대표 세대 편집
   refreshGenBar(); syncColorPickers(); pvLastHTML=null; render();
-});
+}
+$('#genOn').addEventListener('change', function(){ setGenOn(this.checked); });
+$('#genPanelToggle').onclick = function(){ setGenOn(true); };
+window.pvGenToggle = setGenOn;
 // 이 세대(단일이면 이 프로필) 작성 내용만 비우기 — 다른 세대·폴더이름·기록번호는 그대로.
+//   id를 주면 그 세대로 먼저 옮겨간 뒤 비운다(미리보기 ⚙메뉴가 지금 보이는 세대 id를 넘겨줌).
+function doGenReset(id){
+  if(id && id!==CUR_GEN) selectGen(id);
+  GEN_FORMS[CUR_GEN]=blankGen(CUR_GEN===MAIN_GEN);
+  writeGen(GEN_FORMS[CUR_GEN]);
+  refreshGenBar(); syncColorPickers(); pvLastHTML=null; render();
+}
 $('#genReset').onclick = function(){
   var m=genMeta(CUR_GEN), what = GEN_ON ? (m.label+' '+m.sub+' 세대') : '프로필';
   if(!confirm(what+' 작성 내용을 모두 지울까요?\n(다른 세대·폴더 이름·기록번호는 그대로 둡니다)')) return;
-  GEN_FORMS[CUR_GEN]=blankGen();
-  writeGen(GEN_FORMS[CUR_GEN]);
-  refreshGenBar(); syncColorPickers(); pvLastHTML=null; render();
+  doGenReset(CUR_GEN);
 };
+// 미리보기 ⚙메뉴는 confirm() 대신 팝오버 안에서 "두 번 누르기"로 이미 확인받은 뒤 이 함수를 부른다
+//   (iframe 안에서 confirm()을 쓰면 자동화 테스트 중 브라우저가 멈추는 문제가 실제로 있었음 — 옷장 삭제와 같은 이유).
+window.pvGenReset = doGenReset;
 $('#addStat').onclick = function(){ $('#stats').appendChild(statRow('', '', '')); render(); };
 $('#addWard').onclick = function(){ $('#ward').appendChild(wardRow('', '', false)); render(); };
 // 무대 배치 편집 토글 — 켜면 미리보기에 편집기(edit-core.js) 표시, 끄면 깨끗한 미리보기. 새로 그려야 반영.
@@ -2782,10 +2982,36 @@ $('#addExt').onclick   = function(){ $('#exts').appendChild(extRow({})); render(
   document.addEventListener('keydown', function(e){ if(e.key==='Escape' && !pop.hidden) close(); });
 })();
 $('#repaint').onclick = function(){ pvLastHTML = null; render(); };   // 강제 새로고침(내용 같아도 다시 그림)
-$('#toggleForm').onclick = function(){ var c=document.querySelector('.wrap').classList.toggle('collapsed'); this.textContent = c?'▶ 편집':'◀ 패널'; };
-$('#fxPanelToggle').onclick = function(){ var p=$('#fxPanel'); p.hidden=!p.hidden; };
+// 효과·배치·목록 이미지는 트리거 버튼이 무대 아래(미리보기 iframe 안)로 옮겨가서, iframe이 parent.pvXxx()로
+//   부르는 함수로 노출한다(세대 관리 ⚙메뉴 등과 같은 방식) — 패널 자체는 그대로 이 페이지(부모)에 있음.
+// 세 패널(효과·목록 이미지·도구)이 전부 같은 자리(오른쪽 서랍)에 뜨므로, 하나를 열 때 나머지는 닫아
+//   겹쳐 보이지 않게 한다(안 그러면 뒤에 열려있던 패널이 숨은 채로 남아있다가 다른 패널을 닫을 때 불쑥 드러남).
+function toggleSidePanel(id){
+  var p=$('#'+id), willOpen=p.hidden;
+  ['fxPanel','lineupPanel','toolsPanel'].forEach(function(pid){ var el=$('#'+pid); if(el) el.hidden=true; });
+  p.hidden=!willOpen;
+}
+window.pvFxPanelToggle = function(){ toggleSidePanel('fxPanel'); };
+window.pvStagePanelToggle = function(){ var cb=$('#stageEdit'); cb.checked=!cb.checked; cb.dispatchEvent(new Event('change')); };
+window.pvLineupPanelToggle = function(){ toggleSidePanel('lineupPanel'); };
+$('#toolsPanelToggle').onclick = function(){ toggleSidePanel('toolsPanel'); };
+$('#prevBarToggle').onclick = function(){
+  var c=$('#prevBar').classList.toggle('collapsed');
+  this.textContent = c?'▾':'▴'; this.title = c?'이 도구줄 펼치기':'이 도구줄 접기/펼치기';
+};
+// 서랍 안에서도 바로 닫을 수 있게 맨 위에 ✕ 전용 줄을 하나씩 붙임(셋 다 같은 모양이라 마크업 3번 반복 안 하고 여기서 한 번에).
+//   내용 위에 겹쳐 띄우면 첫 줄 글이 잘려 보이므로, 콘텐츠 앞에 "줄"로 넣는다(겹침 아님, 새 줄).
+['fxPanel','lineupPanel','toolsPanel'].forEach(function(id){
+  var p=$('#'+id); if(!p) return;
+  var head=document.createElement('div'); head.className='side-panel-head';
+  var x=document.createElement('button'); x.type='button'; x.className='side-panel-close'; x.title='닫기'; x.textContent='✕';
+  x.onclick=function(){ p.hidden=true; };
+  head.appendChild(x);
+  p.insertBefore(head, p.firstChild);
+});
 // 능력치 카드 자체를 껐다 켬(카드 삭제/추가) — 켜져 있으면 위 '＋텍스트'류 버튼들처럼 그림이 바뀌는 구조변경이라 render()로 다시 그림.
 $('#statPanelToggle').onclick = function(){ var cb=$('#b_stat_on'); cb.checked=!cb.checked; render(); };
+$('#idPanelToggle').onclick = function(){ var cb=$('#b_idcard_on'); cb.checked=!cb.checked; render(); };
 $('#reset').onclick = function(){ if(confirm('입력한 내용을 모두 지울까요? (빈 상태로 돌아갑니다)')){ try{ localStorage.removeItem('tsPB'); }catch(e){} location.reload(); } };
 $('#gen').onclick = showOut;
 $('#loadBtn').onclick = function(){ loadFromText($('#loadSrc').value); };

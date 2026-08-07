@@ -30,7 +30,11 @@
   --accent-line:color-mix(in srgb,var(--accent) 50%,transparent);
   --hud:var(--accent);
   --hud-faint:color-mix(in srgb,var(--accent) 16%,transparent);
-  --topbar-h:89px;   /* .topbar 실제 높이(패딩+내용 두 줄) — .topbar min-height 와 .left-fixed sticky top 계산이 이 값 하나를 같이 봄 */
+  /* .topbar 실제 높이 — .topbar min-height 와 .left-fixed sticky top 계산이 이 값 하나를 같이 봄.
+     여기 적힌 93px은 JS(profile.js)가 못 돌 때만 쓰는 임시값 — 실제 값은 profile.js가 페이지를 열 때마다
+     .topbar를 직접 재서 이 변수를 덮어쓴다(캐릭터마다 이름·소속 길이가 달라 줄바꿈 높이가 다르고,
+     웹폰트가 늦게 도착하면 그 사이 높이도 바뀌므로 숫자를 손으로 맞혀 박아두면 다시 어긋난다). */
+  --topbar-h:93px;
 }
 
 /* 스크롤되는 화면 뷰포트 (기기 스크린 내부) */
@@ -50,6 +54,12 @@ body{font-family:'Chakra Petch','Pretendard','Gothic A1',sans-serif}
    → 이 줄 안 내용(제목 줄바꿈 등)이 늘어나 더 높아지면 --topbar-h 숫자만 바꾸면 전체가 다시 맞음.
    뒤에 배경색을 깔아야 스크롤되는 본문이 아래로 비쳐 보이지 않음. */
 .topbar{position:sticky;top:var(--osbar-h);z-index:20;width:var(--frame-w);margin:0 auto;min-height:var(--topbar-h);display:flex;align-items:center;gap:20px;padding:20px var(--frame-pad) 16px;background:var(--bg);box-sizing:border-box}
+/* 하단 마감 푸터(.foot, common.css 공용 스타일) — 다른 화면(홈·목록·갤러리)은 .screen(고정 높이 프레임)+
+   .foot(그 안 마지막 flex 칸)이라 항상 보이는데, 이 페이지는 .mscreen 전체가 스크롤되는 구조라 같은 방식이
+   안 통한다 — 대신 position:sticky+bottom:0로 "스크롤해도 화면 아래에 붙박이"를 만든다(위 .topbar가 top:0로
+   붙박이인 것과 대칭). width·padding도 .topbar/.sheet와 맞춰야 글자가 화면 테두리에 안 붙어 보인다(공용
+   .foot엔 그 폭 제한이 없어서 이 페이지에서만 따로 준다). */
+.mscreen .foot{position:sticky;bottom:0;z-index:20;width:var(--frame-w);margin:0 auto;padding:0 var(--frame-pad);background:var(--bg)}
 .brand{font-family:'Orbitron';font-weight:900;letter-spacing:1px;font-size:var(--fs-lg);color:var(--ink);display:flex;flex-direction:column;gap:5px}
 .brand .bt{display:flex;align-items:center;gap:10px}
 .brand span{color:var(--hud)}
@@ -77,15 +87,16 @@ body{font-family:'Chakra Petch','Pretendard','Gothic A1',sans-serif}
 .genseg.fill{background:var(--accent)}
 
 /* ===== 본문 그리드 : 왼쪽(비주얼) + 오른쪽(정보) ===== */
-/* --F = 캐릭터 프레임 폭 = 460 고정. 창 크기와 무관하게 안 줄어듦(부족하면 스크롤).
-   카드열 = 프레임×1.3 (고정 비율). 전체는 가운데 정렬(남는 폭은 좌우 여백). */
-.sheet{position:relative;z-index:5;--F:460px;
+/* --F = 카드열 폭 계산용 프레임 값 = 460 고정(카드는 화면이 낮아져도 안 좁아져야 하므로 화면 크기와 무관).
+   --stage-f = 무대(.stage) 자기 폭만 따로 — 세로 790px 정도를 목표로 잡은 고정값(416px → ×1.9=790.4px).
+   화면마다 실시간 재계산하지 않는 순수 고정값 — 화면이 부족하면 .stage-col 자체 스크롤(profile.js)로 보완한다. */
+.sheet{position:relative;z-index:5;--F:460px;--stage-f:416px;
   width:100%;margin:0 auto;padding:4px var(--frame-pad) 40px;
   display:grid;grid-template-columns:auto minmax(0, calc(var(--F) * 1.3));gap:24px;justify-content:center;align-items:start}
 /* 스티키 top = topbar(뒤로가기·세대 타임라인) 바로 아래로 = 스크롤해도 원래 간격 유지한 채 topbar를 따라 고정.
-   --osbar-h(common.css) + --topbar-h(위 .topbar) 를 그대로 더함 → 숫자를 여기 또 안 적어도 항상 topbar 바로 밑에 맞음.
-   맨 끝의 + 4px = 바로 위 .sheet 의 padding-top(4px). 스크롤 전 원래 자리와 딱 맞춰야
-   맨 위에서 스크롤을 앞뒤로 오갈 때 그 차이만큼(예: 4px) 옷장·무대가 뚝뚝 튀는(들썩거리는) 게 없어짐 —
+   --osbar-h(common.css) + --topbar-h(위 .topbar, profile.js가 실측) 를 그대로 더함 → 숫자를 여기 또 안 적어도 항상 topbar 바로 밑에 맞음.
+   맨 끝의 + 4px = 바로 위 .sheet 의 padding-top(4px, 스크롤 전 옷장·무대의 원래 자리). 이 계산이 실제 여백과
+   어긋나면 맨 위에서 스크롤을 살짝만 내려도 그 차이만큼 여백이 뚝 줄어드는(들썩거리는) 게 보인다 —
    .sheet padding-top 값이 바뀌면 이 +4px 도 같이 맞출 것. */
 .left-fixed{position:sticky;top:calc(var(--osbar-h) + var(--topbar-h) + 4px);display:grid;grid-template-columns:88px auto;gap:20px;align-items:start}
   /* ★overflow:hidden을 여기 두면 안 됨 — .stage-fold-tab이 이 박스 오른쪽 경계에
@@ -111,7 +122,10 @@ body{font-family:'Chakra Petch','Pretendard','Gothic A1',sans-serif}
 .stage-fold-tab{position:absolute;top:120px;right:-14px;z-index:6;width:28px;height:28px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1;padding:0;
   background:var(--bg);border:1px solid var(--accent-line);color:var(--accent-deep);
-  cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15);transition:.15s}
+  cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15);transition:border-color .15s,color .15s,background .15s}
+  /* transition을 border-color·color·background로만 좁힘(전엔 all이라 top·right까지 애니됐음) — profile.js가
+     화면 크기에 맞춰 top·right를 실측해 즉시 고쳐주는데, all이면 그 값도 0.15초 동안 스르륵 움직이다 보니
+     방금 잰 값과 실제 화면 위치가 그 사이엔 안 맞아 헷갈렸다(호버 색 전환만 부드러우면 충분). */
 .stage-fold-tab:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-tint)}
 
 /* ---- 옷장(비주얼 슬롯: 메인 / SD 치비 / 의상 …) ---- */
@@ -132,9 +146,9 @@ body{font-family:'Chakra Petch','Pretendard','Gothic A1',sans-serif}
 .slot.on .cap{color:var(--accent-deep)}
 
 /* ---- 무대(대표 일러 + 무대 효과 슬롯) ---- */
-/* 프레임 비율 고정(세로형). 크기는 '높이'가 결정 → 폭만 줄여도 프레임은 안 줄고 세로가 부족할 때만 줄어듦.
-   width = min(최대폭, 가용높이÷비율). container-type=프레임 안 글자를 폭에 비례(cqw)시키기 위함. */
-.stage{position:relative;container-type:inline-size;aspect-ratio:1/1.9;width:var(--F);margin-inline:auto;
+/* 프레임 비율 고정(세로형), 폭은 --stage-f(위 .sheet, 고정값). container-type=프레임 안 글자를 폭에
+   비례(cqw)시키기 위함. */
+.stage{position:relative;container-type:inline-size;aspect-ratio:1/1.9;width:var(--stage-f);margin-inline:auto;
   border-radius:6px;overflow:hidden;
   background:radial-gradient(90% 70% at 50% 18%,var(--elev),transparent 62%),linear-gradient(180deg,var(--elev2) 0%,var(--bg-tint) 100%);
   border:1px solid var(--line-soft);box-shadow:0 10px 40px -20px rgba(40,60,90,.35);
@@ -174,7 +188,14 @@ body{font-family:'Chakra Petch','Pretendard','Gothic A1',sans-serif}
 /* 플레이스홀더 세대(원형/더미 등 일러 없는 세대) = 무대 효과 캔버스 숨김 */
 .stage.fx-off canvas{display:none}
 
-.stage-col{position:relative}
+/* 무대(.stage-col)가 오른쪽 카드보다 길어지면(프로필 툴은 무대 아래 도구 버튼까지 있어 특히 그럴 수 있음)
+   자기 스크롤을 갖는다 — 안 그러면 오른쪽 카드 스크롤을 끝까지 내려야 무대 아래가 보인다.
+   .left-fixed 통째로 스크롤을 주면 그 경계에 걸쳐있는 접기 탭(.stage-fold-tab)이 잘려 보여서(과거 버그),
+   .stage-col만 감싼다 — 탭은 이 박스 밖(.left-fixed 기준)이라 안 잘림. 실제 높이(max-height)는
+   profile.js가 화면 크기에 맞춰 잰다(고정값이면 화면마다 어긋남) — 여기선 넘칠 때 스크롤만 정의.
+   scrollbar-gutter:stable — 스크롤바가 생기고 없어질 때 그만큼 내용 폭이 오락가락 움찔거리는 걸 막음
+   (스크롤 필요 없을 때도 스크롤바 자리를 미리 비워둬서 필요해질 때 폭이 안 변함). */
+.stage-col{position:relative;overflow-y:auto;scrollbar-gutter:stable}
 
 /* 1·2세대 무대 플레이스홀더 (원형/더미 = 일러 없음) */
 .stage-ph{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
