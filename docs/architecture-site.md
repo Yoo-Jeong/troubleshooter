@@ -95,21 +95,24 @@ troubleshooter/
 
 | 파일 | 버전 |
 |---|---|
-| `common.css` | v2 |
-| `profile.css` | v47 |
+| `common.css` | v3 |
+| `profile.css` | v55 |
 | `transitions.css` | v1 |
-| `common.js` | v7 |
-| `profile.js` | v33 |
-| `profile-generations.js` | v1 |
+| `common.js` | v8 |
+| `profile.js` | v39 |
+| `profile-generations.js` | v2 |
 | `profile-ui.js` | v1 |
-| `stage-fx.js` | v130 |
+| `stage-fx.js` | v131 |
 | `transitions.js` | v3 |
 | `motion.js` | v3 |
 | `gallery-data.js` | v1 |
+
+프로필 작성 툴 전용 파일(`tools/profile-builder.css`·`profile-builder-*.js` 6개)은 `profile-builder.html` 한 곳에서만 참조되는 별도 체계입니다. 자세한 표는 [`architecture-profile-builder.md`](architecture-profile-builder.md) 참고.
 
 - **개발 중** → 번호 안 올려도 `jekyll serve` 재빌드에 브라우저에서 `Ctrl`+`Shift`+`R`이면 충분합니다.
 - **배포 전** → 고친 파일의 `?v=`를 올려주세요. 참조하는 곳이 여러 군데일 수 있습니다.  
   예를 들어 `profile.css`, `stage-fx.js`는 실제 캐릭터 레이아웃(`_layouts/character.html`) 말고도 프로필 작성 툴의 미리보기(`buildSrcdoc()` 등)에서도 따로 불러옵니다.  
   그곳도 같이 올려야 툴 미리보기에서도 최신 버전이 반영됩니다.
-- `tools/bump-cache.ps1`(또는 더블클릭용 `.bat`)을 실행하면 모든 `.html`의 모든 `?v=` 번호를 한 번에 같은 새 번호로 맞춰줍니다.  
+- `tools/bump-cache.ps1`(또는 더블클릭용 `.bat`)을 실행하면 `.html`과 `.js` 안의 모든 `?v=` 번호를 한 번에 같은 새 번호로 맞춰줍니다.  
+  (`.js`도 보는 이유: `profile.js`가 `?edit` 모드에서 `edit-core.js`/`editor.js`를 문자열로 불러오는 곳, `profile-builder-preview.js`가 미리보기 iframe에 실제 사이트 파일들을 문자열로 불러오는 곳처럼, `?v=` 참조가 `.html`이 아니라 `.js` 안에 박혀있는 경우가 있어서입니다.)  
   파일마다 각자 다른 번호를 매기고 싶다면 지금처럼 쓰지 말고 해당 줄만 직접 올리세요.

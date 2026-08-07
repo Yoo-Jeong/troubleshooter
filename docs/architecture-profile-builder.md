@@ -92,6 +92,9 @@ profile-builder-core.js → fx-gen.js → body.js → preview.js → edit.js →
 그래서 `assets/js/profile*.js`처럼 레이아웃 + srcdoc 두 곳을 다 bump할 필요 없이, 이 한 곳만 관리하면 됩니다.  
 분할 시점(2026-08-08)엔 전부 `v=1`이었고, 그 뒤 수정된 파일만 개별적으로 올라갑니다(예: `profile-builder-preview.js`는 하단 푸터 겹침 버그 수정으로 `v=2`).
 
+★`tools/bump-cache.ps1`을 쓸 때 주의: 이 스크립트가 찾는 `?v=` 참조 중 상당수가 `.html`이 아니라 `profile-builder-preview.js`(iframe 미리보기가 실제 사이트 파일들을 문자열로 불러오는 곳) 안에 있습니다.  
+파일 분할 직후 스크립트가 `.html`만 훑도록 돼있어 이 부분을 놓치는 문제가 실제로 있었고(같은 날 고침), 지금은 `.js`도 같이 훑도록 고쳐져 있습니다. 이 파일을 또 나누게 되면 `?v=` 문자열이 어느 파일로 옮겨가는지 항상 확인하세요.
+
 ---
 
 ## 검증 방식

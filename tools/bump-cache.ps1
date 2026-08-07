@@ -19,9 +19,15 @@ try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 # 프로젝트 루트 = 이 스크립트가 든 tools/ 폴더의 부모
 $root = Split-Path -Parent $PSScriptRoot
 
-# _local, .git 을 뺀 모든 .html 수집
-$files = Get-ChildItem -Path $root -Recurse -Filter *.html -File |
-  Where-Object { $_.FullName -notmatch '\\(_local|\.git)\\' }
+# _local, .git, _site(빌드 결과물, 다음 빌드에 어차피 덮어써짐)를 뺀 모든 .html + .js 수집.
+#   .js 까지 뒤지는 이유: 프로필 작성 툴의 미리보기(iframe)를 만드는 코드가
+#   profile-builder-preview.js 안에서 문자열로 "profile.js?v=39" 같은 실제 사이트 참조를
+#   그대로 흉내내고 있어서(단일 출처인 실제 레이아웃과 똑같이 맞춰줘야 미리보기가 정확함),
+#   .html만 보면 이 파일 안의 ?v=는 못 찾고 지나친다(2026-08-08, profile-builder.html을
+#   여러 js 파일로 쪼갠 뒤 실제로 겪은 문제 — 실제 페이지와 툴 미리보기가 서로 다른 버전을
+#   불러오게 됨, docs/architecture-profile-builder.md 참고).
+$files = Get-ChildItem -Path $root -Recurse -Include *.html,*.js -File |
+  Where-Object { $_.FullName -notmatch '\\(_local|\.git|_site)\\' }
 
 # 1) 현재 가장 큰 버전 번호 찾기
 $cur = 0
