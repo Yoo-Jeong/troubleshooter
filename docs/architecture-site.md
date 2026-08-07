@@ -43,7 +43,8 @@ troubleshooter/
 │   │   └── index_orbit.html   #     Orbit 모드(3D 궤도)  ← 프리뷰 EXTRA
 │   │
 │   ├── tools/
-│   │   └── profile-builder.html #  ★비개발자용 캐릭터 프로필 작성 폼(코드 몰라도 사용 가능)
+│   │   ├── profile-builder.html #  ★비개발자용 캐릭터 프로필 작성 폼(코드 몰라도 사용 가능)
+│   │   └── profile-builder.css, profile-builder-*.js(6개)  # 파일 구성은 architecture-profile-builder.md 참고
 │   │
 │   └── assets/                #   공용 자산(CSS, JS, 이미지)
 │       ├── css/  common.css, profile.css, transitions.css

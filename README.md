@@ -104,7 +104,7 @@ troubleshooter/
 │   ├── characters/<이름>/  # 캐릭터별 프로필(front matter + 이미지)
 │   ├── world/, gallery/, logs/   # 그 외 화면
 │   ├── modes/               # 홈 화면 조각들
-│   ├── tools/profile-builder.html  # 프로필 작성 툴
+│   ├── tools/profile-builder.html  # 프로필 작성 툴(파일 구성은 docs/architecture-profile-builder.md)
 │   └── assets/               # 공용 CSS, JS, 이미지
 ├── .github/workflows/pages.yml   # GitHub Actions 배포
 ├── _config.yml        # Jekyll 설정
@@ -125,5 +125,6 @@ troubleshooter/
 
 - [`docs/guide-workflow.md`](docs/guide-workflow.md): 다른 컴퓨터에서 이어가기, 브랜치 운영, 배포(GitHub Pages)
 - [`docs/architecture-character-pages.md`](docs/architecture-character-pages.md): 캐릭터 페이지 구조(레이아웃과 데이터), profile.js 3파일 구조, 무대 효과 엔진(stage-fx.js)
+- [`docs/architecture-profile-builder.md`](docs/architecture-profile-builder.md): 프로필 작성 툴의 8개 파일 구성과 로드 순서
 - [`docs/architecture-site.md`](docs/architecture-site.md): 전체 폴더 구조, 디자인과 색 시스템, 캐시 버전(`?v=`) 관리
 - [`docs/guide-tools.md`](docs/guide-tools.md): `?edit` 조정 도구, 라인업 이미지 스크립트, 갤러리 데이터 모델
