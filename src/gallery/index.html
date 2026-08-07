@@ -59,8 +59,13 @@
     background:rgba(0,0,0,.86);padding:60px 20px;opacity:0;pointer-events:none;transition:opacity .18s ease}
   .lbx.on{opacity:1;pointer-events:auto}
   .lbx-stage{position:relative;display:flex;align-items:center;justify-content:center;max-width:min(1100px,92vw);max-height:66vh}
-  .lbx-stage img{max-width:100%;max-height:66vh;border-radius:6px;box-shadow:0 20px 60px rgba(0,0,0,.5);display:block}
-  .lbx-meta{margin-top:20px;max-width:min(680px,92vw);text-align:center}
+  .lbx-stage img{max-width:100%;max-height:66vh;border-radius:6px;box-shadow:0 20px 60px rgba(0,0,0,.5);display:block;cursor:zoom-in}
+  .lbx-meta{margin-top:20px;max-width:min(680px,92vw);text-align:center;transition:opacity .15s ease}
+  /* 그림을 한 번 더 누르면(확대) 정보 칸을 접어 그 자리까지 그림에 내주고 화면 거의 꽉 차게 키운다 —
+     다시 누르면 .zoomed 를 떼고 원래 크기·정보 칸으로 돌아간다(같은 클릭이 토글). */
+  .lbx.zoomed .lbx-stage{max-width:94vw;max-height:88vh}
+  .lbx.zoomed .lbx-stage img{max-height:88vh;cursor:zoom-out}
+  .lbx.zoomed .lbx-meta{display:none}
   /* Orbitron은 영문 전용 폰트라 한글이 섞이면 폴백 폰트로 따로 렌더돼 폰트가 뒤섞여 보임
      — 그리드 카드 제목(.g-t)과 같은 한글 지원 폰트(Chakra Petch)로 통일 */
   .lbx-title{font-family:'Chakra Petch';font-weight:600;font-size:var(--fs-xl);letter-spacing:.3px;color:#eaeff4}
@@ -79,10 +84,14 @@
   .lbx-x:hover{background:#fff;color:#111}
   .lbx-nav{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border:1px solid rgba(255,255,255,.25);
     border-radius:50%;background:rgba(0,0,0,.3);color:#eaeff4;font-size:var(--fs-lg);cursor:pointer;transition:.2s;
-    display:flex;align-items:center;justify-content:center}
+    display:flex;align-items:center;justify-content:center;padding:0;overflow:visible}
   .lbx-nav:hover{background:#fff;color:#111}
-  .lbx-nav.prev{left:8px}
-  .lbx-nav.next{right:8px}
+  /* ★클래스 이름 주의: common.css에 전혀 다른 용도의 전역 .prev 클래스(미리보기 패널용)가 있어서,
+     예전에 이 버튼이 class="lbx-nav prev"만 썼을 때 그 스타일(overflow:auto·큰 padding)이 함께 섞여
+     들어와 왼쪽 버튼만 타원+스크롤바로 보이는 버그가 있었다(오른쪽은 .next라는 전역 클래스가 없어 멀쩡했음).
+     같은 사고가 다시 나지 않게 이 페이지만의 이름(.lbx-prev/.lbx-next)으로 완전히 구분해서 쓴다. */
+  .lbx-nav.lbx-prev{left:8px}
+  .lbx-nav.lbx-next{right:8px}
   @media(max-width:700px){.lbx-nav{display:none}}   /* 좁은 화면은 화살표 버튼 대신 좌우 스와이프로 넘김(터치 표준) */
   /* 지금 몇 번째 그림인지(그림이 많아지면 유용) — 그림이 1장뿐이면 JS가 아예 안 채움 */
   .lbx-count{position:absolute;top:16px;left:16px;font-family:'Share Tech Mono';font-size:var(--fs-xs);
@@ -123,8 +132,8 @@
   <div class="lbx" id="lbx">
     <button class="lbx-x" id="lbxClose" aria-label="닫기">✕</button>
     <div class="lbx-count mono" id="lbxCount"></div>
-    <button class="lbx-nav prev" id="lbxPrev" aria-label="이전 그림">‹</button>
-    <button class="lbx-nav next" id="lbxNext" aria-label="다음 그림">›</button>
+    <button class="lbx-nav lbx-prev" id="lbxPrev" aria-label="이전 그림">‹</button>
+    <button class="lbx-nav lbx-next" id="lbxNext" aria-label="다음 그림">›</button>
     <div class="lbx-stage"><img id="lbxImg" src="" alt=""></div>
     <div class="lbx-meta">
       <div class="lbx-title" id="lbxTitle"></div>
@@ -176,6 +185,7 @@
   function openLbx(i){
     var it = ITEMS[i]; if(!it) return;
     curI = i;
+    lbx.classList.remove('zoomed');   // 다른 그림으로 넘어가면(또는 새로 열면) 항상 기본 크기로 시작
     lbxImg.src = '../assets/img/gallery/'+it.file; lbxImg.alt = it.title;
     lbxTitle.textContent = it.title;
     lbxSub.textContent = [it.date, it.artist ? '@'+it.artist : ''].filter(Boolean).join('  ·  ');
@@ -202,6 +212,7 @@
   document.getElementById('lbxClose').addEventListener('click', closeLbx);
   document.getElementById('lbxPrev').addEventListener('click', function(){ stepLbx(-1); });
   document.getElementById('lbxNext').addEventListener('click', function(){ stepLbx(1); });
+  lbxImg.addEventListener('click', function(){ lbx.classList.toggle('zoomed'); });   // 그림 클릭 = 확대/축소 토글
   lbx.addEventListener('click', function(e){ if(e.target === lbx) closeLbx(); });   // 그림·정보 바깥(어두운 배경) 클릭 시 닫기
   document.addEventListener('keydown', function(e){
     if(!lbx.classList.contains('on')) return;
