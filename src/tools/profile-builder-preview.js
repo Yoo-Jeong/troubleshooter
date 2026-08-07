@@ -184,8 +184,8 @@ function buildSrcdoc(st){
     '<script>window.CHAR_META='+CH(curMeta)+';window.CHAR_STATS='+CH(curStats)+';'+
       'window.CHAR_WARDROBE='+CH(ward)+';window.CHAR_GENERATIONS='+CH(gens)+';<\/script>'+
     '<script src="../../assets/js/common.js?v=8"><\/script>'+
-    '<script src="../../assets/js/profile.js?v=38"><\/script>'+
-    '<script src="../../assets/js/profile-generations.js?v=1"><\/script>'+
+    '<script src="../../assets/js/profile.js?v=39"><\/script>'+
+    '<script src="../../assets/js/profile-generations.js?v=2"><\/script>'+
     '<script src="../../assets/js/profile-ui.js?v=1"><\/script>'+
     '<script src="../../assets/js/stage-fx.js?v=131"><\/script>'+
     // 서술/확장 카드 안 코드블럭 문법강조(실제 페이지 _layouts/character.html과 같은 CDN 라이브러리 — 모양 바꾸면 거기도 같이).
@@ -565,6 +565,7 @@ function syncColorPickers(){   // 각 커스텀 색 스와치 배경을 현재 �
 var PV = document.querySelectorAll('.pv-frame');
 var pvFront = 0;          // 지금 보이는 iframe 번호(0 또는 1)
 var pvLastHTML = null;    // 직전에 그린 HTML. 같으면 다시 안 그림(불필요한 깜빡임 차단)
+var pvResetScroll = false;   // 세대 전환 등 "새 화면"으로 넘어갈 때만 true(selectGen이 켬) — 켜져 있으면 이번 렌더는 스크롤을 이어받지 않고 맨 위로
 function pvScroll(fr){    // 미리보기 스크롤 위치 읽기(.mscreen 이 스크롤 영역)
   try{ var m = fr.contentDocument && fr.contentDocument.querySelector('.mscreen'); return m ? m.scrollTop : 0; }
   catch(e){ return 0; }
@@ -574,7 +575,8 @@ function paintPreview(st){
   if(html === pvLastHTML) return;    // 바뀐 게 없으면 손대지 않는다(핵심 깜빡임 차단)
   pvLastHTML = html;
   var front = PV[pvFront], back = PV[pvFront ^ 1];
-  var keepScroll = pvScroll(front);  // 보던 위치 유지(위로 튀지 않게)
+  var keepScroll = pvResetScroll ? 0 : pvScroll(front);  // 평소엔 보던 위치 유지(위로 튀지 않게), 세대 전환 직후만 맨 위로
+  pvResetScroll = false;
   back.onload = function(){
     try{
       var doc = back.contentDocument;

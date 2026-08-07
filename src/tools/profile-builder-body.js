@@ -5,6 +5,8 @@
    구조화 폼 → HTML 생성(buildIdentity/buildBody, 마크다운라이트 proseToHtml) ·
    HTML → 구조화 폼 역파서(htmlToProse 계열/parseBody, 불러오기용) ·
    상태 → front matter YAML(flowMeta~buildFM/buildFile).
+   그 외 ROLES/DEPTS(역할·부서 드롭다운 데이터)와 idmeta 조립·역분해
+   (assembleIdmeta/parseIdmeta) 도 이 파일에 있음.
    ============================================================ */
 /* ---------- 본문: 구조화 폼 → HTML 생성 ---------- */
 // 텍스트칸에서 선택한 글자만 감싸서 서식 표시(**굵게**·_기울임_). 선택 없으면 무시.

@@ -68,13 +68,18 @@
   function syncStageColHeight(){
     var sc = document.querySelector('.stage-col'), ms = document.querySelector('.mscreen'), lf = document.querySelector('.left-fixed');
     var tab = document.querySelector('.stage-fold-tab'), stage = document.querySelector('.stage');
+    var foot = document.querySelector('.mscreen .foot');   // 하단 마감 푸터(sticky bottom) — 화면이 짧으면 이 안에 겹쳐 가려짐
     if(!sc || !ms || !lf) return;
     if(getComputedStyle(lf).position !== 'sticky'){   // 좁은 화면: 전부 제한 없이 자연스럽게(모바일은 세로로 쌓여 문제 자체가 없음)
       sc.style.maxHeight = ''; if(tab) tab.style.right = '';
       return;
     }
     var stickyTop = parseFloat(getComputedStyle(lf).top) || 0;
-    var availH = ms.clientHeight - stickyTop - 14;
+    // 푸터는 .mscreen 하단에 sticky로 항상 붙어있어서(불투명 배경) .stage-col 내용이 그 자리까지 내려오면
+    //   가려진다 — 프로필 툴은 무대 아래 도구 버튼(효과/배치/목록 이미지)까지 있어 특히 화면이 짧을 때 겪는 문제.
+    //   푸터 실제 높이만큼 더 빼서, 스크롤을 끝까지 내려도 푸터 위에서 멈추게 한다.
+    var footH = foot ? foot.getBoundingClientRect().height : 0;
+    var availH = ms.clientHeight - stickyTop - footH - 14;
     sc.style.maxHeight = availH + 'px';
     if(tab){
       // 탭(‹/›)의 top은 원래 손으로 잰 고정값(120px, 무대가 안 잘렸던 원래 높이 874px 기준 위에서 약 14% 지점 —

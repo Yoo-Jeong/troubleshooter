@@ -152,6 +152,8 @@
     function switchTo(sel){
       if(sel === curId) return;
       var it = byId(sel);
+      var ms = document.querySelector('.mscreen');   // 세대 전환 = 다른 캐릭터 보듯 새로 시작 → 스크롤을 맨 위로
+      if(ms) ms.scrollTop = 0;
       stage.classList.add('switching');
       if(fileArea){ fileArea.style.transition = 'opacity .3s ease'; fileArea.style.opacity = '0'; }
       setTimeout(function(){
