@@ -72,7 +72,7 @@ function buildSrcdoc(st){
     '<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Chakra+Petch:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Share+Tech+Mono&family=Gothic+A1:wght@300;400;500;700;800&display=swap" rel="stylesheet">'+
     '<link rel="stylesheet" href="../../assets/css/common.css">'+
     '<link rel="stylesheet" href="../../assets/css/transitions.css">'+
-    '<link rel="stylesheet" href="../../assets/css/profile.css?v=55">'+
+    '<link rel="stylesheet" href="../../assets/css/profile.css?v=56">'+
     '<style>:root,:root[data-theme="dark"]{--accent:'+accent+';--accent2:'+accent2+';'+(st.statPlus?'--stat-plus:'+st.statPlus+';':'')+'}:root[data-theme="light"]{--accent:'+accentL+';'+(accent2L?'--accent2:'+accent2L+';':'')+'}'+
     '.stage .ghost{display:block}'+   /* 미리보기(폭 좁음)에서 고스트 확실히 표시 — profile.css 캐시와 무관하게. !important 안 씀=이미지 없을 때 profile.js 인라인 숨김은 존중 */
     '[data-edit]{cursor:text;border-radius:3px}[data-edit]:hover{box-shadow:0 0 0 1px var(--accent-line,#7aa)}[data-edit]:focus{outline:none;box-shadow:0 0 0 2px var(--accent);background:rgba(120,180,210,.07)}'+
