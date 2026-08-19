@@ -188,3 +188,15 @@ a{text-decoration:none;color:inherit}
 .foot{display:flex;align-items:center;height:50px;flex:0 0 50px;border-top:1px solid var(--line);font-family:'Share Tech Mono';font-size:var(--fs-xs);letter-spacing:1px;color:var(--tx3)}
 .foot .g{color:var(--tx2)}
 .foot .r{margin-left:auto}
+
+/* ============================================================
+   홈 화면 모드 조각 공용 — index_pcb/terminal/minimal 3개 조각이
+   토씨 하나 안 틀리고 반복해 쓰던 규칙(오빗 모드는 3D 궤도 구조가
+   달라 로고 링·배치를 자기 파일에서 따로 정의함, 여기와 무관).
+   ============================================================ */
+.feature{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;padding:6px 0;overflow:hidden}
+@keyframes sp{to{transform:rotate(360deg)}}   /* 로고 링 회전 */
+@keyframes bl{50%{opacity:0}}                 /* 부팅 커서 깜빡임 */
+:root[data-theme="light"] .ring .logo,
+:root[data-theme="light"] .tring .logo,
+:root[data-theme="light"] .mring .logo{filter:brightness(.6) saturate(1.5)}

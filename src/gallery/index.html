@@ -12,7 +12,9 @@
 <!-- 다른 실제 페이지(characters.html·logs 등)와 같은 공통 골격 — 상단바·기기 베젤·테마 토글·시계·
      시스템 설정 톱니까지 전부 common.js/common.css가 처리(단일 출처). -->
 <link rel="stylesheet" href="../assets/css/common.css?v=3">
+<link rel="stylesheet" href="../assets/css/transitions.css?v=1">
 <script src="../assets/js/common.js?v=8"></script>
+<script src="../assets/js/transitions.js?v=3"></script>
 <!-- 그림 목록 데이터(단일 출처) — 홈 화면의 "N RECORDS" 표시도 이 파일을 같이 봄(gallery-data.js 안 주석 참고) -->
 <script src="../assets/js/gallery-data.js?v=1"></script>
 
@@ -87,9 +89,8 @@
     display:flex;align-items:center;justify-content:center;padding:0;overflow:visible}
   .lbx-nav:hover{background:#fff;color:#111}
   /* ★클래스 이름 주의: common.css에 전혀 다른 용도의 전역 .prev 클래스(미리보기 패널용)가 있어서,
-     예전에 이 버튼이 class="lbx-nav prev"만 썼을 때 그 스타일(overflow:auto·큰 padding)이 함께 섞여
-     들어와 왼쪽 버튼만 타원+스크롤바로 보이는 버그가 있었다(오른쪽은 .next라는 전역 클래스가 없어 멀쩡했음).
-     같은 사고가 다시 나지 않게 이 페이지만의 이름(.lbx-prev/.lbx-next)으로 완전히 구분해서 쓴다. */
+     "prev"/"next" 같은 흔한 이름을 그대로 쓰면 그 스타일(overflow:auto·큰 padding 등)이 섞여 들어온다.
+     이 페이지만의 이름(.lbx-prev/.lbx-next)으로 완전히 구분해서 쓴다. */
   .lbx-nav.lbx-prev{left:8px}
   .lbx-nav.lbx-next{right:8px}
   @media(max-width:700px){.lbx-nav{display:none}}   /* 좁은 화면은 화살표 버튼 대신 좌우 스와이프로 넘김(터치 표준) */

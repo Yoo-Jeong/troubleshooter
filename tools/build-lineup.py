@@ -7,10 +7,11 @@
 - 결과: src/assets/img/lineup/<k>.png (모두 동일 캔버스 크기 → 패널에서 그대로 겹쳐도 비율/바닥 일치)
 - ★프로젝트 루트에서 실행:  python tools/build-lineup.py
 
-키 바꾸려면 아래 CM 숫자만 고치고 다시 실행:  python tools/build-lineup.py
+키(cm)는 각 캐릭터 front matter(roster.height)를 그대로 읽어온다 — 키를 바꾸고 싶으면
+캐릭터 파일(src/characters/<슬러그>/index.html)의 roster.height를 고친 뒤 이 스크립트를 다시 실행.
 """
 from PIL import Image
-import os, json
+import os, json, re
 
 # ── 정규화 규격 상수: src/assets/lineup-constants.json 한 곳에서 읽음 ──
 #    프로필 작성 툴(profile-builder.html)도 같은 파일을 읽는다.
@@ -20,15 +21,31 @@ _CONST = os.path.join(_HERE, '..', 'src', 'assets', 'lineup-constants.json')
 with open(_CONST, encoding='utf-8') as _fp:
     _C = json.load(_fp)
 
-SRC = 'src/assets/img/lineup_raw'
-OUT = 'src/assets/img/lineup'
-CM  = {'seluka':195,'vector':192,'s':183,'meant':171,'myt':164,'merely':152}
+SRC = os.path.join(_HERE, '..', 'src', 'assets', 'img', 'lineup_raw')
+OUT = os.path.join(_HERE, '..', 'src', 'assets', 'img', 'lineup')
+
+# 키(cm)는 여기 따로 적지 않고 각 캐릭터 front matter(roster.height)에서 직접 읽는다.
+# → 캐릭터 페이지에서 키를 바꿔도 이 스크립트가 자동으로 새 값을 따라가서,
+#   여기 숫자를 깜빡 안 고쳐 라인업 이미지만 옛 키 기준으로 남는 일이 없다.
+_CHARS_DIR = os.path.join(_HERE, '..', 'src', 'characters')
+_SLUGS = ['seluka', 'vector', 's', 'meant', 'myt', 'merely']
+
+def _read_height(slug):
+    path = os.path.join(_CHARS_DIR, slug, 'index.html')
+    with open(path, encoding='utf-8') as fp:
+        text = fp.read()
+    m = re.search(r'^roster:\s*\{[^}]*\bheight:\s*(\d+)', text, re.M)
+    if not m:
+        raise ValueError(f'{path} 의 front matter에서 roster.height 를 못 찾음')
+    return int(m.group(1))
+
+CM = {slug: _read_height(slug) for slug in _SLUGS}
 
 # 일부 캐릭터는 원본(lineup_raw) 히어로 일러가 '서 있는' 포즈가 아니라 목록 정렬에 안 맞음.
 # 그런 캐릭터만 '서 있는' 소스로 교체(키 비율 정렬용). 없으면 lineup_raw 기본 사용.
 # S: 후드 히어로가 공중 점프 포즈 → 서 있는 정장 일러로 교체.
 SRC_OVERRIDE = {
-    's': '_local/source/트슈 전신/에스정장전신_투명화.png',
+    's': os.path.join(_HERE, '..', '_local', 'source', '트슈 전신', '에스정장전신_투명화.png'),
 }
 
 OUT_H     = _C['OUT_H']      # 출력 캔버스 높이(px)

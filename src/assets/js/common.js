@@ -68,9 +68,8 @@ document.addEventListener('DOMContentLoaded', function(){
   //   ★이 스크립트(common.js)는 항상 "<사이트 루트>/assets/js/common.js"에 있다는 사실을 이용 —
   //   자신이 실제로 로드된 주소(TS_SELF_SRC)에서 "assets/js/common.js…" 뒷부분을 떼어내면 사이트 루트가 나온다.
   //   이 방식은 사이트가 도메인 루트(username.github.io/)에 있든, GitHub Pages 프로젝트 페이지처럼
-  //   하위경로(username.github.io/저장소이름/)에 있든 항상 정확하다(예전엔 URL 슬래시 개수만 세서
-  //   "../"를 몇 개 붙일지 계산했는데, 그건 사이트가 도메인 루트에 있다고 가정한 계산이라 하위경로
-  //   배포에선 한 단계씩 부족해 로고·SYSTEM CONFIG 링크가 사이트 바깥으로 새는 버그가 있었음, 2026-08-02).
+  //   하위경로(username.github.io/저장소이름/)에 있든 항상 정확하다(URL 슬래시 개수만 세는 방식은
+  //   사이트가 도메인 루트에 있다고 가정한 계산이라 하위경로 배포에선 틀어짐).
   function TSROOT(){
     if(TS_SELF_SRC){
       var m = TS_SELF_SRC.match(/^(.*\/)assets\/js\/common\.js(?:[?#].*)?$/);
