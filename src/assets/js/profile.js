@@ -245,7 +245,7 @@
   };
   if(art && /[?&]edit\b/.test(location.search)){
     var jsdir = (SELF && SELF.src) ? SELF.src.replace(/[^/]+$/, '') : '../assets/js/';   // profile.js 와 같은 폴더
-    [jsdir+'edit-core.js?v=1', jsdir+'editor.js?v=7'].forEach(function(src){
+    [jsdir+'edit-core.js?v=132', jsdir+'editor.js?v=132'].forEach(function(src){
       var es = document.createElement('script'); es.src = src; es.async = false; document.body.appendChild(es);   // 코어 먼저, 순서 보장
     });
   }
