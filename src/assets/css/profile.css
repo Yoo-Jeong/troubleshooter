@@ -183,7 +183,7 @@ body{font-family:'Chakra Petch','Pretendard','Gothic A1',sans-serif}
   /* 위치(--art-x/shift) + 키네틱 오프셋(--kx/--ky = motion.js의 둥실·마우스 패럴랙스). 변수 없으면 0이라 영향 없음. */
   transform:translate(var(--art-x,0%),var(--art-shift,0%)) translate(var(--kx,0px),var(--ky,0px));
   -webkit-mask-image:linear-gradient(180deg,#000 95%,transparent 99.5%);mask-image:linear-gradient(180deg,#000 95%,transparent 99.5%);
-  filter:drop-shadow(0 22px 42px rgba(50,70,100,.16));user-select:none;transition:opacity .35s ease}
+  filter:drop-shadow(0 22px 42px rgba(50,70,100,.16));user-select:none;transition:opacity .35s ease;cursor:zoom-in}   /* 클릭하면 라이트박스로 확대(profile-ui.js) */
 .stage.switching .art{opacity:0}   /* 세대 전환 시 페이드(원래 동작) */
 /* 플레이스홀더 세대(원형/더미 등 일러 없는 세대) = 무대 효과 캔버스 숨김 */
 .stage.fx-off canvas{display:none}

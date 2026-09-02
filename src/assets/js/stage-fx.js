@@ -2425,6 +2425,11 @@ window.TSFX = (function () {
         H = cv.offsetHeight || cv.getBoundingClientRect().height;
         cv.width = Math.max(1, W * dpr); cv.height = Math.max(1, H * dpr);
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        // ★캔버스 크기를 바꾸면(cv.width/height 대입) 컨텍스트 설정이 초기화되므로 매번 다시 지정 —
+        //   기본값(low)은 일러를 캔버스에 그릴 때(예: glitchSlice·archiveTear가 일러 원본을 훨씬 작은
+        //   화면 크기로 줄여 그림) 뭉개져 보이는 정도가 심해서, 고화질 축소로 올려둔다.
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
         st.layer = L.place; st.place = L.place;
         if (def.init) def.init(st, W, H, cv);
       }

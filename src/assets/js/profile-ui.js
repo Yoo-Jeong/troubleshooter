@@ -2,7 +2,7 @@
    TS·OS — 캐릭터 프로필 · 화면 상호작용 4종 (6명 공유 · 단일 출처)
    ------------------------------------------------------------
    전부 서로 상태를 안 나눠 쓰는 독립된 (function(){...})() 블록:
-   1) 라이트박스        — 서술카드 안 그림 클릭 → 화면 가득 크게 보기
+   1) 라이트박스        — 서술카드 안 그림·무대 전신 일러 클릭 → 화면 가득 크게 보기
    2) 카드 접기/펼치기   — 서술카드·확장카드 공통, max-height 트랜지션
    3) 사원증 스캔 토글   — #idScan 애니메이션 켜기/끄기
    4) 무대 접기(읽기 모드) 토글 — 옷장·무대를 접어 서술카드를 넓게 보기
@@ -11,7 +11,7 @@
    안 나눠 쓰므로 이 파일은 그 두 파일보다 먼저 실행돼도 상관없음(순서 무관).
    ============================================================ */
 
-// 서술카드 안 그림 클릭 → 화면 가득 크게 보기(라이트박스). 오버레이 하나를 재사용(그림마다 새로 안 만듦).
+// 서술카드 안 그림·무대 전신 일러 클릭 → 화면 가득 크게 보기(라이트박스). 오버레이 하나를 재사용(그림마다 새로 안 만듦).
 (function(){
   var box, img;
   function ensure(){
@@ -25,8 +25,11 @@
   function open(src, alt){ ensure(); img.src = src; img.alt = alt || ''; box.classList.add('on'); }
   function close(){ if(box) box.classList.remove('on'); }
   document.addEventListener('click', function(e){
-    var t = e.target.closest && e.target.closest('.prose .p-fig img');
-    if(t) open(t.src, t.alt);
+    // 무대 일러는 #stageArt 하나를 옷장 전환·세대 전환마다 src만 바꿔써서 클릭 시점의 src를 그대로 확대하면 됨.
+    var t = e.target.closest && e.target.closest('.prose .p-fig img, .stage .art');
+    // naturalWidth 체크 : 그림이 아직 없는(작성 중인) 캐릭터는 무대 일러가 깨진 이미지 상태일 수 있음 —
+    // 그런 빈 이미지를 확대해 봐야 의미 없으니 실제로 로드된 그림일 때만 라이트박스를 연다.
+    if(t && t.naturalWidth) open(t.src, t.alt);
   });
   document.addEventListener('keydown', function(e){ if(e.key === 'Escape') close(); });
 })();

@@ -32,7 +32,7 @@ function buildSrcdoc(st){
   // 무대 배치 편집(=페이지 ?edit) : 편집 모드일 때만 edit-core.js + 툴 어댑터를 미리보기에 주입.
   //   어댑터 = editor.js 와 같은 레이어(일러/고스트)를 쓰되, 파일쓰기 대신 값을 parent.pvStageEdit 로 되돌림(편집 코어 재사용, 이중구현 없음).
   var editorScript = !EDIT_MODE ? '' :
-    '<script src="../../assets/js/edit-core.js?v=132"><\/script>'+
+    '<script src="../../assets/js/edit-core.js?v=135"><\/script>'+
     '<script>(function(){var P=window.TSProfile;if(!P||!P.art||!window.TSEditCore)return;'+
     'var F=[{id:"art",name:"▤ 일러",anchorBottom:true,el:function(){return P.art;},fields:['+
       '{k:"크기",v:"--art-h",min:30,max:220,def:118,kind:"h",a:"data-arth"},'+
@@ -72,7 +72,7 @@ function buildSrcdoc(st){
     '<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Chakra+Petch:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Share+Tech+Mono&family=Gothic+A1:wght@300;400;500;700;800&display=swap" rel="stylesheet">'+
     '<link rel="stylesheet" href="../../assets/css/common.css">'+
     '<link rel="stylesheet" href="../../assets/css/transitions.css">'+
-    '<link rel="stylesheet" href="../../assets/css/profile.css?v=132">'+
+    '<link rel="stylesheet" href="../../assets/css/profile.css?v=135">'+
     '<style>:root,:root[data-theme="dark"]{--accent:'+accent+';--accent2:'+accent2+';'+(st.statPlus?'--stat-plus:'+st.statPlus+';':'')+'}:root[data-theme="light"]{--accent:'+accentL+';'+(accent2L?'--accent2:'+accent2L+';':'')+'}'+
     '.stage .ghost{display:block}'+   /* 미리보기(폭 좁음)에서 고스트 확실히 표시 — profile.css 캐시와 무관하게. !important 안 씀=이미지 없을 때 profile.js 인라인 숨김은 존중 */
     '[data-edit]{cursor:text;border-radius:3px}[data-edit]:hover{box-shadow:0 0 0 1px var(--accent-line,#7aa)}[data-edit]:focus{outline:none;box-shadow:0 0 0 2px var(--accent);background:rgba(120,180,210,.07)}'+
@@ -183,11 +183,11 @@ function buildSrcdoc(st){
       '<div class="fmt-bar" id="fmtBar" hidden><button type="button" data-fmt="bold"><b>B</b></button><button type="button" data-fmt="italic"><i>I</i></button><button type="button" data-fmt="quote" title="인용문으로">&ldquo;</button><button type="button" data-fmt="faint" title="회색 글자로(연하게)" style="opacity:.6">A</button><button type="button" data-fmt="code" title="코드블럭으로(고른 문단 전체)" style="font-family:monospace">&lt;/&gt;</button></div>'+   // 글자 선택 시 뜨는 서식 툴바
     '<script>window.CHAR_META='+CH(curMeta)+';window.CHAR_STATS='+CH(curStats)+';'+
       'window.CHAR_WARDROBE='+CH(ward)+';window.CHAR_GENERATIONS='+CH(gens)+';<\/script>'+
-    '<script src="../../assets/js/common.js?v=132"><\/script>'+
-    '<script src="../../assets/js/profile.js?v=132"><\/script>'+
-    '<script src="../../assets/js/profile-generations.js?v=132"><\/script>'+
-    '<script src="../../assets/js/profile-ui.js?v=132"><\/script>'+
-    '<script src="../../assets/js/stage-fx.js?v=132"><\/script>'+
+    '<script src="../../assets/js/common.js?v=135"><\/script>'+
+    '<script src="../../assets/js/profile.js?v=135"><\/script>'+
+    '<script src="../../assets/js/profile-generations.js?v=135"><\/script>'+
+    '<script src="../../assets/js/profile-ui.js?v=135"><\/script>'+
+    '<script src="../../assets/js/stage-fx.js?v=135"><\/script>'+
     // 서술/확장 카드 안 코드블럭 문법강조(실제 페이지 _layouts/character.html과 같은 CDN 라이브러리 — 모양 바꾸면 거기도 같이).
     //   미리보기는 폼을 고칠 때마다 liveText()가 이 패널만 다시 그리는데, 그때는 페이지 재로드가 아니라서 이 스크립트가 다시
     //   안 돌아감 → liveText() 쪽에서 win.hljs.highlightAll()을 직접 한 번 더 불러줌(중복 호출은 hljs가 알아서 건너뜀, 안전).
